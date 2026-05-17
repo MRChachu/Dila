@@ -1,5 +1,5 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-body { background: #05070a; color: white; min-height: 100vh; overflow-x: hidden; }
+body { background: #05070a; color: white; min-height: 100vh; overflow-x: hidden; width: 100%; }
 
 .background-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; transition: background 1.5s ease; }
 .theme-default { background: radial-gradient(circle at 50% -20%, #1e2a5a 0%, #05070a 75%); }
@@ -7,27 +7,29 @@ body { background: #05070a; color: white; min-height: 100vh; overflow-x: hidden;
 .theme-clouds { background: radial-gradient(circle at 50% -20%, #2c3a59 0%, #0e1424 60%, #05070a 100%); }
 .theme-rain { background: radial-gradient(circle at 50% -20%, #16263b 0%, #0a111c 65%, #020407 100%); }
 
-.container { max-width: 1440px; margin: 0 auto; padding: 20px; height: 100vh; display: flex; flex-direction: column; }
-.main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-.main-logo-svg { height: 46px; width: auto; filter: drop-shadow(0 0 10px rgba(243, 156, 18, 0.3)); }
+.container { max-width: 1440px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; width: 100%; }
+.main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; width: 100%; gap: 15px; }
+.main-logo-svg { height: 46px; width: auto; filter: drop-shadow(0 0 10px rgba(243, 156, 18, 0.3)); flex-shrink: 0; }
+
+/* დესკტოპის ნავიგაცია */
 .pro-nav { display: flex; gap: 20px; background: rgba(255,255,255,0.04); padding: 8px 24px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.08); }
-.nav-item { opacity: 0.5; font-size: 13px; cursor: pointer; transition: 0.3s; }
+.nav-item { opacity: 0.5; font-size: 13px; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
 .nav-item.active, .nav-item:hover { opacity: 1; color: #f39c12; font-weight: bold; }
 
-.header-right { display: flex; gap: 12px; align-items: center; }
+.header-right { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
 .glass-pill { background: rgba(255,255,255,0.08); padding: 6px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); font-weight: bold; font-size: 14px; }
 .sync-pill { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 20px; color: white; font-size: 12px; cursor: pointer; transition: 0.2s; }
 .sync-pill:hover { background: rgba(255,255,255,0.12); border-color: #f39c12; }
 
-/* Grid და სინგლ ხედი */
-.dashboard-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 20px; flex: 1; align-items: start; transition: 0.3s ease; }
+/* Grid სტრუქტურა */
+.dashboard-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 20px; flex: 1; align-items: start; width: 100%; }
 .dashboard-grid.single-view { grid-template-columns: 1fr; justify-items: center; }
-.dashboard-grid.single-view .card { width: 100%; max-width: 580px; height: 460px; animation: scaleUp 0.4s ease; }
+.dashboard-grid.single-view .card { width: 100%; max-width: 580px; height: auto; min-height: 440px; animation: scaleUp 0.4s ease; }
 .hidden { display: none !important; }
 
 @keyframes scaleUp { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-.card { background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 26px; padding: 24px; display: flex; flex-direction: column; height: 440px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+.card { background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 26px; padding: 24px; display: flex; flex-direction: column; height: 440px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); width: 100%; }
 
 /* კომპონენტები */
 .search-bar-pro { display: flex; align-items: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 10px 16px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.08); }
@@ -49,7 +51,7 @@ body { background: #05070a; color: white; min-height: 100vh; overflow-x: hidden;
 .curr-row:hover { background: rgba(255,255,255,0.05); }
 .curr-row-left { display: flex; align-items: center; gap: 12px; }
 
-/* კრიპტო სტილი */
+/* კრიპტო ზოლი */
 .crypto-container { display: flex; justify-content: space-between; gap: 10px; margin: 8px 0; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); }
 .crypto-item { flex: 1; display: flex; justify-content: space-between; font-size: 13px; background: rgba(255,255,255,0.02); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); }
 .crypto-item b { color: #00ff88; }
@@ -72,11 +74,59 @@ body { background: #05070a; color: white; min-height: 100vh; overflow-x: hidden;
 .bottom-price { font-size: 22px; font-weight: bold; color: #f39c12; }
 .sub-label { font-size: 10px; color: rgba(255,255,255,0.4); }
 
-/* ✅ TOAST NOTIFICATIONS STYLE */
+/* TOAST NOTIFICATIONS */
 #toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 10000; }
 .toast { background: rgba(10, 25, 15, 0.85); border: 1px solid #00ff88; backdrop-filter: blur(15px); color: white; padding: 14px 24px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-size: 13px; font-weight: bold; min-width: 250px; animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .toast.error { background: rgba(30, 10, 10, 0.85); border-color: #ff3333; color: #ff8888; }
 @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-@media (max-width: 1150px) { .dashboard-grid, .dashboard-grid.single-view { grid-template-columns: repeat(2, 1fr); gap: 15px; } .dashboard-grid.single-view .card { max-width: 100%; } .container { height: auto; } body { overflow-y: auto; } }
-@media (max-width: 650px) { .dashboard-grid, .dashboard-grid.single-view { grid-template-columns: 1fr; } }
+/* ==========================================
+   ⚡ RESPONSIVE MEDIA QUERIES (მობილურის ოპტიმიზაცია)
+   ========================================== */
+@media (max-width: 1150px) {
+    .dashboard-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .container { height: auto; }
+    body { overflow-y: auto; }
+}
+
+@media (max-width: 768px) {
+    .main-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    /* მობილური Swipe-მენიუ (გადაადგილდება თითით, არ ამახინჯებს ეკრანს) */
+    .pro-nav {
+        width: 100vw;
+        max-width: calc(100% + 40px);
+        margin: 0 -20px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 12px 20px;
+        gap: 24px;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+    }
+    .pro-nav::-webkit-scrollbar { display: none; } /* აქრობს მახინჯ სქროლბარს */
+
+    .header-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .dashboard-grid, .dashboard-grid.single-view {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .card {
+        height: auto;
+        min-height: 420px;
+        padding: 20px;
+    }
+}
