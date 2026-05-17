@@ -1,0 +1,16 @@
+{
+  "short_name": "Dila.ge",
+  "name": "Dila.ge Smart Dashboard",
+  "icons": [
+    {
+      "src": "https://openweathermap.org/img/wn/01d@2x.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#05070a",
+  "theme_color": "#1e2a5a",
+  "display": "standalone",
+  "orientation": "portrait"
+}

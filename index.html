@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dila.ge - Smart Pro Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div id="ambient-bg" class="background-overlay theme-default"></div>
+    
+    <div id="toast-container"></div>
+
+    <div class="container">
+        <header class="main-header">
+            <svg class="main-logo-svg" viewBox="0 0 200 60">
+                <defs>
+                    <filter id="logo-glow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                </defs>
+                <g filter="url(#logo-glow)">
+                    <path d="M30 40C30 31.7 36.7 25 45 25C53.3 25 60 31.7 60 40H30Z" fill="#f39c12"/>
+                    <path d="M45 15V20M28 20L32 23M62 23L66 20M20 32H25M65 32H70" stroke="#f39c12" stroke-width="2.5" stroke-linecap="round"/>
+                </g>
+                <text x="80" y="42" font-family="Arial" font-size="28" font-weight="800" fill="#ffffff">Dila<tspan fill="#f39c12">.ge</tspan></text>
+            </svg>
+
+            <nav class="pro-nav">
+                <div class="nav-item active" data-tab="all">🏠 მთავარი</div>
+                <div class="nav-item" data-tab="weather">☁️ ამინდი</div>
+                <div class="nav-item" data-tab="currency">$ კურსი</div>
+                <div class="nav-item" data-tab="gold">🎯 ოქრო</div>
+                <div class="nav-item" data-tab="about">ℹ️ ჩვენს შესახებ</div>
+                <div class="nav-item" data-tab="contact">📞 კონტაქტი</div>
+                <div class="nav-item" data-tab="admin" id="nav-admin-tab" style="display: none;">🔐 ადმინი</div>
+            </nav>
+            
+            <div class="header-right">
+                <button id="sync-btn" class="sync-pill">🔄 <span id="sync-status">განახლება</span></button>
+                <div id="current-time" class="glass-pill">00:00</div>
+            </div>
+        </header>
+
+        <main class="dashboard-grid" id="main-grid">
+            <section class="card" id="weather-card">
+                <div class="search-bar-pro">
+                    <input type="text" id="city-input" placeholder="მოძებნე ქალაქი ან სოფელი...">
+                    <button id="search-btn">🔍</button>
+                </div>
+                <div class="weather-main">
+                    <div class="w-text">
+                        <h3 id="city-display">თბილისი</h3>
+                        <h2 id="temp-display">18°C</h2>
+                        <p id="weather-desc">მოწმენდილი ცა</p>
+                    </div>
+                    <img id="main-weather-icon" src="https://openweathermap.org/img/wn/01d@2x.png" alt="ამინდი">
+                </div>
+                <div class="weather-details">
+                    <div class="w-stat"><span>ტენიანობა</span><b id="humidity">45%</b></div>
+                    <div class="w-stat"><span>ქარი</span><b id="wind">5 კმ/ს</b></div>
+                    <div class="w-stat"><span>ხილვადობა</span><b id="vis">10.0 კმ</b></div>
+                </div>
+                <div class="forecast-row" id="forecast-box"></div>
+            </section>
+
+            <section class="card" id="currency-card">
+                <div class="card-head"><h3>კურსი</h3><span class="tag nbg">NBG</span></div>
+                <div class="curr-header">
+                    <span>ვალუტა</span>
+                    <div class="buy-sell"><span>ყიდვა</span><span>გაყიდვა</span></div>
+                </div>
+                <div id="currency-list" class="curr-list"></div>
+                <div id="calc-panel" class="calc-box" style="display: none;">
+                    <div class="calc-title-row"><span id="calc-title">USD ➔ GEL</span><button id="close-calc">×</button></div>
+                    <div class="calc-input-row">
+                        <input type="number" id="calc-input" placeholder="0.00">
+                        <span id="calc-result">0.00 ₾</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card" id="gold-card">
+                <div class="card-head"><h3>ოქრო</h3><span class="tag live">Live</span></div>
+                <p class="sub-label">London Market (XAU/USD)</p>
+                <div class="price-val" id="gold-live-price">2335.50 $</div>
+                <div class="gold-chart">
+                    <svg viewBox="0 0 200 60" preserveAspectRatio="none"><path id="sparkline-path" d="M 0,40 Q 50,35 100,38 T 200,15" fill="none" stroke="#f39c12" stroke-width="3"/></svg>
+                </div>
+                <div class="bottom-info">
+                    <p class="sub-label">საქართველოში (1გრ. 24K)</p>
+                    <div class="bottom-price" id="gold-local-price">203.40 ₾</div>
+                </div>
+            </section>
+
+            <section class="card" id="fuel-card">
+                <div class="card-head"><h3>ბაზრები & საწვავი</h3><span class="tag">Live</span></div>
+                <div class="fuel-list">
+                    <div class="fuel-item"><span>⛽ Premium (A-95)</span><b class="price-right" id="display-premium">2.85 ₾</b></div>
+                    <div class="fuel-item"><span>⛽ Super (A-98)</span><b class="price-right" id="display-super">3.10 ₾</b></div>
+                    <div class="fuel-item"><span>⛽ Euro Diesel</span><b class="price-right" id="display-diesel">2.70 ₾</b></div>
+                </div>
+                
+                <div class="crypto-container">
+                    <div class="crypto-item"><span>🪙 BTC</span><b id="btc-price">--- $</b></div>
+                    <div class="crypto-item"><span>🔷 ETH</span><b id="eth-price">--- $</b></div>
+                </div>
+
+                <div class="oil-footer">
+                    <div class="oil-meta">
+                        <p class="sub-label">Brent Crude Oil</p>
+                        <div class="bottom-price" style="color: white;">83.68 $</div>
+                    </div>
+                    <div class="oil-icon">🛢️</div>
+                </div>
+            </section>
+
+            <section class="card hidden" id="about-card">
+                <div class="card-head"><h3>ჩვენს შესახებ</h3></div>
+                <p style="font-size: 14px; line-height: 1.6; margin-top: 15px; color: #ddd;">
+                    <strong>Dila.ge</strong> არის ინოვაციური, მაღალტექნოლოგიური საინფორმაციო Dashboard პლატფორმა, რომელიც მომხმარებელს აწვდის კრიტიკულად მნიშვნელოვან გლობალურ და ლოკალურ მონაცემებს რეალურ დროში.
+                </p>
+            </section>
+
+            <section class="card hidden" id="contact-card">
+                <div class="card-head"><h3>კონტაქტი</h3></div>
+                <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 25px; font-size: 14px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 8px;">
+                        <span style="color: #888;">📧 ელ-ფოსტა:</span><b>support@dila.ge</b>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card hidden" id="admin-card">
+                <div class="card-head"><h3>ადმინ პანელი</h3></div>
+                <div class="admin-form" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; flex: 1;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 11px; color: #888;">Premium (A-95):</label>
+                        <input type="number" id="input-premium" step="0.01" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 11px; color: #888;">Super (A-98):</label>
+                        <input type="number" id="input-super" step="0.01" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 11px; color: #888;">Euro Diesel:</label>
+                        <input type="number" id="input-diesel" step="0.01" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 5px;">
+                        <label style="font-size: 11px; color: #f39c12; font-weight: bold;">🔐 შეიყვანე ადმინის PIN კოდი:</label>
+                        <input type="password" id="input-admin-pin" placeholder="••••" style="background: rgba(243,156,18,0.05); border: 1px solid rgba(243,156,18,0.3); border-radius: 8px; color: #f39c12; padding: 8px 12px; outline: none; text-align: center; font-weight: bold; letter-spacing: 3px;">
+                    </div>
+                    <button id="save-fuel-btn" style="background: #f39c12; border: none; border-radius: 10px; color: black; font-weight: bold; padding: 10px; cursor: pointer; margin-top: auto; font-size: 13px;">ბაზაში გადაგზავნა</button>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
