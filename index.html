@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dila.ge - Smart Pro Dashboard</title>
-    <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="ambient-bg" class="background-overlay theme-default"></div>
@@ -27,9 +27,17 @@
 
             <nav class="pro-nav">
                 <div class="nav-item active" data-tab="all">🏠 მთავარი</div>
-                <div class="nav-item" data-tab="weather">☁️ ამინდი</div>
-                <div class="nav-item" data-tab="currency">$ კურსი</div>
-                <div class="nav-item" data-tab="gold">🎯 ოქრო</div>
+                
+                <div class="nav-dropdown">
+                    <div class="drop-btn">📊 მონაცემები ▾</div>
+                    <div class="dropdown-content">
+                        <div class="nav-item" data-tab="weather">☁️ ამინდი</div>
+                        <div class="nav-item" data-tab="currency">$ კურსი</div>
+                        <div class="nav-item" data-tab="gold">🎯 ლითონები</div>
+                        <div class="nav-item" data-tab="loan">🧮 სესხის კალკულატორი</div>
+                    </div>
+                </div>
+
                 <div class="nav-item" data-tab="about">ℹ️ ჩვენს შესახებ</div>
                 <div class="nav-item" data-tab="contact">📞 კონტაქტი</div>
                 <div class="nav-item" data-tab="admin" id="nav-admin-tab" style="display: none;">🔐 ადმინი</div>
@@ -67,7 +75,8 @@
                 <div class="card-head"><h3>კურსი</h3><span class="tag nbg">NBG</span></div>
                 <div class="curr-header">
                     <span>ვალუტა</span>
-                    <div class="buy-sell"><span>ყიდვა</span><span>გაყიდვა</span></div>
+                    <span>ყიდვა</span>
+                    <span>გაყიდვა</span>
                 </div>
                 <div id="currency-list" class="curr-list"></div>
                 <div id="calc-panel" class="calc-box" style="display: none;">
@@ -80,21 +89,30 @@
             </section>
 
             <section class="card" id="gold-card">
-                <div class="card-head"><h3>ოქრო</h3><span class="tag live">Live</span></div>
-                <p class="sub-label">London Market (XAU/USD)</p>
-                <div class="price-val" id="gold-live-price">2335.50 $</div>
-                <div class="gold-chart">
-                    <svg viewBox="0 0 200 60" preserveAspectRatio="none"><path id="sparkline-path" d="M 0,40 Q 50,35 100,38 T 200,15" fill="none" stroke="#f39c12" stroke-width="3"/></svg>
+                <div class="card-head"><h3>ლითონები</h3><span class="tag live">Live</span></div>
+                <p class="sub-label">London Market (XAU & XAG)</p>
+                
+                <div style="margin-top: 12px; margin-bottom: 12px;">
+                    <span style="font-size: 11px; color: #888; display:block; margin-bottom: 2px;">🏆 ოქრო (XAU/USD)</span>
+                    <div class="price-val" id="gold-live-price" style="font-size: 24px; color: #f39c12; font-weight: bold;">2339.00 $</div>
+                    <div style="font-size: 13px; color: #bbb; margin-top: 2px;">საქართველოში (1გრ 24K): <b id="gold-local-price" style="color: #f39c12;">203.40 ₾</b></div>
                 </div>
-                <div class="bottom-info">
-                    <p class="sub-label">საქართველოში (1გრ. 24K)</p>
-                    <div class="bottom-price" id="gold-local-price">203.40 ₾</div>
+
+                <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; margin-bottom: 10px;">
+                    <span style="font-size: 11px; color: #888; display:block; margin-bottom: 2px;">🥈 ვერცხლი (XAG/USD)</span>
+                    <div class="price-val" id="silver-live-price" style="font-size: 24px; color: #e5e7eb; font-weight: bold;">28.50 $</div>
+                    <div style="font-size: 13px; color: #bbb; margin-top: 2px;">საქართველოში (1გრ 999): <b id="silver-local-price" style="color: #e5e7eb;">2.48 ₾</b></div>
+                </div>
+
+                <div class="gold-chart" style="margin-top: auto;">
+                    <svg viewBox="0 0 200 40" preserveAspectRatio="none"><path id="sparkline-path" d="M 0,30 Q 50,25 100,28 T 200,10" fill="none" stroke="#f39c12" stroke-width="2.5"/></svg>
                 </div>
             </section>
 
             <section class="card" id="fuel-card">
                 <div class="card-head"><h3>ბაზრები & საწვავი</h3><span class="tag">Live</span></div>
                 <div class="fuel-list">
+                    <div class="fuel-item"><span>⛽ Regular (A-92)</span><b class="price-right" id="display-regular">2.50 ₾</b></div>
                     <div class="fuel-item"><span>⛽ Premium (A-95)</span><b class="price-right" id="display-premium">2.85 ₾</b></div>
                     <div class="fuel-item"><span>⛽ Super (A-98)</span><b class="price-right" id="display-super">3.10 ₾</b></div>
                     <div class="fuel-item"><span>⛽ Euro Diesel</span><b class="price-right" id="display-diesel">2.70 ₾</b></div>
@@ -111,6 +129,45 @@
                         <div class="bottom-price" style="color: white;">83.68 $</div>
                     </div>
                     <div class="oil-icon">🛢️</div>
+                </div>
+            </section>
+
+            <section class="card hidden" id="loan-card" style="height: auto; min-height: 440px;">
+                <div class="card-head"><h3>სესხის კალკულატორი</h3><span class="tag live">ანუიტეტური</span></div>
+                <p class="sub-label">თანაბარი ყოველთვიური გადასახდელის გაანგარიშება</p>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 11px; color: #888;">სესხის თანხა (₾):</label>
+                            <input type="number" id="loan-amount" value="1000" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none; font-variant-numeric: tabular-nums;">
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 11px; color: #888;">ვადა (თვე):</label>
+                            <input type="number" id="loan-months" value="12" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none; font-variant-numeric: tabular-nums;">
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 11px; color: #888;">წლიური საპროცენტო განაკვეთი (%):</label>
+                        <input type="number" id="loan-rate" value="32" step="0.1" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none; font-variant-numeric: tabular-nums;">
+                    </div>
+                    <button id="calc-loan-btn" style="background: #f39c12; border: none; border-radius: 10px; color: black; font-weight: bold; padding: 10px; cursor: pointer; margin-top: 5px; font-size: 13px;">გაანგარიშება</button>
+                </div>
+                
+                <div id="loan-results" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-variant-numeric: tabular-nums;">
+                    <div style="display: flex; justify-content: space-between;"><span>💳 ყოველთვიური გადასახდელი:</span><b id="loan-res-fixed" style="color: #00ff88; font-size: 16px;">--- ₾</b></div>
+                    <div style="display: flex; justify-content: space-between;"><span>💰 სესხის ძირითადი თანხა:</span><b id="loan-res-principal-total">--- ₾</b></div>
+                    <div style="display: flex; justify-content: space-between;"><span>📊 ჯამური პროცენტი (ზედმეტობა):</span><b id="loan-res-interest" style="color: #ff8888;">--- ₾</b></div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 6px;"><span>🛒 სულ გადასახდელი ჯამი:</span><b id="loan-res-total" style="color: #f39c12;">--- ₾</b></div>
+                </div>
+
+                <div id="loan-schedule-box" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display: none; flex-direction: column;">
+                    <div class="loan-sched-header">
+                        <span>თვე</span>
+                        <span>გადასახდელი</span>
+                        <span>ძირი</span>
+                        <span>პროცენტი</span>
+                    </div>
+                    <div id="loan-schedule-list"></div>
                 </div>
             </section>
 
@@ -133,6 +190,10 @@
             <section class="card hidden" id="admin-card">
                 <div class="card-head"><h3>ადმინ პანელი</h3></div>
                 <div class="admin-form" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; flex: 1;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 11px; color: #888;">Regular (A-92):</label>
+                        <input type="number" id="input-regular" step="0.01" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none;">
+                    </div>
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 11px; color: #888;">Premium (A-95):</label>
                         <input type="number" id="input-premium" step="0.01" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none;">

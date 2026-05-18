@@ -10,7 +10,7 @@ let goldHistory = [30, 28, 35, 32, 40, 38, 45, 42, 48, 46];
 const FIREBASE_DB_URL = 'https://dila-ge-default-rtdb.europe-west1.firebasedatabase.app/fuel.json'; 
 const ADMIN_SECURE_PIN = '9988'; // შენი საიდუმლო პინი ადმინისთვის
 
-// ✅ ვალუტების მკაცრი თანმიმდევრობა შენი მოთხოვნის მიხედვით
+// ვალუტების მკაცრი თანმიმდევრობა
 const CURRENCY_ORDER = [
     { code: 'USD', flag: '🇺🇸' },
     { code: 'EUR', flag: '🇪🇺' },
@@ -37,6 +37,9 @@ function initDashboard() {
     
     fetchWeather(savedCity);
     fetchFinances();
+    
+    // კალკულატორის ღილაკის დაკავშირება
+    document.getElementById('calc-loan-btn').onclick = calculateLoan;
     
     setInterval(animateSparkline, 4000);
 }
@@ -87,6 +90,7 @@ function setupNavigation() {
         currency: document.getElementById('currency-card'),
         gold: document.getElementById('gold-card'),
         fuel: document.getElementById('fuel-card'),
+        loan: document.getElementById('loan-card'),
         about: document.getElementById('about-card'),
         contact: document.getElementById('contact-card'),
         admin: document.getElementById('admin-card')
@@ -119,16 +123,74 @@ function setupNavigation() {
     });
 }
 
+// ==========================================
+// ✅ საბანკო ანუიტეტური (თანაბარი) სესხის ალგორითმი
+// ==========================================
+function calculateLoan() {
+    const amount = parseFloat(document.getElementById('loan-amount').value) || 0;
+    const months = parseInt(document.getElementById('loan-months').value) || 0;
+    const annualRate = parseFloat(document.getElementById('loan-rate').value) || 0;
+
+    if (amount <= 0 || months <= 0 || annualRate <= 0) {
+        showToast('გთხოვთ შეიყვანოთ სწორი მონაცემები', 'error');
+        return;
+    }
+
+    // ყოველთვიური საპროცენტო განაკვეთი
+    const monthlyRate = (annualRate / 100) / 12;
+
+    // ანუიტეტური ფორმულა: ფიქსირებული ყოველთვიური გადასახდელი
+    const monthlyPayment = amount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+    
+    let totalInterest = 0;
+    let remainingBalance = amount;
+
+    const scheduleList = document.getElementById('loan-schedule-list');
+    scheduleList.innerHTML = ''; // ცხრილის გასუფთავება
+
+    for (let i = 1; i <= months; i++) {
+        // პროცენტი ითვლება მიმდინარე ნაშთზე
+        const interestPayment = remainingBalance * monthlyRate;
+        // ძირითადი თანხა არის ფიქსირებულ გადასახდელს მინუს პროცენტი
+        const principalPayment = monthlyPayment - interestPayment;
+
+        totalInterest += interestPayment;
+
+        // სტრიქონის ჩამატება გრაფიკში
+        scheduleList.innerHTML += `
+            <div class="loan-sched-row">
+                <span style="color: rgba(255,255,255,0.4); text-align: left;">#${i}</span>
+                <b style="color: #00ff88;">${monthlyPayment.toFixed(2)} ₾</b>
+                <span>${principalPayment.toFixed(2)} ₾</span>
+                <span style="color: #ff8888;">${interestPayment.toFixed(2)} ₾</span>
+            </div>
+        `;
+
+        remainingBalance -= principalPayment; // ნაშთი მცირდება დაფარული ძირით
+    }
+
+    const totalPayout = amount + totalInterest;
+
+    // შედეგების ასახვა ეკრანზე
+    document.getElementById('loan-res-fixed').textContent = monthlyPayment.toFixed(2) + " ₾";
+    document.getElementById('loan-res-principal-total').textContent = amount.toFixed(2) + " ₾";
+    document.getElementById('loan-res-interest').textContent = totalInterest.toFixed(2) + " ₾";
+    document.getElementById('loan-res-total').textContent = totalPayout.toFixed(2) + " ₾";
+    
+    // გრაფიკის გამოჩენა
+    document.getElementById('loan-schedule-box').style.display = 'flex';
+    
+    showToast('ანუიტეტური გრაფიკი აიგო!');
+}
+
 async function refreshAllData() {
     const status = document.getElementById('sync-status');
     if(status) status.textContent = "ახლდება...";
-    
     const savedCity = localStorage.getItem('dila-last-city') || 'Tbilisi';
     await fetchWeather(savedCity);
     await fetchFinances();
     await loadFuelPricesCloud();
     await fetchCryptoCloud();
-    
     setTimeout(() => { if(status) status.textContent = "განახლდა"; }, 1200);
 }
 
@@ -151,7 +213,6 @@ async function fetchWeather(city) {
             showToast('ქალაქი ვერ მოიძებნა', 'error');
             return;
         }
-        
         const { lat, lon, local_names, name } = geoData[0];
         const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}&lang=ka`);
         const data = await res.json();
@@ -192,7 +253,6 @@ function loadFallbackForecast() {
     }
 }
 
-// ✅ ვალუტის წამოღება და დალაგება ზუსტი თანმიმდევრობით
 async function fetchFinances() {
     const list = document.getElementById('currency-list');
     try {
@@ -201,14 +261,10 @@ async function fetchFinances() {
         const res = await fetch(proxy + nbgUrl);
         const json = await res.json();
         const data = JSON.parse(json.contents)[0].currencies;
-        
-        // მონაცემების რუკად (Map) გარდაქმნა სწრაფი ძებნისთვის
         const nbgRatesMap = {};
         data.forEach(c => { nbgRatesMap[c.code] = c; });
-        
         list.innerHTML = '';
         
-        // ვბეჭდავთ ზუსტად CURRENCY_ORDER-ის მიხედვით
         CURRENCY_ORDER.forEach(target => {
             const c = nbgRatesMap[target.code];
             if (c) {
@@ -225,15 +281,9 @@ function loadFallbackFinances() {
     const list = document.getElementById('currency-list');
     if(!list) return;
     list.innerHTML = '';
-    
-    // რეზერვიც იგივე თანმიმდევრობით
     const fallbacks = [
-        {c:'USD', f:'🇺🇸', r:2.715}, 
-        {c:'EUR', f:'🇪🇺', r:2.940}, 
-        {c:'GBP', f:'🇬🇧', r:3.445}, 
-        {c:'TRY', f:'🇹🇷', r:0.084}, 
-        {c:'RUB', f:'🇷🇺', r:0.031}, 
-        {c:'AMD', f:'🇦🇲', r:0.0069}
+        {c:'USD', f:'🇺🇸', r:2.715}, {c:'EUR', f:'🇪🇺', r:2.940}, {c:'GBP', f:'🇬ბ', r:3.445}, 
+        {c:'TRY', f:'🇹🇷', r:0.084}, {c:'RUB', f:'🇷🇺', r:0.031}, {c:'AMD', f:'🇦🇲', r:0.0069}
     ];
     fallbacks.forEach(item => { renderCurrencyRow(list, item.f, item.c, item.r); });
     animateSparkline();
@@ -243,10 +293,13 @@ function renderCurrencyRow(container, flag, code, rate) {
     const isSmall = rate < 0.1;
     const buyPrice = (rate * 0.988).toFixed(isSmall ? 4 : 3);
     const sellPrice = (rate * 1.012).toFixed(isSmall ? 4 : 3);
-    
     const row = document.createElement('div');
     row.className = 'curr-row';
-    row.innerHTML = `<div class="curr-row-left"><span>${flag}</span><b style="font-size:13px;">${code}</b></div><div style="display:flex; gap:28px;"><span style="color:rgba(255,255,255,0.3); font-size:13px;">${buyPrice}</span><b style="color:#f39c12; font-size:13px;">${sellPrice}</b></div>`;
+    row.innerHTML = `
+        <div class="curr-row-left"><span>${flag}</span><b style="font-size:13px;">${code}</b></div>
+        <span class="curr-price" style="color:rgba(255,255,255,0.3);">${buyPrice}</span>
+        <span class="curr-price" style="color:#f39c12; font-weight: bold;">${sellPrice}</span>
+    `;
     row.onclick = () => openCalculator(code, rate);
     container.appendChild(row);
 }
@@ -272,10 +325,16 @@ function animateSparkline() {
     const goldGel = (goldUsd / 31.1035) * usdRate;
     document.getElementById('gold-live-price').textContent = goldUsd.toFixed(2) + " $";
     document.getElementById('gold-local-price').textContent = goldGel.toFixed(2) + " ₾";
-    goldHistory.push(20 + Math.random() * 25);
+
+    const silverUsd = 28.30 + (Math.random() * 0.3);
+    const silverGel = (silverUsd / 31.1035) * usdRate;
+    document.getElementById('silver-live-price').textContent = silverUsd.toFixed(2) + " $";
+    document.getElementById('silver-local-price').textContent = silverGel.toFixed(2) + " ₾";
+
+    goldHistory.push(15 + Math.random() * 20);
     if(goldHistory.length > 8) goldHistory.shift();
     let pathString = "M ";
-    goldHistory.forEach((val, i) => { pathString += `${i * 28},${60 - val} `; });
+    goldHistory.forEach((val, i) => { pathString += `${i * 28},${40 - val} `; });
     const pathEl = document.getElementById('sparkline-path');
     if(pathEl) pathEl.setAttribute('d', pathString);
 }
@@ -298,17 +357,18 @@ async function loadFuelPricesCloud() {
     try {
         const res = await fetch(FIREBASE_DB_URL);
         const data = await res.json();
-        
         if(data) {
+            document.getElementById('display-regular').textContent = parseFloat(data.regular || 2.50).toFixed(2) + " ₾";
             document.getElementById('display-premium').textContent = parseFloat(data.premium).toFixed(2) + " ₾";
             document.getElementById('display-super').textContent = parseFloat(data.super).toFixed(2) + " ₾";
             document.getElementById('display-diesel').textContent = parseFloat(data.diesel).toFixed(2) + " ₾";
-
+            document.getElementById('input-regular').value = data.regular || 2.50;
             document.getElementById('input-premium').value = data.premium;
             document.getElementById('input-super').value = data.super;
             document.getElementById('input-diesel').value = data.diesel;
         }
     } catch(e) {
+        document.getElementById('display-regular').textContent = "2.50 ₾";
         document.getElementById('display-premium').textContent = "2.85 ₾";
         document.getElementById('display-super').textContent = "3.10 ₾";
         document.getElementById('display-diesel').textContent = "2.70 ₾";
@@ -317,31 +377,27 @@ async function loadFuelPricesCloud() {
 
 document.getElementById('save-fuel-btn').onclick = async () => {
     const enteredPin = document.getElementById('input-admin-pin').value;
-    
     if (enteredPin !== ADMIN_SECURE_PIN) {
         showToast('ადმინის პინ-კოდი არასწორია!', 'error');
         return;
     }
-
+    const regular = document.getElementById('input-regular').value;
     const premium = document.getElementById('input-premium').value;
     const superFuel = document.getElementById('input-super').value;
     const diesel = document.getElementById('input-diesel').value;
 
-    if(premium && superFuel && diesel) {
+    if(regular && premium && superFuel && diesel) {
         try {
             const res = await fetch(FIREBASE_DB_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ premium, super: superFuel, diesel })
+                body: JSON.stringify({ regular, premium, super: superFuel, diesel })
             });
-
             if(res.ok) {
                 showToast('ფასები განახლდა ღრუბლოვან ბაზაში!');
                 document.getElementById('input-admin-pin').value = '';
                 loadFuelPricesCloud();
-            } else {
-                throw new Error();
-            }
+            } else { throw new Error(); }
         } catch(e) { showToast('ბაზასთან კავშირის შეცდომა', 'error'); }
     } else { showToast('გთხოვთ შეავსოთ ყველა ველი', 'error'); }
 };
@@ -353,7 +409,6 @@ document.getElementById('search-btn').onclick = () => {
 document.getElementById('city-input').onkeypress = (e) => {
     if (e.key === 'Enter' && e.target.value.trim()) fetchWeather(e.target.value.trim());
 };
-
 document.getElementById('sync-btn').onclick = refreshAllData;
 
 initDashboard();
