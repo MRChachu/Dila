@@ -6,18 +6,12 @@ let usdRate = 2.715;
 let selectedCurrencyRate = 2.715;
 let goldHistory = [30, 28, 35, 32, 40, 38, 45, 42, 48, 46];
 
-// 🌐 Firebase ონლაინ ბაზის მისამართი და უსაფრთხოების კოდი
 const FIREBASE_DB_URL = 'https://dila-ge-default-rtdb.europe-west1.firebasedatabase.app/fuel.json'; 
-const ADMIN_SECURE_PIN = '9988'; // შენი საიდუმლო პინი ადმინისთვის
+const ADMIN_SECURE_PIN = '9988'; 
 
-// ვალუტების მკაცრი თანმიმდევრობა
 const CURRENCY_ORDER = [
-    { code: 'USD', flag: '🇺🇸' },
-    { code: 'EUR', flag: '🇪🇺' },
-    { code: 'GBP', flag: '🇬🇧' },
-    { code: 'TRY', flag: '🇹🇷' },
-    { code: 'RUB', flag: '🇷🇺' },
-    { code: 'AMD', flag: '🇦🇲' }
+    { code: 'USD', flag: '🇺🇸' }, { code: 'EUR', flag: '🇪🇺' }, { code: 'GBP', flag: '🇬🇧' },
+    { code: 'TRY', flag: '🇹🇷' }, { code: 'RUB', flag: '🇷🇺' }, { code: 'AMD', flag: '🇦🇲' }
 ];
 
 // ==========================================
@@ -26,6 +20,7 @@ const CURRENCY_ORDER = [
 function initDashboard() {
     startClock();
     setupNavigation();
+    setupMobileDropdown(); // ✅ ჩაირთო მობილურის სენსორული მენიუ
     checkAdminQuery(); 
     
     const savedCity = localStorage.getItem('dila-last-city') || 'Tbilisi';
@@ -38,15 +33,39 @@ function initDashboard() {
     fetchWeather(savedCity);
     fetchFinances();
     
-    // კალკულატორის ღილაკის დაკავშირება
     document.getElementById('calc-loan-btn').onclick = calculateLoan;
-    
     setInterval(animateSparkline, 4000);
 }
 
 // ==========================================
-// პრემიუმ TOAST შეტყობინებები
+// ✅ მობილურის Dropdown კლიკების მართვა
 // ==========================================
+function setupMobileDropdown() {
+    const dropdownBlock = document.getElementById('main-nav-dropdown');
+    const dropBtn = dropdownBlock.querySelector('.drop-btn');
+    
+    // როცა კალკულატორის ან სხვა ტაბის შიგნით დააჭერს - მენიუ დაიკეტოს
+    const subItems = dropdownBlock.querySelectorAll('.dropdown-content .nav-item');
+
+    dropBtn.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768) {
+            e.stopPropagation(); // კლიკმა სხვაგან არ გაჟონოს
+            dropdownBlock.classList.toggle('open');
+        }
+    });
+
+    subItems.forEach(item => {
+        item.addEventListener('click', () => {
+            dropdownBlock.classList.remove('open'); // არჩევისას იკეტება
+        });
+    });
+
+    // ეკრანის ნებისმიერ სხვა ადგილზე დაჭერისას მენიუ იხურება
+    document.addEventListener('click', () => {
+        dropdownBlock.classList.remove('open');
+    });
+}
+
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if(!container) return;
@@ -54,7 +73,6 @@ function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.textContent = type === 'success' ? `✅ ${message}` : `❌ ${message}`;
-    
     container.appendChild(toast);
     
     setTimeout(() => {
@@ -100,6 +118,12 @@ function setupNavigation() {
         item.addEventListener('click', () => {
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
+            
+            // თუ ქვემენიუს ელემენტი გააქტიურდა, მთავარ ღილაკსაც მიეცეს აქტიური ვიზუალი
+            if (item.closest('.dropdown-content')) {
+                document.getElementById('main-nav-dropdown').classList.add('active');
+            }
+
             const selectedTab = item.getAttribute('data-tab');
 
             if (selectedTab === 'all') {
@@ -123,9 +147,6 @@ function setupNavigation() {
     });
 }
 
-// ==========================================
-// ✅ საბანკო ანუიტეტური (თანაბარი) სესხის ალგორითმი
-// ==========================================
 function calculateLoan() {
     const amount = parseFloat(document.getElementById('loan-amount').value) || 0;
     const months = parseInt(document.getElementById('loan-months').value) || 0;
@@ -136,27 +157,20 @@ function calculateLoan() {
         return;
     }
 
-    // ყოველთვიური საპროცენტო განაკვეთი
     const monthlyRate = (annualRate / 100) / 12;
-
-    // ანუიტეტური ფორმულა: ფიქსირებული ყოველთვიური გადასახდელი
     const monthlyPayment = amount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
     
     let totalInterest = 0;
     let remainingBalance = amount;
 
     const scheduleList = document.getElementById('loan-schedule-list');
-    scheduleList.innerHTML = ''; // ცხრილის გასუფთავება
+    scheduleList.innerHTML = ''; 
 
     for (let i = 1; i <= months; i++) {
-        // პროცენტი ითვლება მიმდინარე ნაშთზე
         const interestPayment = remainingBalance * monthlyRate;
-        // ძირითადი თანხა არის ფიქსირებულ გადასახდელს მინუს პროცენტი
         const principalPayment = monthlyPayment - interestPayment;
-
         totalInterest += interestPayment;
 
-        // სტრიქონის ჩამატება გრაფიკში
         scheduleList.innerHTML += `
             <div class="loan-sched-row">
                 <span style="color: rgba(255,255,255,0.4); text-align: left;">#${i}</span>
@@ -165,21 +179,17 @@ function calculateLoan() {
                 <span style="color: #ff8888;">${interestPayment.toFixed(2)} ₾</span>
             </div>
         `;
-
-        remainingBalance -= principalPayment; // ნაშთი მცირდება დაფარული ძირით
+        remainingBalance -= principalPayment; 
     }
 
     const totalPayout = amount + totalInterest;
 
-    // შედეგების ასახვა ეკრანზე
     document.getElementById('loan-res-fixed').textContent = monthlyPayment.toFixed(2) + " ₾";
     document.getElementById('loan-res-principal-total').textContent = amount.toFixed(2) + " ₾";
     document.getElementById('loan-res-interest').textContent = totalInterest.toFixed(2) + " ₾";
     document.getElementById('loan-res-total').textContent = totalPayout.toFixed(2) + " ₾";
     
-    // გრაფიკის გამოჩენა
     document.getElementById('loan-schedule-box').style.display = 'flex';
-    
     showToast('ანუიტეტური გრაფიკი აიგო!');
 }
 
@@ -282,7 +292,7 @@ function loadFallbackFinances() {
     if(!list) return;
     list.innerHTML = '';
     const fallbacks = [
-        {c:'USD', f:'🇺🇸', r:2.715}, {c:'EUR', f:'🇪🇺', r:2.940}, {c:'GBP', f:'🇬ბ', r:3.445}, 
+        {c:'USD', f:'🇺🇸', r:2.715}, {c:'EUR', f:'🇪🇺', r:2.940}, {c:'GBP', f:'🇬🇧', r:3.445}, 
         {c:'TRY', f:'🇹🇷', r:0.084}, {c:'RUB', f:'🇷🇺', r:0.031}, {c:'AMD', f:'🇦🇲', r:0.0069}
     ];
     fallbacks.forEach(item => { renderCurrencyRow(list, item.f, item.c, item.r); });

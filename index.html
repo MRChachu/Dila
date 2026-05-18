@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dila.ge - Smart Pro Dashboard</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=1.0.1">
+    <link rel="stylesheet" href="style.css?v=1.0.2">
 </head>
 <body>
     <div id="ambient-bg" class="background-overlay theme-default"></div>
@@ -28,13 +28,13 @@
             <nav class="pro-nav">
                 <div class="nav-item active" data-tab="all">🏠 მთავარი</div>
                 
-                <div class="nav-dropdown">
+                <div class="nav-dropdown" id="main-nav-dropdown">
                     <div class="drop-btn">📊 მონაცემები ▾</div>
                     <div class="dropdown-content">
                         <div class="nav-item" data-tab="weather">☁️ ამინდი</div>
                         <div class="nav-item" data-tab="currency">$ კურსი</div>
                         <div class="nav-item" data-tab="gold">🎯 ლითონები</div>
-                        <div class="nav-item" data-tab="loan">🧮 სესხის კალკულატორი</div>
+                        <div class="nav-item" data-tab="loan">🧮 სესხი</div>
                     </div>
                 </div>
 
@@ -132,7 +132,7 @@
                 </div>
             </section>
 
-            <section class="card hidden" id="loan-card" style="height: auto; min-height: 440px;">
+            <section class="card hidden" id="loan-card">
                 <div class="card-head"><h3>სესხის კალკულატორი</h3><span class="tag live">ანუიტეტური</span></div>
                 <p class="sub-label">თანაბარი ყოველთვიური გადასახდელის გაანგარიშება</p>
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
@@ -215,6 +215,6 @@
             </section>
         </main>
     </div>
-    <script src="script.js?v=1.0.1"></script>
+    <script src="script.js?v=1.0.2"></script>
 </body>
 </html>
