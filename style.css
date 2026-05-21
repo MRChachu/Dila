@@ -1,5 +1,5 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; }
+body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; background: #05070a; }
 
 .background-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; transition: background 1.5s ease; }
 .theme-default { background: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #05070a 85%); }
@@ -7,16 +7,16 @@ body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; }
 .theme-clouds { background: radial-gradient(circle at 50% -20%, #3a4f7c 0%, #0f172a 65%, #05070a 100%); }
 .theme-rain { background: radial-gradient(circle at 50% -20%, #1e3a8a 0%, #0f172a 70%, #05070a 100%); }
 
-.container { max-width: 1440px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; width: 100%; overflow-x: hidden; }
+.container { max-width: 1440px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; width: 100%; }
 .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; width: 100%; gap: 15px; }
 .main-logo-svg { height: 46px; width: auto; filter: drop-shadow(0 0 10px rgba(243, 156, 18, 0.3)); flex-shrink: 0; }
 
-/* ნავიგაცია */
-.pro-nav { display: flex; gap: 20px; background: rgba(255,255,255,0.04); padding: 8px 24px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.08); max-width: 100%; align-items: center; }
+/* ნავიგაცია (დესკტოპი) */
+.pro-nav { display: flex; gap: 20px; background: rgba(255,255,255,0.04); padding: 8px 24px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.08); align-items: center; }
 .nav-item { opacity: 0.5; font-size: 13px; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
 .nav-item.active, .nav-item:hover { opacity: 1; color: #f39c12; font-weight: bold; }
 
-/* ჩამოსაშლელი მენიუ (Dropdown) */
+/* Dropdown ბლოკი */
 .nav-dropdown { position: relative; display: inline-block; padding: 10px 0; } 
 .drop-btn { opacity: 0.5; font-size: 13px; cursor: pointer; transition: 0.3s; user-select: none; }
 .nav-dropdown:hover .drop-btn { opacity: 1; color: #f39c12; }
@@ -38,12 +38,10 @@ body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; }
     margin-top: 5px;
 }
 .dropdown-content::before { content: ''; position: absolute; top: -15px; left: 0; width: 100%; height: 15px; background: transparent; }
-.dropdown-content .nav-item { padding: 10px 18px; width: 100%; text-align: left; display: block; }
-.dropdown-content .nav-item:hover { background: rgba(255,255,255,0.06); }
+.dropdown-content .nav-item { padding: 10px 18px; width: 100%; text-align: left; display: block; opacity: 0.6; }
+.dropdown-content .nav-item:hover { background: rgba(255,255,255,0.06); opacity: 1; }
 
-/* დესკტოპზე ჰოვერ ეფექტი */
 .nav-dropdown:hover .dropdown-content { display: block; }
-/* მობილურზე კლასით მართვა */
 .nav-dropdown.open .dropdown-content { display: block; }
 .nav-dropdown:has(.nav-item.active) .drop-btn { opacity: 1; color: #f39c12; font-weight: bold; }
 
@@ -52,7 +50,7 @@ body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; }
 .sync-pill { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 20px; color: white; font-size: 12px; cursor: pointer; transition: 0.2s; }
 .sync-pill:hover { background: rgba(255,255,255,0.12); border-color: #f39c12; }
 
-/* Grid სტრუქტურა */
+/* Grid */
 .dashboard-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 20px; flex: 1; align-items: start; width: 100%; }
 .dashboard-grid.single-view { grid-template-columns: 1fr; justify-items: center; }
 .dashboard-grid.single-view .card { width: 100%; max-width: 580px; height: auto; min-height: 440px; animation: scaleUp 0.4s ease; }
@@ -60,108 +58,137 @@ body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; }
 
 @keyframes scaleUp { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-/* ✅ ბარათები (სიმაღლე გახდა ავტომატური სესხის გამო, დანარჩენებს უნარჩუნდება ფიქსირებული 440px) */
-.card { background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 26px; padding: 24px; display: flex; flex-direction: column; min-height: 440px; height: 440px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); width: 100%; }
-
-/* ✅ კონკრეტულად სესხის ბარათი ყოველთვის ავტომატურ სიმაღლეზეა, რომ გრაფიკი ჩაეტიოს */
+.card { background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 26px; padding: 24px; display: flex; flex-direction: column; height: 440px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); width: 100%; overflow: hidden; }
 #loan-card { height: auto !important; }
 
-.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%; flex-wrap: nowrap; }
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%; }
 
-/* კომპონენტები */
+/* კალკულატორის სტრუქტურული კლასები (სრული კომპაქტურობა) */
+.loan-inputs-container { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.loan-input-row-flex { display: flex; gap: 10px; width: 100%; }
+.loan-input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; width: 100%; }
+.loan-input-group label { font-size: 11px; color: #888; text-align: left; }
+.loan-input-group input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 8px 12px; outline: none; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+#calc-loan-btn { background: #f39c12; border: none; border-radius: 10px; color: black; font-weight: bold; padding: 11px; cursor: pointer; margin-top: 4px; font-size: 13px; width: 100%; transition: 0.2s; }
+#calc-loan-btn:hover { background: #e68a00; }
+
+.loan-results-panel { margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.loan-res-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.loan-res-row b { font-weight: bold; color: white; }
+#loan-res-fixed { color: #00ff88; font-size: 15px; }
+.loan-results-panel .total-row { border-top: 1px solid rgba(255,255,255,0.04); padding-top: 6px; }
+.loan-results-panel .total-row b { color: #f39c12; }
+
+/* გრაფიკის ბლოკი */
+.loan-schedule-wrapper { margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display: none; flex-direction: column; width: 100%; }
+.loan-sched-header { display: grid; grid-template-columns: 35px 1fr 1fr 1fr; font-size: 11px; color: rgba(255,255,255,0.3); padding: 0 4px 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); width: 100%; }
+.loan-sched-header span { text-align: right; }
+.loan-sched-header span:first-child { text-align: left; }
+
+#loan-schedule-list { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; margin-top: 4px; width: 100%; }
+#loan-schedule-list::-webkit-scrollbar { width: 4px; }
+#loan-schedule-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+.loan-sched-row { display: grid; grid-template-columns: 35px 1fr 1fr 1fr; align-items: center; padding: 8px 4px; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.02); font-variant-numeric: tabular-nums; width: 100%; }
+.loan-sched-row span { text-align: right; color: #fff; }
+.loan-sched-row span:first-child { text-align: left; color: rgba(255,255,255,0.4); }
+.loan-sched-row b { text-align: right; color: #00ff88; font-weight: normal; }
+
+/* კომპონენტები დესკტოპისთვის */
 .search-bar-pro { display: flex; align-items: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 10px 16px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.08); }
 #city-input { background: none; border: none; color: white; outline: none; flex: 1; font-size: 13px; }
 #search-btn { background: none; border: none; cursor: pointer; color: #f39c12; }
-
 .weather-main { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 20px 0; }
 #temp-display { font-size: 54px; font-weight: 800; background: linear-gradient(180deg, #fff 0%, #bbb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .weather-details { display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); padding: 12px 0; margin-bottom: 15px; }
 .w-stat { text-align: center; flex: 1; }
 .w-stat span { font-size: 10px; color: rgba(255,255,255,0.4); display: block; }
 .forecast-row { display: flex; justify-content: space-between; margin-top: auto; }
-
-.curr-header { display: grid; grid-template-columns: 1fr 70px 70px; font-size: 11px; color: rgba(255,255,255,0.3); margin-bottom: 10px; padding: 0 8px 5px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.curr-header span:nth-child(2), .curr-header span:nth-child(3) { text-align: right; }
-
 .curr-list { flex: 1; }
 .curr-row { display: grid; grid-template-columns: 1fr 70px 70px; align-items: center; padding: 10.5px 8px; border-bottom: 1px solid rgba(255,255,255,0.02); border-radius: 8px; cursor: pointer; font-variant-numeric: tabular-nums; }
 .curr-row:hover { background: rgba(255,255,255,0.05); }
-.curr-row-left { display: flex; align-items: center; gap: 12px; text-align: left; }
+.curr-row-left { display: flex; align-items: center; gap: 12px; }
 .curr-price { text-align: right; font-size: 13px; }
-
-/* სესხის გრაფიკის სტილები */
-.loan-sched-header { display: grid; grid-template-columns: 35px 1fr 1fr 1fr; font-size: 11px; color: rgba(255,255,255,0.3); padding: 0 4px 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.loan-sched-header span:nth-child(2), .loan-sched-header span:nth-child(3), .loan-sched-header span:nth-child(4) { text-align: right; }
-
-#loan-schedule-list { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; margin-top: 4px; padding-right: 4px; }
-#loan-schedule-list::-webkit-scrollbar { width: 4px; }
-#loan-schedule-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-
-.loan-sched-row { display: grid; grid-template-columns: 35px 1fr 1fr 1fr; align-items: center; padding: 8px 4px; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.02); font-variant-numeric: tabular-nums; }
-.loan-sched-row span:nth-child(2), .loan-sched-row span:nth-child(3), .loan-sched-row span:nth-child(4) { text-align: right; }
-
-.calc-box { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(243, 156, 18, 0.3); border-radius: 14px; padding: 12px; margin-top: auto; }
-.calc-title-row { display: flex; justify-content: space-between; font-size: 11px; color: #f39c12; margin-bottom: 6px; }
-.calc-title-row button { background: none; border: none; color: white; cursor: pointer; }
-#calc-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: white; padding: 4px 8px; width: 90px; outline: none; }
-#calc-result { font-weight: bold; color: #00ff88; }
-
-.tag { font-size: 9px; font-weight: bold; padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+.tag { font-size: 9px; font-weight: bold; padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
 .tag.nbg { background: rgba(243, 156, 18, 0.15); color: #f39c12; }
 .tag.live { background: rgba(0, 255, 136, 0.12); color: #00ff88; }
 .price-val { font-size: 30px; font-weight: bold; }
 .fuel-list { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
 .fuel-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 14px; }
 .price-right { color: #f39c12; font-weight: bold; }
-.bottom-info, .oil-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); }
-.oil-footer { display: flex; justify-content: space-between; align-items: center; }
+.oil-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
 .bottom-price { font-size: 22px; font-weight: bold; color: #f39c12; }
 .sub-label { font-size: 10px; color: rgba(255,255,255,0.4); }
-
-#toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 10000; }
-.toast { background: rgba(10, 25, 15, 0.85); border: 1px solid #00ff88; backdrop-filter: blur(15px); color: white; padding: 14px 24px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-size: 13px; font-weight: bold; min-width: 250px; animation: slideIn 0.3s ease; }
-.toast.error { background: rgba(30, 10, 10, 0.85); border-color: #ff3333; color: #ff8888; }
-
 .crypto-container { display: flex; justify-content: space-between; gap: 10px; margin: 8px 0; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); }
 .crypto-item { flex: 1; display: flex; justify-content: space-between; font-size: 13px; background: rgba(255,255,255,0.02); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); }
 .crypto-item b { color: #00ff88; }
 
-/* მობილურის ოპტიმიზაცია */
+/* 📱 მობილურის ულტრა-ოპტიმიზაცია (768px-დან ქვევით) */
 @media (max-width: 1150px) {
     .dashboard-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
 }
 
 @media (max-width: 768px) {
-    .container { padding: 12px; }
-    .main-header { flex-direction: column; align-items: center; gap: 12px; margin-bottom: 15px; width: 100%; }
+    .container { padding: 12px; width: 100%; }
+    .main-header { flex-direction: column; align-items: center; gap: 14px; margin-bottom: 20px; width: 100%; }
+    .main-logo-svg { height: 40px; }
 
-    /* ✅ მობილურის იდეალური ნავიგაცია სუფთა Dropdown-ით */
-    .pro-nav { width: 100%; border-radius: 15px; padding: 10px 15px; gap: 15px; justify-content: center; position: relative; }
+    /* ✅ ნავიგაციის ფიქსირებული მობილური დიზაინი (გადაფარვების გარეშე) */
+    .pro-nav { 
+        width: 100%; 
+        border-radius: 16px; 
+        padding: 6px 10px; 
+        gap: 4px; 
+        justify-content: space-between; 
+        position: relative; 
+        background: rgba(255,255,255,0.03);
+    }
     
-    .nav-dropdown { position: static; } /* მობილურზე აბსოლუტური პოზიციისთვის */
-    .drop-btn { opacity: 0.5; display: block; font-size: 13px; color: white; }
+    /* ელემენტები თანაბრად გადანაწილდეს, რომ არ აირიოს */
+    .pro-nav .nav-item:not(.dropdown-content .nav-item) { 
+        font-size: 12px; 
+        padding: 8px 6px; 
+        text-align: center;
+        flex: 1;
+    }
+    
+    .nav-dropdown { position: static; flex: 1; text-align: center; } 
+    .drop-btn { font-size: 12px; padding: 8px 6px; width: 100%; }
 
+    /* სუფთა მობილური ჩამოსაშლელი ფანჯარა */
     .dropdown-content {
         position: absolute !important;
         top: 100% !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: calc(100% - 30px);
-        background: rgba(13, 18, 33, 0.98) !important;
-        border: 1px solid rgba(255,255,255,0.15) !important;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.8) !important;
-        margin-top: 5px;
+        left: 0 !important;
+        transform: none !important;
+        width: 100%;
+        background: #0d1221 !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.9) !important;
+        margin-top: 6px;
         border-radius: 14px;
-        display: none; /* იმართება JS-ის კლასით */
+        z-index: 5000;
     }
     
-    .dropdown-content .nav-item { padding: 12px 20px !important; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .dropdown-content .nav-item { 
+        padding: 14px !important; 
+        text-align: center !important; 
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+        font-size: 13px !important;
+    }
     .dropdown-content .nav-item:last-child { border-bottom: none; }
 
-    .header-right { width: 100%; justify-content: space-between; }
-    .dashboard-grid, .dashboard-grid.single-view { grid-template-columns: 1fr; gap: 14px; width: 100%; }
+    .header-right { width: 100%; justify-content: space-between; margin-top: 4px; }
+    .glass-pill, .sync-pill { padding: 6px 14px; font-size: 12px; }
+
+    /* ერთიანი სვეტი ბარათებისთვის */
+    .dashboard-grid, .dashboard-grid.single-view { grid-template-columns: 1fr !important; gap: 14px; width: 100%; }
+    .card { min-height: 400px; height: 400px; padding: 20px; border-radius: 22px; }
     
-    /* მობილურზეც ყველა ბარათი ფიქსირებულია, გარდა სესხისა */
-    .card { min-height: 400px; height: 400px; padding: 18px; }
+    /* სესხის ბარათის მობილური ადაპტაცია */
     #loan-card { height: auto !important; min-height: 400px !important; }
+    .loan-input-group input { padding: 10px; font-size: 15px; }
+    
+    /* ცხრილის სვეტების ზომები მობილურზე (არაფერი გავა ეკრანიდან) */
+    .loan-sched-header, .loan-sched-row { grid-template-columns: 30px 1fr 1fr 1fr !important; font-size: 11px; }
 }

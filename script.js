@@ -20,7 +20,7 @@ const CURRENCY_ORDER = [
 function initDashboard() {
     startClock();
     setupNavigation();
-    setupMobileDropdown(); // ✅ ჩაირთო მობილურის სენსორული მენიუ
+    setupMobileDropdown(); 
     checkAdminQuery(); 
     
     const savedCity = localStorage.getItem('dila-last-city') || 'Tbilisi';
@@ -37,30 +37,25 @@ function initDashboard() {
     setInterval(animateSparkline, 4000);
 }
 
-// ==========================================
-// ✅ მობილურის Dropdown კლიკების მართვა
-// ==========================================
+// მობილურის Dropdown კლიკები
 function setupMobileDropdown() {
     const dropdownBlock = document.getElementById('main-nav-dropdown');
     const dropBtn = dropdownBlock.querySelector('.drop-btn');
-    
-    // როცა კალკულატორის ან სხვა ტაბის შიგნით დააჭერს - მენიუ დაიკეტოს
     const subItems = dropdownBlock.querySelectorAll('.dropdown-content .nav-item');
 
     dropBtn.addEventListener('click', (e) => {
         if (window.innerWidth <= 768) {
-            e.stopPropagation(); // კლიკმა სხვაგან არ გაჟონოს
+            e.stopPropagation();
             dropdownBlock.classList.toggle('open');
         }
     });
 
     subItems.forEach(item => {
         item.addEventListener('click', () => {
-            dropdownBlock.classList.remove('open'); // არჩევისას იკეტება
+            dropdownBlock.classList.remove('open');
         });
     });
 
-    // ეკრანის ნებისმიერ სხვა ადგილზე დაჭერისას მენიუ იხურება
     document.addEventListener('click', () => {
         dropdownBlock.classList.remove('open');
     });
@@ -119,12 +114,14 @@ function setupNavigation() {
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
             
-            // თუ ქვემენიუს ელემენტი გააქტიურდა, მთავარ ღილაკსაც მიეცეს აქტიური ვიზუალი
             if (item.closest('.dropdown-content')) {
                 document.getElementById('main-nav-dropdown').classList.add('active');
+            } else if (!item.classList.contains('drop-btn')) {
+                document.getElementById('main-nav-dropdown').classList.remove('active');
             }
 
             const selectedTab = item.getAttribute('data-tab');
+            if(!selectedTab) return;
 
             if (selectedTab === 'all') {
                 grid.classList.remove('single-view');
@@ -173,8 +170,8 @@ function calculateLoan() {
 
         scheduleList.innerHTML += `
             <div class="loan-sched-row">
-                <span style="color: rgba(255,255,255,0.4); text-align: left;">#${i}</span>
-                <b style="color: #00ff88;">${monthlyPayment.toFixed(2)} ₾</b>
+                <span>#${i}</span>
+                <b>${monthlyPayment.toFixed(2)} ₾</b>
                 <span>${principalPayment.toFixed(2)} ₾</span>
                 <span style="color: #ff8888;">${interestPayment.toFixed(2)} ₾</span>
             </div>

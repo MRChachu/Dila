@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dila.ge - Smart Pro Dashboard</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=1.0.2">
+    <link rel="stylesheet" href="style.css?v=1.0.3">
 </head>
 <body>
     <div id="ambient-bg" class="background-overlay theme-default"></div>
@@ -135,37 +135,37 @@
             <section class="card hidden" id="loan-card">
                 <div class="card-head"><h3>სესხის კალკულატორი</h3><span class="tag live">ანუიტეტური</span></div>
                 <p class="sub-label">თანაბარი ყოველთვიური გადასახდელის გაანგარიშება</p>
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
-                    <div style="display: flex; gap: 10px;">
-                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                            <label style="font-size: 11px; color: #888;">სესხის თანხა (₾):</label>
-                            <input type="number" id="loan-amount" value="1000" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none; font-variant-numeric: tabular-nums;">
+                <div class="loan-inputs-container">
+                    <div class="loan-input-row-flex">
+                        <div class="loan-input-group">
+                            <label>სესხის თანხა (₾):</label>
+                            <input type="number" id="loan-amount" value="1000">
                         </div>
-                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                            <label style="font-size: 11px; color: #888;">ვადა (თვე):</label>
-                            <input type="number" id="loan-months" value="12" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none; font-variant-numeric: tabular-nums;">
+                        <div class="loan-input-group">
+                            <label>ვადა (თვე):</label>
+                            <input type="number" id="loan-months" value="12">
                         </div>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 11px; color: #888;">წლიური საპროცენტო განაკვეთი (%):</label>
-                        <input type="number" id="loan-rate" value="32" step="0.1" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 6px 12px; outline: none; font-variant-numeric: tabular-nums;">
+                    <div class="loan-input-group">
+                        <label>წლიური საპროცენტო განაკვეთი (%):</label>
+                        <input type="number" id="loan-rate" value="32" step="0.1">
                     </div>
-                    <button id="calc-loan-btn" style="background: #f39c12; border: none; border-radius: 10px; color: black; font-weight: bold; padding: 10px; cursor: pointer; margin-top: 5px; font-size: 13px;">გაანგარიშება</button>
+                    <button id="calc-loan-btn">გაანგარიშება</button>
                 </div>
                 
-                <div id="loan-results" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-variant-numeric: tabular-nums;">
-                    <div style="display: flex; justify-content: space-between;"><span>💳 ყოველთვიური გადასახდელი:</span><b id="loan-res-fixed" style="color: #00ff88; font-size: 16px;">--- ₾</b></div>
-                    <div style="display: flex; justify-content: space-between;"><span>💰 სესხის ძირითადი თანხა:</span><b id="loan-res-principal-total">--- ₾</b></div>
-                    <div style="display: flex; justify-content: space-between;"><span>📊 ჯამური პროცენტი (ზედმეტობა):</span><b id="loan-res-interest" style="color: #ff8888;">--- ₾</b></div>
-                    <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 6px;"><span>🛒 სულ გადასახდელი ჯამი:</span><b id="loan-res-total" style="color: #f39c12;">--- ₾</b></div>
+                <div id="loan-results" class="loan-results-panel">
+                    <div class="loan-res-row"><span>💳 ყოველთვიურად:</span><b id="loan-res-fixed">--- ₾</b></div>
+                    <div class="loan-res-row"><span>💰 სესხის ძირი:</span><b id="loan-res-principal-total">--- ₾</b></div>
+                    <div class="loan-res-row"><span>📊 ჯამური პროცენტი:</span><b id="loan-res-interest">--- ₾</b></div>
+                    <div class="loan-res-row total-row"><span>🛒 სულ გადასახდელი:</span><b id="loan-res-total">--- ₾</b></div>
                 </div>
 
-                <div id="loan-schedule-box" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display: none; flex-direction: column;">
+                <div id="loan-schedule-box" class="loan-schedule-wrapper">
                     <div class="loan-sched-header">
                         <span>თვე</span>
-                        <span>გადასახდელი</span>
+                        <span>ჯამი</span>
                         <span>ძირი</span>
-                        <span>პროცენტი</span>
+                        <span>პროც.</span>
                     </div>
                     <div id="loan-schedule-list"></div>
                 </div>
@@ -174,7 +174,7 @@
             <section class="card hidden" id="about-card">
                 <div class="card-head"><h3>ჩვენს შესახებ</h3></div>
                 <p style="font-size: 14px; line-height: 1.6; margin-top: 15px; color: #ddd;">
-                    <strong>Dila.ge</strong> არის ინოვაციური, მაღალტექნოლოგიური საინფორმაციო Dashboard პლატფორმა, რომელიც მომხმარებელს აწვდის კრიტიკულად მნიშვნელოვან გლობალურ და ლოკალურ მონაცემებს რეალურ დროში.
+                    <strong>Dila.ge</strong> არის ინოვაციური საინფორმაციო Dashboard პლატფორმა, რომელიც მომხმარებელს აწვდის კრიტიკულად მნიშვნელოვან მონაცემებს რეალურ დროში.
                 </p>
             </section>
 
@@ -215,6 +215,6 @@
             </section>
         </main>
     </div>
-    <script src="script.js?v=1.0.2"></script>
+    <script src="script.js?v=1.0.3"></script>
 </body>
 </html>
