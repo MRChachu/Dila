@@ -1,5 +1,6 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; background: #05070a; }
+/* ✅ ფონი გახდა გამჭვირვალე, რომ უკანა ანიმაციური ფენა გამოჩნდეს */
+body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; background: transparent; }
 
 .background-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; transition: background 1.5s ease; }
 .theme-default { background: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #05070a 85%); }
@@ -63,7 +64,7 @@ body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; b
 
 .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; width: 100%; }
 
-/* კალკულატორის სტრუქტურული კლასები (სრული კომპაქტურობა) */
+/* კალკულატორის სტილები */
 .loan-inputs-container { display: flex; flex-direction: column; gap: 12px; width: 100%; }
 .loan-input-row-flex { display: flex; gap: 10px; width: 100%; }
 .loan-input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; width: 100%; }
@@ -123,7 +124,7 @@ body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; b
 .crypto-item { flex: 1; display: flex; justify-content: space-between; font-size: 13px; background: rgba(255,255,255,0.02); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); }
 .crypto-item b { color: #00ff88; }
 
-/* 📱 მობილურის ულტრა-ოპტიმიზაცია (768px-დან ქვევით) */
+/* 📱 მობილურის ოპტიმიზაცია */
 @media (max-width: 1150px) {
     .dashboard-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
 }
@@ -133,7 +134,6 @@ body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; b
     .main-header { flex-direction: column; align-items: center; gap: 14px; margin-bottom: 20px; width: 100%; }
     .main-logo-svg { height: 40px; }
 
-    /* ✅ ნავიგაციის ფიქსირებული მობილური დიზაინი (გადაფარვების გარეშე) */
     .pro-nav { 
         width: 100%; 
         border-radius: 16px; 
@@ -144,7 +144,6 @@ body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; b
         background: rgba(255,255,255,0.03);
     }
     
-    /* ელემენტები თანაბრად გადანაწილდეს, რომ არ აირიოს */
     .pro-nav .nav-item:not(.dropdown-content .nav-item) { 
         font-size: 12px; 
         padding: 8px 6px; 
@@ -155,7 +154,6 @@ body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; b
     .nav-dropdown { position: static; flex: 1; text-align: center; } 
     .drop-btn { font-size: 12px; padding: 8px 6px; width: 100%; }
 
-    /* სუფთა მობილური ჩამოსაშლელი ფანჯარა */
     .dropdown-content {
         position: absolute !important;
         top: 100% !important;
@@ -181,14 +179,11 @@ body, html { color: white; min-height: 100vh; overflow-x: hidden; width: 100%; b
     .header-right { width: 100%; justify-content: space-between; margin-top: 4px; }
     .glass-pill, .sync-pill { padding: 6px 14px; font-size: 12px; }
 
-    /* ერთიანი სვეტი ბარათებისთვის */
     .dashboard-grid, .dashboard-grid.single-view { grid-template-columns: 1fr !important; gap: 14px; width: 100%; }
     .card { min-height: 400px; height: 400px; padding: 20px; border-radius: 22px; }
     
-    /* სესხის ბარათის მობილური ადაპტაცია */
     #loan-card { height: auto !important; min-height: 400px !important; }
     .loan-input-group input { padding: 10px; font-size: 15px; }
     
-    /* ცხრილის სვეტების ზომები მობილურზე (არაფერი გავა ეკრანიდან) */
     .loan-sched-header, .loan-sched-row { grid-template-columns: 30px 1fr 1fr 1fr !important; font-size: 11px; }
 }
