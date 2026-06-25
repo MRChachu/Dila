@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
 // 🟢 დამატებულია ახალი აიკონები მოწვევისთვის (UserPlus, BellRing)
-import { Trophy, Shield, PlusCircle, Play, LogOut, RefreshCw, History, Users, Target, LayoutGrid, Lock, Unlock, Medal, UserCheck, Star, UserPlus, BellRing } from 'lucide-react';
+import { Trophy, Shield, PlusCircle, Play, LogOut, RefreshCw, History, User, Target, LayoutGrid, Lock, Unlock, Medal, UserCheck, Star, UserPlus, BellRing } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -26,7 +26,7 @@ export default function App() {
   const [error, setError] = useState('');
 
   // 🟢 ონლაინ მოთამაშეების და მოწვევების State
-  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [onlineUser, setOnlineUser] = useState([]);
   const [inviteAlert, setInviteAlert] = useState(null);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -57,7 +57,7 @@ export default function App() {
     socket.on('activeRoomsList', (rooms) => setLiveRooms(rooms));
     
     // 🟢 ვუსმენთ ონლაინ მოთამაშეების განახლებას და მოწვევებს
-    socket.on('updateOnlineUsers', (users) => setOnlineUsers(users));
+    socket.on('updateOnlineUsers', (user) => setOnlineUser(user));
     socket.on('receiveInvite', (data) => setInviteAlert(data));
 
     const handleOnConnect = () => {
@@ -93,7 +93,7 @@ export default function App() {
 
     return () => {
       socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('activeRoomsList'); 
-      socket.off('updateOnlineUsers'); socket.off('receiveInvite');
+      socket.off('updateOnlineUser'); socket.off('receiveInvite');
       socket.off('connect', handleOnConnect);
     };
   }, []);
@@ -288,15 +288,15 @@ export default function App() {
                 <div className="bg-stone-900/50 backdrop-blur-xl border border-white/5 rounded-2xl p-5 space-y-3 shadow-2xl">
                   <h4 className="text-xs font-bold text-stone-400 flex items-center justify-between border-b border-white/5 pb-3 uppercase tracking-widest">
                     <div className="flex items-center gap-2">
-                      <Users size={14} className="text-emerald-500" /> ონლაინ მოთამაშეები
+                      <User size={14} className="text-emerald-500" /> ონლაინ მოთამაშეები
                     </div>
                     <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-mono font-black text-[10px]">
-                      {onlineUsers.length}
+                      {onlineUser.length}
                     </span>
                   </h4>
                   <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                    {onlineUsers.filter(u => u.username !== safeUsername).length > 0 ? (
-                      onlineUsers.filter(u => u.username !== safeUsername).map(u => (
+                    {onlineUser.filter(u => u.username !== safeUsername).length > 0 ? (
+                      onlineUser.filter(u => u.username !== safeUsername).map(u => (
                         <div key={u.socketId} className="flex items-center justify-between p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-xs transition-all hover:border-emerald-500/20">
                           <div className="flex items-center gap-2.5">
                             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]" />
