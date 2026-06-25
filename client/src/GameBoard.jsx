@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-// 🟢 ზუსტად აქ, ბოლოში დაემატა 'Users'
 import { LogOut, Send, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users } from 'lucide-react';
 
 export default function GameBoard({ room, socket, onLeave }) {
@@ -12,35 +11,39 @@ export default function GameBoard({ room, socket, onLeave }) {
   const [isMuted, setIsMuted] = useState(false);
   const chatRef = useRef(null);
 
+  // 🔊 ხმების რეფერენსები (დარწმუნდი, რომ public ფოლდერში გაქვს ეს ფაილები, ან სახელები შეუცვალე შენსას)
+  const playSound = useRef(typeof Audio !== 'undefined' ? new Audio('/play.mp3') : null);
+  const captureSound = useRef(typeof Audio !== 'undefined' ? new Audio('/capture.mp3') : null);
+
   const me = room?.players?.find(p => p.id === socket.id);
   const isMyTurn = room?.players?.[room.currentTurn]?.id === socket.id;
 
-  // ემოციების სია
   const emotes = ['🔥', '😂', '😎', '🤯', '🃏', '⏳', '👏', '💀'];
 
-  // კონფეტის ეფექტი მოგებისას
+  // 🔊 ხმის გაშვება მოქმედებისას
+  useEffect(() => {
+    if (room?.lastAction && !isMuted) {
+      try {
+        if (room.lastAction.type === 'CAPTURE') {
+          captureSound.current?.play().catch(e => console.log("Audio play error:", e));
+        } else {
+          playSound.current?.play().catch(e => console.log("Audio play error:", e));
+        }
+      } catch (err) {
+        console.log("Audio not supported or blocked");
+      }
+    }
+  }, [room?.lastAction, isMuted]);
+
   useEffect(() => {
     if (room?.roundSummary?.matchWinner) {
       const isMeWinner = room.roundSummary.matchWinner === me?.name;
       if (isMeWinner) {
-        // ოქროსფერი პრემიუმ კონფეტი
         const duration = 3000;
         const end = Date.now() + duration;
         const frame = () => {
-          confetti({
-            particleCount: 5,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0 },
-            colors: ['#f59e0b', '#fbbf24', '#d97706']
-          });
-          confetti({
-            particleCount: 5,
-            angle: 120,
-            spread: 55,
-            origin: { x: 1 },
-            colors: ['#f59e0b', '#fbbf24', '#d97706']
-          });
+          confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#f59e0b', '#fbbf24', '#d97706'] });
+          confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#f59e0b', '#fbbf24', '#d97706'] });
           if (Date.now() < end) requestAnimationFrame(frame);
         };
         frame();
@@ -104,9 +107,8 @@ export default function GameBoard({ room, socket, onLeave }) {
   return (
     <div className="w-full flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto h-[85vh]">
       
-      {/* მარცხენა პანელი: ჩატი და მოთამაშეები */}
+      {/* მარცხენა პანელი */}
       <div className="w-full lg:w-80 flex flex-col gap-4">
-        {/* მოთამაშეების სია (Premium Glassmorphism) */}
         <div className="bg-stone-900/60 backdrop-blur-md border border-white/5 rounded-3xl p-5 shadow-2xl flex flex-col gap-3 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
           <h3 className="text-xs font-black text-amber-500 uppercase tracking-widest flex items-center gap-2 mb-2">
@@ -118,21 +120,17 @@ export default function GameBoard({ room, socket, onLeave }) {
             return (
               <div key={p.id} className={`relative flex items-center justify-between p-3 rounded-2xl border transition-all duration-300 ${isCurrentTurn ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : 'bg-stone-950/40 border-white/5'}`}>
                 {isCurrentTurn && <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-6 bg-amber-500 rounded-r-full animate-pulse" />}
-                
                 <div className="flex flex-col z-10">
                   <span className={`font-bold text-sm ${p.id === socket.id ? 'text-amber-400' : 'text-stone-200'}`}>
                     {p.name} {p.id === socket.id && '(შენ)'}
                   </span>
                   <span className="text-[10px] text-stone-500 font-bold mt-0.5 tracking-wider">ქულა: {p.totalScore}</span>
                 </div>
-                
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] bg-stone-900/80 px-2 py-1 rounded-lg border border-white/5 font-mono text-stone-400">
                     {p.cards?.length} 🃏
                   </span>
                 </div>
-
-                {/* ლაივ ემოციის ანიმაცია */}
                 {emote && (
                   <div className="absolute -right-2 -top-4 text-3xl animate-bounce drop-shadow-xl z-20">
                     {emote.emote}
@@ -143,7 +141,6 @@ export default function GameBoard({ room, socket, onLeave }) {
           })}
         </div>
 
-        {/* ლაივ ჩატი */}
         <div className="flex-1 bg-stone-900/60 backdrop-blur-md border border-white/5 rounded-3xl flex flex-col shadow-2xl overflow-hidden min-h-[250px]">
           <div className="p-4 border-b border-white/5 flex items-center gap-2">
             <MessageSquare size={14} className="text-amber-500" />
@@ -170,10 +167,8 @@ export default function GameBoard({ room, socket, onLeave }) {
         </div>
       </div>
 
-      {/* მარჯვენა მთავარი არენა (GameBoard) */}
+      {/* მარჯვენა არენა */}
       <div className="flex-1 bg-stone-900/60 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden">
-        
-        {/* ჰედერი: ოთახის ინფო და გამოსვლა */}
         <div className="flex items-center justify-between p-4 border-b border-white/5 bg-stone-950/40">
           <div className="flex items-center gap-3">
             <span className="text-xs font-black text-amber-500 tracking-widest font-mono">ROOM: {room.id}</span>
@@ -191,11 +186,9 @@ export default function GameBoard({ room, socket, onLeave }) {
           </div>
         </div>
 
-        {/* სათამაშო მოედანი */}
         <div className="flex-1 flex flex-col justify-between p-6 relative">
           
-          {/* მოწინააღმდეგეების სტატუსი (ზედა მხარე) */}
-          <div className="text-center">
+          <div className="text-center h-10 relative">
             {isMyTurn ? (
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-full text-amber-400 text-xs font-black shadow-[0_0_20px_rgba(245,158,11,0.15)] animate-pulse">
                 <Sparkles size={14} /> შენი სვლაა! აირჩიე კარტი.
@@ -207,8 +200,35 @@ export default function GameBoard({ room, socket, onLeave }) {
             )}
           </div>
 
-          {/* მაგიდის კარტები (ცენტრში) */}
-          <div className="flex-1 flex items-center justify-center relative">
+          <div className="flex-1 flex items-center justify-center relative mt-4">
+            {/* 🟢 ბოლო მოქმედების ისტორია მაგიდის თავზე */}
+            {room.lastAction && (
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-stone-900/90 border border-white/10 px-5 py-2 rounded-2xl shadow-xl z-20 flex flex-col items-center gap-1.5 animate-in slide-in-from-top-4 duration-300">
+                <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                  <span className="text-amber-500">{room.lastAction.playerName}</span>-მ {room.lastAction.type === 'CAPTURE' ? 'მოჭრა ⚔️' : 'დააგდო 🃏'}
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-0.5 px-2 py-1 bg-stone-950 rounded-lg border border-white/5">
+                    <span className={`text-xs font-black ${getSuitColor(room.lastAction.cardFromHand.suit)}`}>{room.lastAction.cardFromHand.rank}</span>
+                    <span className={`text-sm ${getSuitColor(room.lastAction.cardFromHand.suit)}`}>{room.lastAction.cardFromHand.suit}</span>
+                  </div>
+                  {room.lastAction.type === 'CAPTURE' && room.lastAction.cardsFromTable?.length > 0 && (
+                    <>
+                      <span className="text-stone-600 text-xs font-black">+</span>
+                      <div className="flex items-center gap-1">
+                        {room.lastAction.cardsFromTable.map((c, idx) => (
+                          <div key={idx} className="flex items-center gap-0.5 px-2 py-1 bg-stone-950 rounded-lg border border-white/5">
+                            <span className={`text-xs font-black ${getSuitColor(c.suit)}`}>{c.rank}</span>
+                            <span className={`text-sm ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="w-[85%] max-w-2xl h-48 bg-stone-950/40 rounded-[2rem] border border-white/5 shadow-inner relative flex items-center justify-center p-4">
               <div className="flex flex-wrap justify-center gap-3">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
@@ -231,10 +251,7 @@ export default function GameBoard({ room, socket, onLeave }) {
             </div>
           </div>
 
-          {/* შენი ხელი და მოქმედებები (ქვედა მხარე) */}
           <div className="flex flex-col items-center gap-5 mt-4">
-            
-            {/* Action Buttons & Emotes */}
             <div className="flex items-center gap-4 bg-stone-950/60 p-2 rounded-2xl border border-white/5 backdrop-blur-md shadow-lg">
               <div className="flex gap-1.5 px-2">
                 {emotes.map(emo => (
@@ -251,7 +268,6 @@ export default function GameBoard({ room, socket, onLeave }) {
               </button>
             </div>
 
-            {/* შენი კარტები (Hand) */}
             <div className="flex justify-center gap-2 md:gap-4 h-36 items-end perspective-1000">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
@@ -271,7 +287,6 @@ export default function GameBoard({ room, socket, onLeave }) {
           </div>
         </div>
 
-        {/* რაუნდის / მატჩის დასრულების მოდალი (Overlay) */}
         {room?.roundSummary && (
           <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-50 flex items-center justify-center p-6 animate-in fade-in duration-300">
             <div className="bg-stone-900 border border-amber-500/30 rounded-3xl p-8 max-w-md w-full shadow-[0_30px_60px_rgba(0,0,0,0.8)] text-center space-y-6 relative overflow-hidden">
