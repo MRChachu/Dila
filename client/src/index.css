@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+/* შენი დაწერილი ძველი კოდი ფონისთვის უცვლელად დატოვე ქვემოთ: */
+body {
+  background: radial-gradient(circle at center, #1e1b4b 0%, #0f0720 100%);
+  color: #f8fafc;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+}
