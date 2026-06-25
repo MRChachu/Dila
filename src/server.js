@@ -6,7 +6,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dns = require('dns');
 
-// DNS-ის დაფიქსირება კავშირის სტაბილურობისთვის
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const User = require('./models/User');
@@ -15,7 +14,6 @@ const { createDeck, isValidCapture, calculateRoundScores, getBestMove } = requir
 const app = express();
 const server = http.createServer(app);
 
-// ✨ სრულყოფილი CORS კონფიგურაცია ინტერნეტისთვის
 app.use(cors({
   origin: ['http://localhost:5173', 'https://dila-alpha.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -24,16 +22,13 @@ app.use(cors({
 
 app.use(express.json());
 
-// API როუტები
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
-// ბაზასთან კავშირი
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ მონაცემთა ბაზა წარმატებით დაუკავშირდა (MongoDB Connected)'))
   .catch(err => console.error('❌ ბაზასთან კავშირის შეცდომა:', err.message));
 
-// სოკეტების სერვერი თავისი CORS-ით
 const io = new Server(server, {
   cors: { 
     origin: ['http://localhost:5173', 'https://dila-alpha.vercel.app'], 
@@ -44,10 +39,30 @@ const io = new Server(server, {
 
 const rooms = {};
 const roomTimers = {}; 
-const disconnectTimeouts = {}; // რეფრეშის დაყოვნების ობიექტი
+const disconnectTimeouts = {}; 
+
+// 🟢 გლობალური ონლაინ მოთამაშეების სია
+const onlineUsersMap = {};
 
 io.on('connection', (socket) => {
-  console.log(`🔌 ახალი მოთამაშე: ${socket.id}`);
+  console.log(`🔌 ახალი კავშირი: ${socket.id}`);
+
+  // 🟢 ონლაინ მოთამაშეების განახლების ფუნქცია
+  const broadcastOnlineUsers = () => {
+    const usersList = Object.entries(onlineUsersMap).map(([id, name]) => ({ socketId: id, username: name }));
+    io.emit('updateOnlineUsers', usersList);
+  };
+
+  // 🟢 მოთამაშის ონლაინში დაფიქსირება
+  socket.on('setOnlineUser', (username) => {
+    onlineUsersMap[socket.id] = username;
+    broadcastOnlineUsers();
+  });
+
+  // 🟢 მოწვევის გაგზავნა კონკრეტულ მოთამაშესთან
+  socket.on('sendInvite', ({ targetSocketId, roomId, password, fromName }) => {
+    io.to(targetSocketId).emit('receiveInvite', { roomId, password, fromName });
+  });
 
   const broadcastActiveRooms = () => {
     const activeLobbies = Object.values(rooms)
@@ -83,7 +98,6 @@ io.on('connection', (socket) => {
           if (!p.isBot) {
             const originalName = p.name; 
             
-            // მომენტალური წაგების ჩაწერა მონაცემთა ბაზაში
             User.findOneAndUpdate(
               { username: originalName },
               {
@@ -121,10 +135,9 @@ io.on('connection', (socket) => {
     broadcastActiveRooms();
   };
 
-  // ♻️ რეფრეშის დროს კავშირის აღდგენა
   socket.on('reconnectUser', ({ oldSocketId, playerName, roomId }) => {
     if (disconnectTimeouts[oldSocketId]) {
-      clearTimeout(disconnectTimeouts[oldSocketId]); // ვაუქმებთ წაგებას
+      clearTimeout(disconnectTimeouts[oldSocketId]); 
       delete disconnectTimeouts[oldSocketId];
       
       const room = rooms[roomId];
@@ -134,7 +147,6 @@ io.on('connection', (socket) => {
           player.id = socket.id; 
           socket.join(roomId);
           io.to(roomId).emit('gameUpdated', room);
-          console.log(`✅ მოთამაშე დაბრუნდა რეფრეშის მერე: ${playerName}`);
         }
       }
     }
@@ -210,7 +222,6 @@ io.on('connection', (socket) => {
     });
   });
 
-  // 🎭 ემოციების (Live Emotes) სინქრონიზაცია ოთახში
   socket.on('sendEmote', ({ roomId, emote }) => {
     socket.to(roomId).emit('receiveEmote', { playerId: socket.id, emote });
   });
@@ -289,9 +300,13 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 🛡️ რეფრეშის 5 წამიანი დაყოვნება გათიშვისას
   socket.on('disconnect', () => {
     console.log(`❌ მოთამაშე გაითიშა: ${socket.id}`);
+    
+    // 🟢 წავშალოთ ონლაინ მოთამაშეების სიიდან
+    delete onlineUsersMap[socket.id];
+    broadcastOnlineUsers();
+
     disconnectTimeouts[socket.id] = setTimeout(() => {
       handlePlayerLeave(socket.id);
       delete disconnectTimeouts[socket.id];
@@ -379,5 +394,5 @@ function checkAndTriggerBotTurn(room, roomId) {
   }
 }
 
-const PORT = 5002;
+const PORT = process.env.PORT || 5002;
 server.listen(PORT, () => console.log(`🚀 სერვერი წარმატებით მუშაობს პორტზე: ${PORT}`));

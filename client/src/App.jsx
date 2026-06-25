@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Trophy, Shield, PlusCircle, Play, LogOut, RefreshCw, History, Users, Target, LayoutGrid, Lock, Unlock, Medal, UserCheck, Star } from 'lucide-react';
+// 🟢 დამატებულია ახალი აიკონები მოწვევისთვის (UserPlus, BellRing)
+import { Trophy, Shield, PlusCircle, Play, LogOut, RefreshCw, History, Users, Target, LayoutGrid, Lock, Unlock, Medal, UserCheck, Star, UserPlus, BellRing } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -23,6 +24,10 @@ export default function App() {
   const [liveRooms, setLiveRooms] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]); 
   const [error, setError] = useState('');
+
+  // 🟢 ონლაინ მოთამაშეების და მოწვევების State
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [inviteAlert, setInviteAlert] = useState(null);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -50,6 +55,10 @@ export default function App() {
     socket.on('gameUpdated', (room) => setRoomData(room));
     socket.on('error', (msg) => setError(msg));
     socket.on('activeRoomsList', (rooms) => setLiveRooms(rooms));
+    
+    // 🟢 ვუსმენთ ონლაინ მოთამაშეების განახლებას და მოწვევებს
+    socket.on('updateOnlineUsers', (users) => setOnlineUsers(users));
+    socket.on('receiveInvite', (data) => setInviteAlert(data));
 
     const handleOnConnect = () => {
       const oldSocketId = localStorage.getItem('phurti_socketId');
@@ -57,18 +66,24 @@ export default function App() {
       const savedRoomId = localStorage.getItem('phurti_roomId');
       const savedInRoom = localStorage.getItem('phurti_inRoom') === 'true';
 
-      if (savedUserRaw && savedInRoom && savedRoomId) {
+      if (savedUserRaw) {
         const parsedState = JSON.parse(savedUserRaw);
         const actualUser = parsedState?.user || parsedState;
         const uName = actualUser?.username;
-        
-        if (oldSocketId && uName) {
-          socket.emit('reconnectUser', { oldSocketId, playerName: uName, roomId: savedRoomId.trim() });
-        } else if (uName) {
-          socket.emit('joinRoom', { roomId: savedRoomId.trim(), playerName: uName });
+
+        if (uName) {
+          socket.emit('setOnlineUser', uName); // 🟢 ვატყობინებთ სერვერს რომ ონლაინ ვართ
+          
+          if (savedInRoom && savedRoomId) {
+            if (oldSocketId) {
+              socket.emit('reconnectUser', { oldSocketId, playerName: uName, roomId: savedRoomId.trim() });
+            } else {
+              socket.emit('joinRoom', { roomId: savedRoomId.trim(), playerName: uName });
+            }
+          } else {
+            socket.emit('getLiveRooms');
+          }
         }
-      } else if (savedUserRaw) {
-        socket.emit('getLiveRooms');
       }
       localStorage.setItem('phurti_socketId', socket.id);
     };
@@ -77,7 +92,9 @@ export default function App() {
     if (socket.connected) handleOnConnect();
 
     return () => {
-      socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('activeRoomsList'); socket.off('connect', handleOnConnect);
+      socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('activeRoomsList'); 
+      socket.off('updateOnlineUsers'); socket.off('receiveInvite');
+      socket.off('connect', handleOnConnect);
     };
   }, []);
 
@@ -85,6 +102,7 @@ export default function App() {
     if (userState && !inRoom && safeUsername !== 'მოთამაშე') {
       fetchDashboardData(safeUsername);
       socket.emit('getLiveRooms');
+      socket.emit('setOnlineUser', safeUsername); // 🟢 განახლება
     }
   }, [userState, inRoom, safeUsername]);
 
@@ -98,6 +116,8 @@ export default function App() {
   const handleAuthSuccess = (userData) => {
     setUserState(userData);
     localStorage.setItem('phurti_user', JSON.stringify(userData));
+    const actualUser = userData?.user || userData;
+    if (actualUser?.username) socket.emit('setOnlineUser', actualUser.username); // 🟢 რეგისტრაციის/შესვლისთანავე გამოჩნდება ონლაინში
   };
 
   const handleJoinSpecificRoom = (targetId, pass = '') => {
@@ -117,6 +137,25 @@ export default function App() {
     setInRoom(true);
     localStorage.setItem('phurti_roomId', generatedId); localStorage.setItem('phurti_inRoom', 'true');
     setIsCreateModalOpen(false); setMRoomPassword('');
+  };
+
+  // 🟢 მოწვევის გაგზავნის ლოგიკა
+  const handleSendInvite = (targetSocketId) => {
+    if (inRoom && roomData) {
+      // თუ უკვე ოთახშია, იწვევს თავის ოთახში
+      socket.emit('sendInvite', { targetSocketId, roomId: roomData.id, password: roomData.password, fromName: safeUsername });
+    } else {
+      // თუ ლობიშია, სისტემა ავტომატურად ქმნის ოთახს და იწვევს
+      const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
+      socket.emit('joinRoom', { roomId: generatedId, playerName: safeUsername, roomPassword: null, maxPlayers: 4, targetScore: 11, allowBots: true });
+      setInRoom(true);
+      localStorage.setItem('phurti_roomId', generatedId); 
+      localStorage.setItem('phurti_inRoom', 'true');
+      
+      setTimeout(() => {
+        socket.emit('sendInvite', { targetSocketId, roomId: generatedId, password: null, fromName: safeUsername });
+      }, 300);
+    }
   };
 
   const handleRoomClickFromList = (room) => {
@@ -139,17 +178,33 @@ export default function App() {
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
 
   return (
-    /* 🖼️ ახალი ფონური სურათი გარანტირებული ჩატვირთვით */
     <div 
       className="relative flex min-h-screen flex-col font-sans antialiased bg-cover bg-center bg-fixed"
       style={{ backgroundImage: "url('https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=2560&auto=format&fit=crop')" }}
     >
-      
-      {/* მუქი გადაფარვა, რომ ტექსტები კარგად იკითხებოდეს */}
       <div className="absolute inset-0 bg-stone-950/85 backdrop-blur-[4px] z-0"></div>
 
+      {/* 🟢 შემოსული მოწვევის პრემიუმ მოდალი (ამოხტება ყველგან) */}
+      {inviteAlert && (
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-stone-900 border border-emerald-500/30 rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-[0_0_50px_rgba(16,185,129,0.15)] font-sans text-center relative overflow-hidden animate-in zoom-in duration-200">
+            <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500 animate-pulse"></div>
+            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20 mb-2 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+              <BellRing size={28} className="text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">ახალი გამოწვევა!</h3>
+            <p className="text-sm font-bold text-stone-400">
+              <span className="text-emerald-400 font-black">{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})
+            </p>
+            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
+              <button onClick={() => setInviteAlert(null)} className="py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md">უარყოფა</button>
+              <button onClick={() => { handleJoinSpecificRoom(inviteAlert.roomId, inviteAlert.password); setInviteAlert(null); }} className="py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 border-b-2 border-emerald-800 shadow-[0_0_15px_rgba(16,185,129,0.3)]">შესვლა 🎮</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="relative z-10 flex flex-col flex-1 w-full h-full text-stone-100">
-        {/* 🌟 პრემიუმ ჰედერი მინის ეფექტით */}
         <header className="flex items-center justify-between border-b border-white/5 bg-stone-950/40 backdrop-blur-xl px-8 py-4 sticky top-0 z-40 shadow-lg">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-stone-900/80 rounded-xl border border-white/10 shadow-inner">
@@ -168,7 +223,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* მთავარი კონტენტი */}
         <main className="flex-1 w-full max-w-[1340px] mx-auto p-4 md:p-6 lg:p-8 flex items-center justify-center relative">
           {error && (
             <div className="fixed top-24 right-6 z-50 rounded-xl bg-rose-500/10 border border-rose-500/20 px-5 py-3 text-xs font-black text-rose-400 shadow-2xl backdrop-blur-md animate-in fade-in duration-200">
@@ -179,7 +233,7 @@ export default function App() {
           {!inRoom ? (
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               
-              {/* მარცხენა პანელი: პროფილი და ისტორია */}
+              {/* მარცხენა პანელი */}
               <div className="space-y-5">
                 {/* პროფილის ბარათი */}
                 <div className="bg-stone-900/50 backdrop-blur-xl border border-white/5 rounded-2xl p-5 space-y-5 shadow-2xl">
@@ -214,7 +268,7 @@ export default function App() {
                   <h4 className="text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-3 uppercase tracking-widest">
                     <History size={14} className="text-amber-500" /> პირადი ისტორია
                   </h4>
-                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                  <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                     {profileData?.gameHistory && profileData.gameHistory.length > 0 ? (
                       profileData.gameHistory.map((h, i) => (
                         <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-stone-950/40 border border-white/5 text-xs transition-all hover:bg-stone-900/60">
@@ -229,12 +283,41 @@ export default function App() {
                     )}
                   </div>
                 </div>
+
+                {/* 🟢 ონლაინ მოთამაშეები */}
+                <div className="bg-stone-900/50 backdrop-blur-xl border border-white/5 rounded-2xl p-5 space-y-3 shadow-2xl">
+                  <h4 className="text-xs font-bold text-stone-400 flex items-center justify-between border-b border-white/5 pb-3 uppercase tracking-widest">
+                    <div className="flex items-center gap-2">
+                      <Users size={14} className="text-emerald-500" /> ონლაინ მოთამაშეები
+                    </div>
+                    <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-mono font-black text-[10px]">
+                      {onlineUsers.length}
+                    </span>
+                  </h4>
+                  <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                    {onlineUsers.filter(u => u.username !== safeUsername).length > 0 ? (
+                      onlineUsers.filter(u => u.username !== safeUsername).map(u => (
+                        <div key={u.socketId} className="flex items-center justify-between p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-xs transition-all hover:border-emerald-500/20">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]" />
+                            <span className="font-bold text-stone-200 truncate max-w-[100px]">{u.username}</span>
+                          </div>
+                          <button onClick={() => handleSendInvite(u.socketId)} className="px-3 py-1.5 rounded-lg text-[10px] font-black bg-stone-800 text-amber-500 border border-white/5 hover:bg-stone-700 hover:text-amber-400 active:scale-95 transition-all flex items-center gap-1.5 shadow-md">
+                            <UserPlus size={12} /> მოწვევა
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-stone-600 font-medium italic py-4 text-center">სხვა მოთამაშეები არ არიან</p>
+                    )}
+                  </div>
+                </div>
+
               </div>
 
-              {/* მარჯვენა დიდი სვეტი: მაგიდის მართვა, რეიტინგი და აქტიური ოთახები */}
+              {/* მარჯვენა დიდი სვეტი */}
               <div className="lg:col-span-2 space-y-5 w-full">
                 
-                {/* მართვის ღილაკები */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button onClick={() => setIsCreateModalOpen(true)} className="p-5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 rounded-2xl flex items-center justify-between text-left transition-all shadow-[0_10px_20px_rgba(245,158,11,0.2)] active:scale-95 text-stone-950 border-b-2 border-amber-800 group">
                     <div>
@@ -250,7 +333,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* გლობალური რეიტინგი (TOP 10 Premium Podiums) */}
                 <div className="bg-stone-900/50 backdrop-blur-xl border border-white/5 rounded-2xl p-5 space-y-4 shadow-2xl">
                   <h3 className="text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-3 uppercase tracking-widest">
                     <Medal size={14} className="text-amber-500" /> გლობალური რეიტინგი (TOP 10)
@@ -268,7 +350,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* აქტიური მაგიდები */}
                 <div className="bg-stone-900/50 backdrop-blur-xl border border-white/5 rounded-2xl p-5 space-y-4 shadow-2xl">
                   <div className="flex items-center justify-between border-b border-white/5 pb-3">
                     <h3 className="text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest"><LayoutGrid size={14} className="text-amber-500" /> აქტიური მაგიდები</h3>
@@ -307,7 +388,6 @@ export default function App() {
                 <>
                   {!roomData.gameStarted ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto py-4">
-                      {/* ოთახის ლობი მოლოდინის რეჟიმში */}
                       <div className="bg-stone-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-6 space-y-5 shadow-2xl">
                         <div className="border-b border-white/10 pb-4">
                           <h3 className="text-xl font-black text-amber-400 font-mono">ROOM #{roomData.id}</h3>
@@ -329,7 +409,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* ოთახის პარამეტრები */}
                       <div className="bg-stone-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-6 space-y-5 shadow-2xl">
                         <h4 className="text-xs font-bold text-stone-400 border-b border-white/10 pb-4 flex items-center gap-2 uppercase tracking-widest"><Target size={14} className="text-amber-500" /> მაგიდის წესები</h4>
                         <div className="space-y-2.5">
@@ -358,7 +437,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ოთახის შექმნის პრემიუმ მოდალი */}
           {isCreateModalOpen && (
             <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
               <form onSubmit={handleConfirmCreateRoom} className="bg-stone-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] font-sans">
@@ -398,7 +476,6 @@ export default function App() {
             </div>
           )}
 
-          {/* პაროლის მოდალი შეერთებისას */}
           {isPasswordModalOpen && (
             <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
               <div className="bg-stone-900 border border-white/10 rounded-2xl p-5 max-w-xs w-full space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] font-sans">
