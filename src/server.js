@@ -17,7 +17,7 @@ const server = http.createServer(app);
 
 // ✨ სრულყოფილი CORS კონფიგურაცია ინტერნეტისთვის
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'https://dila-alpha.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
 }));
@@ -36,7 +36,7 @@ mongoose.connect(process.env.MONGO_URI)
 // სოკეტების სერვერი თავისი CORS-ით
 const io = new Server(server, {
   cors: { 
-    origin: process.env.CLIENT_URL || "http://localhost:5173", 
+    origin: ['http://localhost:5173', 'https://dila-alpha.vercel.app'], 
     methods: ["GET", "POST"],
     credentials: true
   }
