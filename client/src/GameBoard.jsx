@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { LogOut, Send, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock } from 'lucide-react';
+// 🟢 ზუსტად აქ, ბოლოში დაემატა 'Users'
+import { LogOut, Send, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users } from 'lucide-react';
 
 export default function GameBoard({ room, socket, onLeave }) {
   const [selectedCardFromHand, setSelectedCardFromHand] = useState(null);
