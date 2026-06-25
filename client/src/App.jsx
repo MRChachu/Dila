@@ -4,7 +4,7 @@ import Auth from './Auth';
 import GameBoard from './GameBoard';
 import { Trophy, Shield, PlusCircle, Play, LogOut, RefreshCw, History, Users, Target, LayoutGrid, Lock, Unlock, Medal, UserCheck, Star } from 'lucide-react';
 
-const socket = io('http://localhost:5002');
+const socket = io('https://purti.onrender.com');
 
 export default function App() {
   const [userState, setUserState] = useState(() => {
@@ -36,10 +36,10 @@ export default function App() {
 
   const fetchDashboardData = async (username) => {
     try {
-      const resProf = await fetch(`http://localhost:5002/api/auth/profile/${username}`);
+      const resProf = await fetch(`https://purti.onrender.com/api/auth/profile/${username}`);
       if (resProf.ok) setProfileData(await resProf.json());
 
-      const resLead = await fetch(`http://localhost:5002/api/auth/leaderboard`);
+      const resLead = await fetch(`https://purti.onrender.com/api/auth/leaderboard`);
       if (resLead.ok) setLeaderboard(await resLead.json());
     } catch (err) {}
   };
