@@ -11,27 +11,52 @@ export default function GameBoard({ room, socket, onLeave }) {
   const [isMuted, setIsMuted] = useState(false);
   const chatRef = useRef(null);
 
-  // 🔊 ხმების რეფერენსები (დარწმუნდი, რომ public ფოლდერში გაქვს ეს ფაილები, ან სახელები შეუცვალე შენსას)
-  const playSound = useRef(typeof Audio !== 'undefined' ? new Audio('/play.mp3') : null);
-  const captureSound = useRef(typeof Audio !== 'undefined' ? new Audio('/capture.mp3') : null);
-
   const me = room?.players?.find(p => p.id === socket.id);
   const isMyTurn = room?.players?.[room.currentTurn]?.id === socket.id;
 
   const emotes = ['🔥', '😂', '😎', '🤯', '🃏', '⏳', '👏', '💀'];
 
-  // 🔊 ხმის გაშვება მოქმედებისას
+  // 🔊 უნივერსალური, ფაილების გარეშე მომუშავე ხმების გენერატორი (Web Audio API)
+  const playPopSound = (isCapture = false) => {
+    if (isMuted) return;
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      if (isCapture) {
+        // მოჭრის ხმა (ოდნავ მაღალი და მკვეთრი)
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(500, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.15);
+      } else {
+        // დაგდების ხმა (რბილი პოპ)
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(350, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.1);
+      }
+    } catch (e) {
+      console.log("Audio not supported");
+    }
+  };
+
+  // როცა ვინმე მოქმედებას შეასრულებს, დაუკრას ხმა
   useEffect(() => {
     if (room?.lastAction && !isMuted) {
-      try {
-        if (room.lastAction.type === 'CAPTURE') {
-          captureSound.current?.play().catch(e => console.log("Audio play error:", e));
-        } else {
-          playSound.current?.play().catch(e => console.log("Audio play error:", e));
-        }
-      } catch (err) {
-        console.log("Audio not supported or blocked");
-      }
+      playPopSound(room.lastAction.type === 'CAPTURE');
     }
   }, [room?.lastAction, isMuted]);
 
@@ -74,6 +99,10 @@ export default function GameBoard({ room, socket, onLeave }) {
 
   const handlePlayCard = () => {
     if (!isMyTurn || !selectedCardFromHand) return;
+    
+    // შენი სვლის ხმა მომენტალურად
+    playPopSound(selectedCardsFromTable.length > 0);
+
     socket.emit('playCard', { roomId: room.id, cardFromHand: selectedCardFromHand, cardsFromTable: selectedCardsFromTable });
     setSelectedCardFromHand(null);
     setSelectedCardsFromTable([]);
@@ -229,7 +258,8 @@ export default function GameBoard({ room, socket, onLeave }) {
               </div>
             )}
 
-            <div className="w-[85%] max-w-2xl h-48 bg-stone-950/40 rounded-[2rem] border border-white/5 shadow-inner relative flex items-center justify-center p-4">
+            {/* 🟢 მაგიდის კონტეინერს დაემატა min-h და py-8, რომ კარტები აღარ მოიჭრას */}
+            <div className="w-[85%] max-w-2xl min-h-[14rem] py-8 bg-stone-950/40 rounded-[2rem] border border-white/5 shadow-inner relative flex items-center justify-center px-4 overflow-visible">
               <div className="flex flex-wrap justify-center gap-3">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
                   const isSelected = selectedCardsFromTable.some(tc => tc.rank === c.rank && tc.suit === c.suit);
@@ -237,7 +267,7 @@ export default function GameBoard({ room, socket, onLeave }) {
                     <div 
                       key={i} 
                       onClick={() => isMyTurn && toggleTableCard(c)}
-                      className={`w-16 h-24 md:w-20 md:h-28 bg-stone-100 rounded-xl shadow-xl flex flex-col justify-between p-2 select-none animate-in zoom-in duration-300 transition-all cursor-pointer ${isSelected ? 'ring-4 ring-amber-500 -translate-y-3 shadow-[0_15px_30px_rgba(245,158,11,0.3)]' : 'hover:-translate-y-1 hover:shadow-2xl'}`}
+                      className={`w-16 h-24 md:w-20 md:h-28 bg-stone-100 rounded-xl shadow-xl flex flex-col justify-between p-2 select-none animate-in zoom-in duration-300 transition-all cursor-pointer ${isSelected ? 'ring-4 ring-amber-500 -translate-y-4 shadow-[0_15px_30px_rgba(245,158,11,0.4)]' : 'hover:-translate-y-2 hover:shadow-2xl'}`}
                     >
                       <span className={`text-sm md:text-base font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
                       <span className={`text-2xl md:text-3xl self-center ${getSuitColor(c.suit)} drop-shadow-md`}>{c.suit}</span>
@@ -252,7 +282,7 @@ export default function GameBoard({ room, socket, onLeave }) {
           </div>
 
           <div className="flex flex-col items-center gap-5 mt-4">
-            <div className="flex items-center gap-4 bg-stone-950/60 p-2 rounded-2xl border border-white/5 backdrop-blur-md shadow-lg">
+            <div className="flex items-center gap-4 bg-stone-950/60 p-2 rounded-2xl border border-white/5 backdrop-blur-md shadow-lg z-10">
               <div className="flex gap-1.5 px-2">
                 {emotes.map(emo => (
                   <button key={emo} onClick={() => handleSendEmote(emo)} className="text-lg hover:scale-125 hover:-translate-y-1 transition-all active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100">{emo}</button>
@@ -268,14 +298,15 @@ export default function GameBoard({ room, socket, onLeave }) {
               </button>
             </div>
 
-            <div className="flex justify-center gap-2 md:gap-4 h-36 items-end perspective-1000">
+            {/* 🟢 შენი კარტების კონტეინერსაც დაემატა h-40 და pt-8 რომ არ მოიჭრას */}
+            <div className="flex justify-center gap-2 md:gap-4 h-40 pt-8 items-end perspective-1000 overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 return (
                   <div 
                     key={i}
                     onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
-                    className={`w-20 h-28 md:w-24 md:h-36 bg-stone-100 rounded-xl shadow-2xl flex flex-col justify-between p-2.5 select-none transition-all duration-300 ease-out cursor-pointer transform-gpu ${isSelected ? '-translate-y-6 scale-110 shadow-[0_20px_40px_rgba(0,0,0,0.6)] ring-4 ring-amber-500 z-20' : 'hover:-translate-y-4 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-10'}`}
+                    className={`w-20 h-28 md:w-24 md:h-36 bg-stone-100 rounded-xl shadow-2xl flex flex-col justify-between p-2.5 select-none transition-all duration-300 ease-out cursor-pointer transform-gpu ${isSelected ? '-translate-y-8 scale-110 shadow-[0_20px_40px_rgba(0,0,0,0.6)] ring-4 ring-amber-500 z-20' : 'hover:-translate-y-4 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-10'}`}
                   >
                     <span className={`text-base md:text-lg font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
                     <span className={`text-3xl md:text-4xl self-center ${getSuitColor(c.suit)} drop-shadow-lg`}>{c.suit}</span>
