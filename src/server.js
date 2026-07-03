@@ -41,25 +41,21 @@ const rooms = {};
 const roomTimers = {}; 
 const disconnectTimeouts = {}; 
 
-// 🟢 გლობალური ონლაინ მოთამაშეების სია
 const onlineUsersMap = {};
 
 io.on('connection', (socket) => {
   console.log(`🔌 ახალი კავშირი: ${socket.id}`);
 
-  // 🟢 ონლაინ მოთამაშეების განახლების ფუნქცია
   const broadcastOnlineUsers = () => {
     const usersList = Object.entries(onlineUsersMap).map(([id, name]) => ({ socketId: id, username: name }));
     io.emit('updateOnlineUsers', usersList);
   };
 
-  // 🟢 მოთამაშის ონლაინში დაფიქსირება
   socket.on('setOnlineUser', (username) => {
     onlineUsersMap[socket.id] = username;
     broadcastOnlineUsers();
   });
 
-  // 🟢 მოწვევის გაგზავნა კონკრეტულ მოთამაშესთან
   socket.on('sendInvite', ({ targetSocketId, roomId, password, fromName }) => {
     io.to(targetSocketId).emit('receiveInvite', { roomId, password, fromName });
   });
@@ -159,7 +155,7 @@ io.on('connection', (socket) => {
     if (!rooms[roomId]) {
       rooms[roomId] = {
         id: roomId, players: [], gameStarted: false, deck: [], tableCards: [],
-        currentTurn: 0, roundSummary: null, lastAction: null,
+        currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null, // 🟢 დამატებულია ლოგიკისთვის
         targetScore: targetScore || 11, maxPlayers: maxPlayers || 4,
         allowBots: allowBots !== undefined ? allowBots : true,
         readyForNextRound: [], turnExpiresAt: null,
@@ -240,7 +236,7 @@ io.on('connection', (socket) => {
     }
     room.deck = createDeck(); room.tableCards = room.deck.splice(0, 4);
     room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; });
-    room.currentTurn = 0; room.lastAction = null; room.roundSummary = null;
+    room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.lastCapturerId = null; // 🟢 გასუფთავება
     startTurnTimer(room, roomId);
     io.to(roomId).emit('gameStarted', room);
     broadcastActiveRooms(); 
@@ -261,6 +257,7 @@ io.on('connection', (socket) => {
       const tableIds = cardsFromTable.map(c => `${c.rank}${c.suit}`);
       room.tableCards = room.tableCards.filter(c => !tableIds.includes(`${c.rank}${c.suit}`));
       room.lastAction = { playerName: player.name, cardFromHand, cardsFromTable, type: 'CAPTURE' };
+      room.lastCapturerId = player.id; // 🟢 ვიმახსოვრებთ ვინ მოჭრა ბოლოს
     } else {
       if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
       player.cards = player.cards.filter(c => !(c.rank === cardFromHand.rank && c.suit === cardFromHand.suit));
@@ -282,7 +279,7 @@ io.on('connection', (socket) => {
 
     if (allRealReady) {
       if (room.roundSummary.matchWinner) {
-        room.gameStarted = false; room.deck = []; room.tableCards = []; room.roundSummary = null; room.lastAction = null; room.readyForNextRound = [];
+        room.gameStarted = false; room.deck = []; room.tableCards = []; room.roundSummary = null; room.lastAction = null; room.readyForNextRound = []; room.lastCapturerId = null;
         room.players = room.players.filter(p => !p.isBot);
         room.players.forEach(p => { p.cards = []; p.captured = []; p.totalScore = 0; });
         io.to(roomId).emit('roomUpdated', room);
@@ -290,7 +287,7 @@ io.on('connection', (socket) => {
       } else {
         room.deck = createDeck(); room.tableCards = room.deck.splice(0, 4);
         room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; });
-        room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.readyForNextRound = [];
+        room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.readyForNextRound = []; room.lastCapturerId = null; // 🟢 გასუფთავება
         startTurnTimer(room, roomId);
         io.to(roomId).emit('gameStarted', room);
         checkAndTriggerBotTurn(room, roomId);
@@ -302,8 +299,6 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`❌ მოთამაშე გაითიშა: ${socket.id}`);
-    
-    // 🟢 წავშალოთ ონლაინ მოთამაშეების სიიდან
     delete onlineUsersMap[socket.id];
     broadcastOnlineUsers();
 
@@ -326,6 +321,15 @@ function handleTurnTransition(room, roomId) {
       io.to(roomId).emit('gameUpdated', room);
       checkAndTriggerBotTurn(room, roomId);
     } else {
+      // 🟢 ბოლო წამღების ლოგიკა კალოდის ამოწურვისას
+      if (room.tableCards.length > 0 && room.lastCapturerId) {
+        const lastCapturer = room.players.find(p => p.id === room.lastCapturerId);
+        if (lastCapturer) {
+          lastCapturer.captured.push(...room.tableCards);
+          room.tableCards = []; // მაგიდა სუფთავდება
+        }
+      }
+
       calculateRoundScores(room);
       room.readyForNextRound = [];
       room.players.forEach(p => { if (p.isBot) room.readyForNextRound.push(p.id); });
@@ -388,6 +392,7 @@ function checkAndTriggerBotTurn(room, roomId) {
         activePlayer.captured.push(botMove.cardFromHand, ...botMove.cardsFromTable);
         const tableIds = botMove.cardsFromTable.map(c => `${c.rank}${c.suit}`);
         room.tableCards = room.tableCards.filter(c => !tableIds.includes(`${c.rank}${c.suit}`));
+        room.lastCapturerId = activePlayer.id; // 🟢 ბოტების შემთხვევაშიც ვიმახსოვრებთ ვინ მოჭრა
       } else { room.tableCards.push(botMove.cardFromHand); }
       handleTurnTransition(room, roomId);
     }, 1500); 
