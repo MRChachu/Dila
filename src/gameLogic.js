@@ -1,175 +1,145 @@
-// src/gameLogic.js
+const SUITS = ['♥', '♦', '♣', '♠'];
+const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
-// 1. ახალი 52-კარტიანი დასტის შექმნა და არევა
+// 1. კალოდის შექმნა და აჩეჩვა
 function createDeck() {
-  const suits = ['♠', '♥', '♦', '♣'];
-  const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
   let deck = [];
-  
-  for (let suit of suits) {
-    for (let rank of ranks) {
+  for (let suit of SUITS) {
+    for (let rank of RANKS) {
       deck.push({ suit, rank });
     }
   }
-  
-  // კარტების არევა შენი ორიგინალური მეთოდით
-  return deck.sort(() => Math.random() - 0.5);
+  // Fisher-Yates ალგორითმით რენდომად აჩეჩვა
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
 }
 
-// 2. კარტის ციფრული მნიშვნელობის მიღება 11-იანი ჯამის დასათვლელად
+// 2. კარტის ციფრული მნიშვნელობის დადგენა (ჯამების დასათვლელად)
 function getCardValue(rank) {
-  if (rank === 'A') return 1;
-  if (['J', 'Q', 'K'].includes(rank)) return 0;
+  if (rank === 'A') return 1; // ტუზი = 1
+  if (['J', 'Q', 'K'].includes(rank)) return 0; // ფიგურებს ჯამი არ აქვთ, ერთმანეთს მიაქვთ
   return parseInt(rank);
 }
 
-// 3. მოჭრის ვალიდაცია (შენი თამაშის ძირითადი წესები)
+// 3. წაყვანის (მოჭრის) სისწორის შემოწმება
 function isValidCapture(cardFromHand, cardsFromTable) {
-  // 1. ვალეტის (J) წესი: მიაქვს ყველა ციფრი და ტუზი, მაგრამ ვერ მიაქვს მეფე/დამა
-  if (cardFromHand.rank === 'J' && cardsFromTable.length > 0) {
-    const hasKingOrQueen = cardsFromTable.some(c => ['K', 'Q'].includes(c.rank));
-    if (hasKingOrQueen) return false;
-    return true;
+  // 🟢 ვალეტის მთავარი წესი: ვალეტს (J) მიაქვს აბსოლუტურად ყველაფერი!
+  if (cardFromHand.rank === 'J') return true;
+
+  // თუ მხოლოდ 1 კარტი მიაქვს, რანკი ზუსტად უნდა ემთხვეოდეს (მაგ: Q-ს მიაქვს Q, 7-ს მიაქვს 7)
+  if (cardsFromTable.length === 1) {
+    return cardFromHand.rank === cardsFromTable[0].rank;
   }
 
-  // 2. მეფის (K) და დამის (Q) წესი: მიაქვთ მხოლოდ თავისივე რანგის ერთი კარტი
-  if (['K', 'Q'].includes(cardFromHand.rank)) {
-    return cardsFromTable.length === 1 && cardsFromTable[0].rank === cardFromHand.rank;
+  // თუ რამდენიმე კარტი მიაქვს ერთდროულად:
+  const handValue = getCardValue(cardFromHand.rank);
+  
+  if (handValue === 0) {
+      // Q და K ფიგურებს არ შეუძლიათ სხვადასხვა კარტების ჯამით წაღება
+      // მათ შეუძლიათ წაიღონ მხოლოდ თავისივე ფიგურები (მაგალითად ერთ K-ს მიაქვს ორი K)
+      const allMatch = cardsFromTable.every(c => c.rank === cardFromHand.rank);
+      return allMatch;
   }
 
-  // 3. ციფრული კარტების (2-10) და ტუზის (A) წესი: ჯამი აუცილებლად უნდა იყოს 11!
-  const handVal = getCardValue(cardFromHand.rank);
-  let tableSum = 0;
+  // თუ ციფრული კარტია (მაგ: 9), ვამოწმებთ მაგიდაზე მონიშნული კარტების ჯამს
+  const tableSum = cardsFromTable.reduce((sum, c) => sum + getCardValue(c.rank), 0);
+  
+  // თუ ჯამი ზუსტად ემთხვევა, ვატანთ
+  if (tableSum === handValue) return true;
 
-  for (let card of cardsFromTable) {
-    const val = getCardValue(card.rank);
-    if (val === 0) return false; // სურათებიან კარტს (K, Q) ციფრით ვერ შეეხები
-    tableSum += val;
-  }
+  // თუ მონიშნული კარტები იდენტურია (მაგ: ხელში გვიჭირავს 8 და მიგვაქვს ორი 8-იანი მაგიდიდან)
+  const allSameAsHand = cardsFromTable.every(c => c.rank === cardFromHand.rank);
+  if (allSameAsHand) return true;
 
-  return (handVal + tableSum) === 11;
+  return false;
 }
 
-// 4. მაგიდაზე არსებული კარტების ყველა შესაძლო კომბინაციის პოვნა ბოტისთვის
-function getAllTableSubsets(table) {
-  return table.reduce((subsets, value) => subsets.concat(subsets.map(set => [value, ...set])), [[]]);
-}
-
-// 5. ბოტის ინტელექტი: საუკეთესო სვლის შერჩევა (პრიორიტეტი: აგურის 10, ჯვრის 2)
-function getBestMove(hand, table) {
-  let possibleCaptures = [];
-
-  hand.forEach(handCard => {
-    if (handCard.rank === 'J' && table.length > 0) {
-      if (isValidCapture(handCard, table)) {
-        possibleCaptures.push({ type: 'CAPTURE', cardFromHand: handCard, cardsFromTable: [...table] });
-      }
-    }
-
-    const subsets = getAllTableSubsets(table);
-    subsets.forEach(subset => {
-      if (subset.length > 0 && isValidCapture(handCard, subset)) {
-        possibleCaptures.push({ type: 'CAPTURE', cardFromHand: handCard, cardsFromTable: subset });
-      }
-    });
-  });
-
-  if (possibleCaptures.length > 0) {
-    possibleCaptures.sort((a, b) => {
-      const scoreA = a.cardsFromTable.some(c => (c.rank === '10' && c.suit === '♦') || (c.rank === '2' && c.suit === '♣')) ? 2 : 0;
-      const scoreB = b.cardsFromTable.some(c => (c.rank === '10' && c.suit === '♦') || (c.rank === '2' && c.suit === '♣')) ? 2 : 0;
-      if (scoreA !== scoreB) return scoreB - scoreA;
-
-      if (a.cardsFromTable.length !== b.cardsFromTable.length) {
-        return b.cardsFromTable.length - a.cardsFromTable.length;
-      }
-
-      const clubsA = a.cardsFromTable.filter(c => c.suit === '♣').length;
-      const clubsB = b.cardsFromTable.filter(c => c.suit === '♣').length;
-      return clubsB - clubsA;
-    });
-
-    return possibleCaptures[0];
-  }
-
-  const safeHand = hand.filter(c => c.rank !== 'J');
-  const cardToDiscard = safeHand.length > 0 ? safeHand[0] : hand[0];
-
-  return {
-    type: 'DISCARD',
-    cardFromHand: cardToDiscard,
-    cardsFromTable: []
-  };
-}
-
-// 6. რაუნდის ფინალური ქულების დათვლა (დასტის ბოლომდე დაცლის შემდეგ)
+// 4. რაუნდის ბოლოს 4-ვე ქულის განაწილება
 function calculateRoundScores(room) {
+  const stats = room.players.map(p => {
+    let clubsCount = 0;
+    let has10Diamond = false;
+    let has2Club = false;
+
+    p.captured.forEach(c => {
+      if (c.suit === '♣') clubsCount++;
+      if (c.rank === '10' && c.suit === '♦') has10Diamond = true;
+      if (c.rank === '2' && c.suit === '♣') has2Club = true;
+    });
+
+    return {
+      id: p.id,
+      name: p.name,
+      cardsCount: p.captured.length,
+      clubsCount,
+      has10Diamond,
+      has2Club,
+      playerRef: p
+    };
+  });
+
+  // ვინ აიღო მეტი კარტი?
   let maxCards = -1;
-  let maxCardsPlayers = [];
+  let cardsWinner = null;
+  stats.forEach(s => {
+    if (s.cardsCount > maxCards) { maxCards = s.cardsCount; cardsWinner = s; }
+    else if (s.cardsCount === maxCards) { cardsWinner = null; /* ყაიმის დროს ქულა არავის ეწერება */ }
+  });
+
+  // ვინ აიღო მეტი ჯვარი?
   let maxClubs = -1;
-  let maxClubsPlayers = [];
+  let clubsWinner = null;
+  stats.forEach(s => {
+    if (s.clubsCount > maxClubs) { maxClubs = s.clubsCount; clubsWinner = s; }
+    else if (s.clubsCount === maxClubs) { clubsWinner = null; }
+  });
 
+  // რეალური ქულების მიმატება მოთამაშეებისთვის
+  if (cardsWinner) cardsWinner.playerRef.totalScore += 1;
+  if (clubsWinner) clubsWinner.playerRef.totalScore += 1;
+  
+  let diamond10WinnerName = "-";
+  let club2WinnerName = "-";
+
+  stats.forEach(s => {
+    if (s.has10Diamond) { s.playerRef.totalScore += 1; diamond10WinnerName = s.name; }
+    if (s.has2Club) { s.playerRef.totalScore += 1; club2WinnerName = s.name; }
+  });
+
+  // ვაგზავნით შედეგებს ვიზუალში (მოდალისთვის)
   room.roundSummary = {
-    cardsWinner: 'ფრე (0 ქულა)',
-    clubsWinner: 'ფრე (0 ქულა)',
-    diamond10Winner: 'არავინ (0 ქულა)',
-    club2Winner: 'არავინ (0 ქულა)',
-    gainedPoints: {} 
+    cardsWinner: cardsWinner ? cardsWinner.name : "ყაიმი (არავინ)",
+    clubsWinner: clubsWinner ? clubsWinner.name : "ყაიმი (არავინ)",
+    diamond10Winner: diamond10WinnerName,
+    club2Winner: club2WinnerName,
+    matchWinner: null 
   };
-
-  room.players.forEach(p => {
-    room.roundSummary.gainedPoints[p.id] = 0;
-  });
-
-  room.players.forEach(player => {
-    const cardCount = player.captured.length;
-    const clubCount = player.captured.filter(c => c.suit === '♣').length;
-    
-    const hasDiamond10 = player.captured.some(c => c.rank === '10' && c.suit === '♦');
-    const hasClub2 = player.captured.some(c => c.rank === '2' && c.suit === '♣');
-
-    if (hasDiamond10) {
-      player.totalScore += 1;
-      room.roundSummary.diamond10Winner = `${player.name} (+1 ქ)`;
-      room.roundSummary.gainedPoints[player.id] += 1;
-    }
-    if (hasClub2) {
-      player.totalScore += 1;
-      room.roundSummary.club2Winner = `${player.name} (+1 ქ)`;
-      room.roundSummary.gainedPoints[player.id] += 1;
-    }
-
-    if (cardCount > maxCards) {
-      maxCards = cardCount;
-      maxCardsPlayers = [player];
-    } else if (cardCount === maxCards) {
-      maxCardsPlayers.push(player);
-    }
-
-    if (clubCount > maxClubs) {
-      maxClubs = clubCount;
-      maxClubsPlayers = [player];
-    } else if (clubCount === maxClubs) {
-      maxClubsPlayers.push(player);
-    }
-  });
-
-  if (maxCardsPlayers.length === 1) {
-    maxCardsPlayers[0].totalScore += 2;
-    room.roundSummary.cardsWinner = `${maxCardsPlayers[0].name} (${maxCards} კარტი) (+2 ქ)`;
-    room.roundSummary.gainedPoints[maxCardsPlayers[0].id] += 2;
-  }
-  if (maxClubsPlayers.length === 1) {
-    maxClubsPlayers[0].totalScore += 1;
-    room.roundSummary.clubsWinner = `${maxClubsPlayers[0].name} (${maxClubs} ჯვარი) (+1 ქ)`;
-    room.roundSummary.gainedPoints[maxClubsPlayers[0].id] += 1;
-  }
 }
 
-// 📦 ექსპორტი სერვერისთვის (არანაირი გარე require ფაილის შიგნით!)
-module.exports = {
-  createDeck,
-  isValidCapture,
-  calculateRoundScores,
-  getBestMove
-};
+// 5. ბოტის ლოგიკა (ჭკვიანი სვლები)
+function getBestMove(botCards, tableCards) {
+  if (!botCards || botCards.length === 0) return null;
+
+  for (let handCard of botCards) {
+    // 🟢 თუ ბოტს J უჭირავს და მაგიდაზე რამე დევს, მაშინვე ხვეტავს ყველაფერს!
+    if (handCard.rank === 'J' && tableCards.length > 0) {
+      return { type: 'CAPTURE', cardFromHand: handCard, cardsFromTable: [...tableCards] };
+    }
+
+    // ვამოწმებთ სხვა კარტებით 1-1-ზე წაღებას
+    for (let tCard of tableCards) {
+      if (isValidCapture(handCard, [tCard])) {
+        return { type: 'CAPTURE', cardFromHand: handCard, cardsFromTable: [tCard] };
+      }
+    }
+  }
+
+  // თუ ვერაფერს ვჭრით, ვაგდებთ პირველივე კარტს (მომავალში აქ შეგვიძლია უფრო ჭკვიანი გადმოგდებაც დავუწეროთ)
+  const cardToDiscard = botCards[0]; 
+  return { type: 'DISCARD', cardFromHand: cardToDiscard, cardsFromTable: [] };
+}
+
+module.exports = { createDeck, isValidCapture, calculateRoundScores, getBestMove };

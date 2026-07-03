@@ -93,19 +93,15 @@ io.on('connection', (socket) => {
         } else {
           const p = room.players[playerIndex];
           const originalName = p.name; 
-          
-          // 🟢 ვამოწმებთ, მატჩი უკვე დასრულებული ხომ არაა 
-          // (თუ დასრულებულია და შედეგების ეკრანიდან გადის, სასჯელი არ ეკუთვნის)
           const isMatchOver = room.roundSummary && room.roundSummary.matchWinner;
           
-          // 🔴 მკაცრი სასჯელი თამაშის შუაში მიტოვებისთვის (მხოლოდ რეიტინგულში)
           if (!p.isBot && room.isRanked && !isMatchOver) {
             User.findOneAndUpdate(
               { username: originalName },
               {
                 $inc: { 
                   'stats.gamesPlayed': 1, 
-                  'stats.totalPointsScored': -room.targetScore // ქულების მინუსში წაყვანა
+                  'stats.totalPointsScored': -room.targetScore 
                 }, 
                 $push: {
                   gameHistory: {
@@ -145,7 +141,6 @@ io.on('connection', (socket) => {
       clearTimeout(disconnectTimeouts[oldSocketId]); 
       delete disconnectTimeouts[oldSocketId];
     }
-    
     const room = rooms[roomId];
     if (room) {
       const player = room.players.find(p => p.name === playerName);
@@ -153,12 +148,8 @@ io.on('connection', (socket) => {
         player.id = socket.id; 
         socket.join(roomId);
         io.to(roomId).emit('gameUpdated', room);
-      } else {
-        socket.emit('roomNotFound'); 
-      }
-    } else {
-      socket.emit('roomNotFound'); 
-    }
+      } else { socket.emit('roomNotFound'); }
+    } else { socket.emit('roomNotFound'); }
   });
 
   socket.on('joinRoom', ({ roomId, playerName, roomPassword, maxPlayers, targetScore, allowBots, isRanked }) => {
@@ -166,12 +157,15 @@ io.on('connection', (socket) => {
     socket.join(roomId);
 
     if (!rooms[roomId]) {
+      // 🟢 თუ ბოტები დაშვებულია, ოთახი იძულებით ხდება ურეიტინგო (Casual)
+      const finalIsRanked = allowBots ? false : (isRanked !== undefined ? isRanked : true);
+
       rooms[roomId] = {
         id: roomId, players: [], gameStarted: false, deck: [], tableCards: [],
         currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null,
         targetScore: targetScore || 11, maxPlayers: maxPlayers || 4,
         allowBots: allowBots !== undefined ? allowBots : true,
-        isRanked: isRanked !== undefined ? isRanked : true,
+        isRanked: finalIsRanked, 
         readyForNextRound: [], turnExpiresAt: null,
         password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword 
       };
@@ -211,6 +205,9 @@ io.on('connection', (socket) => {
     if (!room || room.gameStarted) return;
     if (room.players[0] && room.players[0].id !== socket.id) return;
     room.targetScore = targetScore; room.maxPlayers = maxPlayers; room.allowBots = allowBots;
+    // 🟢 თუ განახლებისას ბოტი ჩართო, ოთახი კარგავს რეიტინგს
+    if (allowBots) room.isRanked = false;
+    
     if (room.players.length > maxPlayers) room.players = room.players.slice(0, maxPlayers);
     io.to(roomId).emit('roomUpdated', room);
     broadcastActiveRooms();
@@ -248,7 +245,20 @@ io.on('connection', (socket) => {
         room.players.push({ id: `bot_${Math.random().toString(36).substr(2, 5)}`, name: `რობოტი ${i}`, cards: [], captured: [], totalScore: 0, isBot: true });
       }
     }
-    room.deck = createDeck(); room.tableCards = room.deck.splice(0, 4);
+    
+    room.deck = createDeck(); 
+    room.tableCards = [];
+
+    // 🟢 ვალეტი არ დაიდება მაგიდაზე პირველი დარიგებისას
+    while (room.tableCards.length < 4) {
+      let card = room.deck.shift();
+      if (card.rank === 'J') {
+        room.deck.push(card); // თუ ვალეტია, ვაბრუნებთ კალოდის ბოლოში
+      } else {
+        room.tableCards.push(card);
+      }
+    }
+
     room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; });
     room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.lastCapturerId = null; 
     startTurnTimer(room, roomId);
@@ -299,7 +309,17 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('roomUpdated', room);
         broadcastActiveRooms();
       } else {
-        room.deck = createDeck(); room.tableCards = room.deck.splice(0, 4);
+        room.deck = createDeck(); 
+        room.tableCards = [];
+        // 🟢 შემდეგი რაუნდის პირველ დარიგებაზეც ვბლოკავთ ვალეტს მაგიდაზე
+        while (room.tableCards.length < 4) {
+          let card = room.deck.shift();
+          if (card.rank === 'J') {
+            room.deck.push(card);
+          } else {
+            room.tableCards.push(card);
+          }
+        }
         room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; });
         room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.readyForNextRound = []; room.lastCapturerId = null; 
         startTurnTimer(room, roomId);
@@ -316,7 +336,6 @@ io.on('connection', (socket) => {
     delete onlineUsersMap[socket.id];
     broadcastOnlineUsers();
 
-    // 5 წამიანი დრო აქვს მოსაბრუნებლად, თუ არა და ეთვლება მარცხი!
     disconnectTimeouts[socket.id] = setTimeout(() => {
       handlePlayerLeave(socket.id);
       delete disconnectTimeouts[socket.id];
