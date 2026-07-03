@@ -71,7 +71,7 @@ io.on('connection', (socket) => {
         targetScore: r.targetScore,
         allowBots: r.allowBots,
         isPrivate: r.isPrivate,
-        isRanked: r.isRanked // 🟢 ვატანთ რეიტინგის სტატუსს
+        isRanked: r.isRanked
       }));
     io.emit('activeRoomsList', activeLobbies); 
   };
@@ -92,17 +92,24 @@ io.on('connection', (socket) => {
           }
         } else {
           const p = room.players[playerIndex];
+          const originalName = p.name; 
           
-          // 🟢 წაგებას ვწერთ მხოლოდ რეიტინგულ თამაშში!
-          if (!p.isBot && room.isRanked) {
-            const originalName = p.name; 
+          // 🟢 ვამოწმებთ, მატჩი უკვე დასრულებული ხომ არაა 
+          // (თუ დასრულებულია და შედეგების ეკრანიდან გადის, სასჯელი არ ეკუთვნის)
+          const isMatchOver = room.roundSummary && room.roundSummary.matchWinner;
+          
+          // 🔴 მკაცრი სასჯელი თამაშის შუაში მიტოვებისთვის (მხოლოდ რეიტინგულში)
+          if (!p.isBot && room.isRanked && !isMatchOver) {
             User.findOneAndUpdate(
               { username: originalName },
               {
-                $inc: { 'stats.gamesPlayed': 1 }, 
+                $inc: { 
+                  'stats.gamesPlayed': 1, 
+                  'stats.totalPointsScored': -room.targetScore // ქულების მინუსში წაყვანა
+                }, 
                 $push: {
                   gameHistory: {
-                    $each: [{ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: false, playedAt: new Date() }],
+                    $each: [{ roomId: room.id, targetScore: room.targetScore, myFinalScore: -room.targetScore, isWinner: false, playedAt: new Date() }],
                     $position: 0 
                   }
                 }
@@ -111,7 +118,7 @@ io.on('connection', (socket) => {
           }
 
           p.isBot = true;
-          p.name = `${p.name} (გავიდა 🤖)`;
+          p.name = `${originalName} (გავიდა 🤖)`;
           p.id = `bot_${Math.random().toString(36).substr(2, 5)}`; 
 
           const realPlayers = room.players.filter(pl => !pl.isBot);
@@ -147,10 +154,10 @@ io.on('connection', (socket) => {
         socket.join(roomId);
         io.to(roomId).emit('gameUpdated', room);
       } else {
-        socket.emit('roomNotFound'); // მოთამაშე ოთახში აღარ არის
+        socket.emit('roomNotFound'); 
       }
     } else {
-      socket.emit('roomNotFound'); // 🟢 ოთახი აღარ არსებობს, ვეუბნებით კლიენტს
+      socket.emit('roomNotFound'); 
     }
   });
 
@@ -164,7 +171,7 @@ io.on('connection', (socket) => {
         currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null,
         targetScore: targetScore || 11, maxPlayers: maxPlayers || 4,
         allowBots: allowBots !== undefined ? allowBots : true,
-        isRanked: isRanked !== undefined ? isRanked : true, // 🟢 რეიტინგული ნაგულისხმევად
+        isRanked: isRanked !== undefined ? isRanked : true,
         readyForNextRound: [], turnExpiresAt: null,
         password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword 
       };
@@ -309,6 +316,7 @@ io.on('connection', (socket) => {
     delete onlineUsersMap[socket.id];
     broadcastOnlineUsers();
 
+    // 5 წამიანი დრო აქვს მოსაბრუნებლად, თუ არა და ეთვლება მარცხი!
     disconnectTimeouts[socket.id] = setTimeout(() => {
       handlePlayerLeave(socket.id);
       delete disconnectTimeouts[socket.id];
@@ -346,7 +354,6 @@ function handleTurnTransition(room, roomId) {
       if (maxScore >= room.targetScore) {
         room.roundSummary.matchWinner = winnerPlayer.name; 
         
-        // 🟢 მონაცემებს ვაახლებთ მხოლოდ რეიტინგულ თამაშში!
         if (room.isRanked) {
           room.players.forEach(async (p) => {
             if (p.isBot) return; 
