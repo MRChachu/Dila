@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Trophy, Shield, PlusCircle, Play, LogOut, RefreshCw, History, User, Target, LayoutGrid, Lock, Unlock, Medal, UserCheck, Star, UserPlus, BellRing, Users, Settings, Music, Palette } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, History, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Palette, Award, CheckCircle2, XCircle, Users, Swords, Gift, Info } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -23,16 +23,15 @@ export default function App() {
   const [liveRooms, setLiveRooms] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]); 
   const [error, setError] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
 
   const [onlineUser, setOnlineUser] = useState([]);
   const [inviteAlert, setInviteAlert] = useState(null);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  // 🟢 პარამეტრების მოდალი
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  // 🟢 დიზაინის და მუსიკის სტეიტები (ინახება ლოკალურად)
   const [theme, setTheme] = useState(() => localStorage.getItem('phurti_theme') || 'wood');
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem('phurti_music') === 'true');
   const audioRef = useRef(typeof Audio !== 'undefined' ? new Audio('/bg-music.mp3') : null);
@@ -46,11 +45,13 @@ export default function App() {
   const [mRoomPassword, setMRoomPassword] = useState('');
   const [mIsRanked, setMIsRanked] = useState(false); 
 
-  // 🟢 მუსიკის კონტროლი
+  // 🟢 სოციალური ტაბების სტეიტი (ონლაინ, მეგობრები, თხოვნები)
+  const [socialTab, setSocialTab] = useState('online');
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.loop = true;
-      audioRef.current.volume = 0.15; // დაბალი ხმა ფონისთვის
+      audioRef.current.volume = 0.15; 
       if (isMusicPlaying && userState) {
         audioRef.current.play().catch(e => console.log("Autoplay prevented:", e));
       } else {
@@ -60,7 +61,6 @@ export default function App() {
     }
   }, [isMusicPlaying, userState]);
 
-  // 🟢 თემის შენახვა
   useEffect(() => {
     localStorage.setItem('phurti_theme', theme);
   }, [theme]);
@@ -83,6 +83,18 @@ export default function App() {
     socket.on('activeRoomsList', (rooms) => setLiveRooms(rooms));
     socket.on('updateOnlineUsers', (users) => setOnlineUser(users));
     socket.on('receiveInvite', (data) => setInviteAlert(data));
+
+    // 🟢 მეგობრების სისტემის ლისენერები
+    socket.on('successMessage', (msg) => {
+      setToastMsg(msg);
+    });
+    socket.on('friendRequestReceived', (sender) => {
+      setToastMsg(`${sender}-მ მეგობრობის თხოვნა გამოგიგზავნა!`);
+      fetchDashboardData(safeUsername);
+    });
+    socket.on('friendListUpdated', () => {
+      fetchDashboardData(safeUsername);
+    });
 
     socket.on('roomNotFound', () => {
       handleResetToLobby();
@@ -116,7 +128,7 @@ export default function App() {
 
     return () => {
       socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('activeRoomsList'); 
-      socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('roomNotFound');
+      socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('roomNotFound');
       socket.off('connect', handleOnConnect);
     };
   }, []);
@@ -135,6 +147,13 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  useEffect(() => {
+    if (toastMsg) {
+      const timer = setTimeout(() => setToastMsg(''), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMsg]);
 
   const handleAuthSuccess = (userData) => {
     setUserState(userData);
@@ -178,6 +197,17 @@ export default function App() {
     }
   };
 
+  // 🟢 მეგობრების კონტროლერები
+  const handleSendFriendReq = (targetName) => {
+    socket.emit('sendFriendRequest', { targetUsername: targetName });
+  };
+  const handleAcceptFriend = (senderName) => {
+    socket.emit('acceptFriendRequest', { senderUsername: senderName });
+  };
+  const handleRejectFriend = (senderName) => {
+    socket.emit('rejectFriendRequest', { senderUsername: senderName });
+  };
+
   const handleRoomClickFromList = (room) => {
     if (room.isPrivate) { setSelectedRoomIdForJoin(room.id); setIsPasswordModalOpen(true); } else { handleJoinSpecificRoom(room.id); }
   };
@@ -195,19 +225,23 @@ export default function App() {
   if (!userState) return <Auth onAuthSuccess={handleAuthSuccess} />;
 
   const winRate = profileData?.stats?.gamesPlayed > 0 ? Math.round((profileData.stats.gamesWon / profileData.stats.gamesPlayed) * 100) : 0;
+  const currentLevel = profileData?.level || 1;
+  const currentXp = profileData?.xp || 0;
+  const targetXp = currentLevel * 1000;
+  const xpPercentage = Math.min((currentXp / targetXp) * 100, 100);
+
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
 
-// 🟢 თემების მინიმალისტური, მუქი გრადიენტული სტილები
   const themeStyles = {
     wood: {
-      bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", // მუქი მინიმალისტური ხისფერი 
+      bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", 
       overlay: "bg-black/10",
       accent: "text-amber-500",
       accentBg: "bg-amber-500",
       card: "bg-stone-900/80",
     },
     lavender: {
-      bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)", // ძალიან ბნელი და რბილი ლავანდისფერი
+      bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)",
       overlay: "bg-black/10",
       accent: "text-violet-400",
       accentBg: "bg-violet-500",
@@ -218,10 +252,22 @@ export default function App() {
 
   return (
     <div 
-      className={`relative flex min-h-screen flex-col font-sans antialiased bg-cover bg-center bg-fixed transition-all duration-700`}
-      style={{ backgroundImage: activeTheme.bg }}
+      className={`relative flex min-h-screen flex-col font-sans antialiased transition-all duration-700`}
+      style={{ background: activeTheme.bg }}
     >
       <div className={`absolute inset-0 ${activeTheme.overlay} backdrop-blur-[4px] z-0 transition-colors duration-700`}></div>
+
+      {error && (
+        <div className="fixed top-20 md:top-24 right-4 md:right-6 z-50 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black text-rose-400 shadow-2xl backdrop-blur-md animate-in fade-in duration-200 flex items-center gap-2">
+          <XCircle size={14} /> {error}
+        </div>
+      )}
+
+      {toastMsg && (
+        <div className={`fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 rounded-xl ${theme==='lavender'?'bg-violet-500/10 border-violet-500/20 text-violet-400':'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'} border px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black shadow-2xl backdrop-blur-md animate-in slide-in-from-top-10 duration-300 flex items-center gap-2`}>
+          <CheckCircle2 size={14} /> {toastMsg}
+        </div>
+      )}
 
       {inviteAlert && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
@@ -242,7 +288,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 პარამეტრების მოდალი */}
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-xs w-full space-y-6 shadow-2xl font-sans relative`}>
@@ -283,7 +328,6 @@ export default function App() {
               <span className="text-xs font-bold text-stone-200 tracking-wide">{safeUsername}</span>
             </div>
             
-            {/* 🟢 პარამეტრების ღილაკი */}
             <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-stone-100 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
               <Settings size={15} className="md:w-4 md:h-4" />
             </button>
@@ -295,27 +339,39 @@ export default function App() {
         </header>
 
         <main className="flex-1 w-full max-w-[1340px] mx-auto p-4 md:p-6 lg:p-8 flex items-center justify-center relative">
-          {error && (
-            <div className="fixed top-20 md:top-24 right-4 md:right-6 z-50 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black text-rose-400 shadow-2xl backdrop-blur-md animate-in fade-in duration-200">
-              {error}
-            </div>
-          )}
-
+          
           {!inRoom ? (
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6 items-start">
+              
+              {/* 🟢 მარცხენა სვეტი: პროფილი, მეგობრები, ისტორია */}
               <div className="space-y-4 md:space-y-5">
+                
+                {/* 🟢 პროფილი & XP */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
-                  <div className="flex items-center gap-3 md:gap-4 border-b border-white/5 pb-3 md:pb-4">
-                    <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-lg md:text-xl ${activeTheme.accent} border border-white/10 shadow-xl`}>
-                      {initial}
-                    </div>
-                    <div className="truncate">
-                      <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate">{safeUsername}</h2>
-                      <p className="text-[10px] md:text-xs text-stone-400 font-medium mt-0.5 truncate">{user?.email || profileData?.email || 'Premium Player'}</p>
+                  <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-lg md:text-xl ${activeTheme.accent} border border-white/10 shadow-xl relative`}>
+                        {initial}
+                        <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
+                      </div>
+                      <div className="truncate">
+                        <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate">{safeUsername}</h2>
+                        <p className="text-[10px] md:text-xs text-stone-400 font-medium mt-0.5 truncate">{user?.email || 'Premium Player'}</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1.5 md:space-y-2">
+                    <div className="flex justify-between text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+                      <span>XP პროგრესი</span>
+                      <span>{currentXp} / {targetXp}</span>
+                    </div>
+                    <div className="w-full h-2 md:h-2.5 bg-stone-950 rounded-full overflow-hidden border border-white/5">
+                      <div className={`h-full ${activeTheme.accentBg} rounded-full transition-all duration-1000`} style={{ width: `${xpPercentage}%` }}></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 pt-2">
                     <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner">
                       <p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">მატჩი</p>
                       <p className="text-sm md:text-base font-mono font-black text-stone-200 mt-0.5 md:mt-1">{profileData?.stats?.gamesPlayed || 0}</p>
@@ -331,57 +387,124 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* 🟢 სოციალური ბლოკი (მეგობრები & ონლაინ) */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                  <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
-                    <History size={14} className={activeTheme.accent} /> პირადი ისტორია
-                  </h4>
-                  <div className="space-y-1.5 md:space-y-2 max-h-[140px] md:max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                    {profileData?.gameHistory && profileData.gameHistory.length > 0 ? (
-                      profileData.gameHistory.map((h, i) => (
-                        <div key={i} className="flex items-center justify-between p-2.5 md:p-3 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:bg-stone-900/60">
-                          <span className="font-bold text-stone-300">Room #{h.roomId}</span>
-                          <span className={`px-2 md:px-2.5 py-0.5 rounded-md text-[9px] md:text-[10px] font-bold tracking-wide border ${h.isWinner ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-stone-800/50 text-stone-500 border-stone-700/40'}`}>
-                            {h.isWinner ? 'WIN' : 'LOSS'}
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-[10px] md:text-xs text-stone-600 font-medium italic py-3 md:py-4 text-center">ისტორია ცარიელია</p>
+                  
+                  <div className="flex border-b border-white/5 gap-4">
+                    <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 ${theme==='lavender'?'border-violet-400':'border-amber-400'}` : 'text-stone-500'}`}>
+                      ონლაინ ({onlineUser.length})
+                    </button>
+                    <button onClick={() => setSocialTab('friends')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'friends' ? `${activeTheme.accent} border-b-2 ${theme==='lavender'?'border-violet-400':'border-amber-400'}` : 'text-stone-500'}`}>
+                      მეგობრები
+                    </button>
+                    <button onClick={() => setSocialTab('requests')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all relative ${socialTab === 'requests' ? `${activeTheme.accent} border-b-2 ${theme==='lavender'?'border-violet-400':'border-amber-400'}` : 'text-stone-500'}`}>
+                      თხოვნები
+                      {profileData?.friendRequests?.length > 0 && (
+                        <span className="absolute -top-1 -right-3 w-3.5 h-3.5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[8px] font-black">{profileData.friendRequests.length}</span>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5 md:space-y-2 max-h-[140px] md:max-h-[160px] overflow-y-auto pr-1 custom-scrollbar pt-2">
+                    
+                    {socialTab === 'online' && (
+                      onlineUser.filter(u => u.username !== safeUsername).length > 0 ? (
+                        onlineUser.filter(u => u.username !== safeUsername).map(u => (
+                          <div key={u.socketId} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-${theme==='lavender'?'violet':'amber'}-500/20`}>
+                            <div className="flex items-center gap-2 md:gap-2.5">
+                              <div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${activeTheme.accentBg} rounded-full animate-pulse`} />
+                              <span className="font-bold text-stone-200 truncate max-w-[70px] md:max-w-[90px]">{u.username}</span>
+                            </div>
+                            <div className="flex gap-1.5">
+                              {!profileData?.friends?.includes(u.username) && (
+                                <button onClick={() => handleSendFriendReq(u.username)} title="მეგობრებში დამატება" className={`p-1.5 md:p-2 rounded-lg bg-stone-800 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95`}><UserPlus size={12} /></button>
+                              )}
+                              <button onClick={() => handleSendInvite(u.socketId)} title="თამაშში მოწვევა" className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}>
+                                <Swords size={12} /> მოწვევა
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">სხვა მოთამაშეები არ არიან</p>
                     )}
+
+                    {socialTab === 'friends' && (
+                      profileData?.friends?.length > 0 ? (
+                        profileData.friends.map((friendName, i) => {
+                          const isOnline = onlineUser.find(u => u.username === friendName);
+                          return (
+                            <div key={i} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-${theme==='lavender'?'violet':'amber'}-500/20`}>
+                              <div className="flex items-center gap-2 md:gap-2.5">
+                                <div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${isOnline ? activeTheme.accentBg : 'bg-stone-600'} rounded-full`} />
+                                <span className={`font-bold truncate max-w-[80px] ${isOnline ? 'text-stone-200' : 'text-stone-500'}`}>{friendName}</span>
+                              </div>
+                              {isOnline && (
+                                <button onClick={() => handleSendInvite(isOnline.socketId)} className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}>
+                                  <Swords size={12} /> მოწვევა
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })
+                      ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">მეგობრების სია ცარიელია</p>
+                    )}
+
+                    {socialTab === 'requests' && (
+                      profileData?.friendRequests?.length > 0 ? (
+                        profileData.friendRequests.map((reqName, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs">
+                            <span className="font-bold text-stone-200 truncate">{reqName}</span>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => handleAcceptFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95"><CheckCircle2 size={12} /></button>
+                              <button onClick={() => handleRejectFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-md active:scale-95"><XCircle size={12} /></button>
+                            </div>
+                          </div>
+                        ))
+                      ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">ახალი თხოვნები არ გაქვს</p>
+                    )}
+
                   </div>
                 </div>
 
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                  <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
-                    <div className="flex items-center gap-2">
-                      <User size={14} className={activeTheme.accent} /> ონლაინ მოთამაშეები
-                    </div>
-                    <span className={`${theme==='lavender'?'bg-violet-500/20 text-violet-400':'bg-amber-500/20 text-amber-400'} px-2 py-0.5 rounded font-mono font-black text-[9px] md:text-[10px]`}>
-                      {onlineUser.length}
-                    </span>
-                  </h4>
-                  <div className="space-y-1.5 md:space-y-2 max-h-[140px] md:max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                    {onlineUser.filter(u => u.username !== safeUsername).length > 0 ? (
-                      onlineUser.filter(u => u.username !== safeUsername).map(u => (
-                        <div key={u.socketId} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-${theme==='lavender'?'violet':'amber'}-500/20`}>
-                          <div className="flex items-center gap-2 md:gap-2.5">
-                            <div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${activeTheme.accentBg} rounded-full animate-pulse`} />
-                            <span className="font-bold text-stone-200 truncate max-w-[80px] md:max-w-[100px]">{u.username}</span>
-                          </div>
-                          <button onClick={() => handleSendInvite(u.socketId)} className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1 md:gap-1.5 shadow-md`}>
-                            <UserPlus size={10} className="md:w-3 md:h-3" /> მოწვევა
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-[10px] md:text-xs text-stone-600 font-medium italic py-3 md:py-4 text-center">სხვა მოთამაშეები არ არიან</p>
-                    )}
-                  </div>
-                </div>
               </div>
 
+              {/* 🟢 მარჯვენა სვეტი: მისიები, მაგიდები, რეიტინგი */}
               <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full">
                 
+                {/* 🟢 ყოველდღიური მისიები (Daily Quests) */}
+                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 relative overflow-hidden`}>
+                   <div className={`absolute top-0 right-0 w-32 h-32 ${activeTheme.accentBg} opacity-5 blur-[60px] rounded-full`}></div>
+                   <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest mb-3">
+                    <Target size={14} className={activeTheme.accent} /> ყოველდღიური მისიები
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {profileData?.dailyQuests?.map((q, idx) => {
+                      const isDone = q.isCompleted;
+                      const p = Math.min((q.progress / q.target) * 100, 100);
+                      return (
+                        <div key={idx} className={`p-3 md:p-4 rounded-xl border transition-all ${isDone ? 'bg-stone-950/80 border-stone-800' : `bg-stone-950/40 border-white/5 hover:border-${theme==='lavender'?'violet':'amber'}-500/30`} flex flex-col justify-between`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <p className={`text-[10px] md:text-xs font-bold ${isDone ? 'text-stone-500 line-through' : 'text-stone-200'} leading-snug`}>{q.title}</p>
+                            {isDone ? <CheckCircle2 size={14} className="text-stone-600 shrink-0 ml-2"/> : <Gift size={14} className={`${activeTheme.accent} shrink-0 ml-2`}/>}
+                          </div>
+                          
+                          <div className="space-y-1 mt-auto">
+                            <div className="flex justify-between text-[8px] md:text-[9px] font-black uppercase tracking-wider text-stone-500">
+                              <span>{q.progress} / {q.target}</span>
+                              <span className={isDone ? 'text-stone-600' : activeTheme.accent}>+{q.xpReward} XP</span>
+                            </div>
+                            <div className="w-full h-1.5 md:h-2 bg-stone-900 rounded-full overflow-hidden">
+                              <div className={`h-full ${isDone ? 'bg-stone-700' : activeTheme.accentBg} transition-all duration-1000`} style={{ width: `${p}%` }}></div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* 🟢 მაგიდის შექმნა */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <button onClick={() => setIsCreateModalOpen(true)} className={`p-4 md:p-5 bg-gradient-to-r ${theme==='lavender' ? 'from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 border-indigo-800' : 'from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 border-amber-800'} rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-lg active:scale-95 text-stone-950 border-b-2 group`}>
                     <div>
@@ -397,60 +520,60 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 md:space-y-4 shadow-2xl transition-colors duration-700`}>
-                  <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
-                    <Medal size={14} className={activeTheme.accent} /> გლობალური რეიტინგი (TOP 10)
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 md:gap-2 max-h-[180px] md:max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
-                    {leaderboard.map((player, idx) => (
-                      <div key={player._id} className={`flex items-center justify-between p-2 md:p-3 rounded-xl border transition-all ${player.username === safeUsername ? `${theme==='lavender'?'bg-violet-500/10 border-violet-500/40':'bg-amber-500/10 border-amber-500/40'}` : 'bg-stone-950/40 border-white/5 hover:border-white/10'} text-[10px] md:text-xs`}>
-                        <div className="flex items-center gap-2 md:gap-3 truncate">
-                          <span className={`w-5 h-5 md:w-6 md:h-6 flex items-center justify-center font-mono font-black text-[9px] md:text-[11px] rounded-md md:rounded-lg ${idx === 0 ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30' : idx === 1 ? 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/30' : idx === 2 ? 'bg-amber-700/10 text-amber-500 border border-amber-700/30' : 'bg-stone-800/80 text-stone-500 border border-white/5'}`}>{idx + 1}</span>
-                          <span className={`font-bold truncate tracking-wide ${player.username === safeUsername ? activeTheme.accent : 'text-stone-200'}`}>{player.username}</span>
-                        </div>
-                        <div className="text-stone-400 font-bold font-mono text-[9px] md:text-[11px] bg-stone-950/60 px-1.5 md:px-2 py-0.5 rounded-md border border-white/5 shrink-0">{player.stats?.gamesWon || 0} მოგება</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 md:space-y-4 shadow-2xl transition-colors duration-700`}>
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3">
-                    <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest"><LayoutGrid size={14} className={activeTheme.accent} /> აქტიური მაგიდები</h3>
-                    <button onClick={() => socket.emit('getLiveRooms')} className={`p-1.5 md:p-2 hover:bg-stone-800 ${activeTheme.accent} rounded-lg md:rounded-xl transition-all bg-stone-950/60 border border-white/5 shadow-md active:scale-95`}><RefreshCw size={12} className="md:w-[13px] md:h-[13px]" /></button>
-                  </div>
-                  {liveRooms.length === 0 ? (
-                    <div className="text-center py-8 md:py-10 border border-dashed border-white/10 rounded-xl bg-stone-950/30">
-                      <p className="text-[10px] md:text-xs text-stone-500 font-bold tracking-wide">ამ წამს ღია მაგიდები არ არის. შექმენი შენი!</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 md:gap-3 max-h-[250px] md:max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
-                      {liveRooms.map((room) => (
-                        <div key={room.id} className={`p-3 md:p-4 rounded-xl bg-stone-950/40 border border-white/5 flex flex-col justify-between space-y-2.5 md:space-y-3 shadow-md hover:border-${theme==='lavender'?'violet':'amber'}-500/30 transition-all duration-300`}>
-                          <div className="flex justify-between items-center">
-                            <div className={`flex items-center gap-1 md:gap-1.5 text-[10px] md:text-xs font-black ${activeTheme.accent} font-mono`}>
-                              #{room.id} {room.isPrivate ? <Lock size={10} className="md:w-3 md:h-3 text-stone-500" /> : <Unlock size={10} className="md:w-3 md:h-3 text-stone-500" />}
-                            </div>
-                            <div className="flex gap-1.5 md:gap-2 items-center">
-                              {room.isRanked ? (
-                                <span className={`text-[8px] md:text-[9px] font-bold ${theme==='lavender'?'text-violet-400 bg-violet-500/10 border-violet-500/20':'text-amber-400 bg-amber-500/10 border-amber-500/20'} px-1.5 md:px-2 py-0.5 rounded border`}>RANKED</span>
-                              ) : (
-                                <span className="text-[8px] md:text-[9px] font-bold text-stone-400 bg-stone-500/10 px-1.5 md:px-2 py-0.5 rounded border border-stone-500/20">CASUAL</span>
-                              )}
-                              <span className="text-[9px] md:text-[10px] font-bold text-stone-300 bg-stone-900/80 px-1.5 md:px-2 py-0.5 rounded-md border border-white/5 font-mono shadow-inner">👥 {room.currentPlayers} / {room.maxPlayers}</span>
+                {/* 🟢 რეიტინგი და ოთახები */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
+                    <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
+                      <Medal size={14} className={activeTheme.accent} /> ტოპ 10
+                    </h3>
+                    <div className="space-y-1.5 md:space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {leaderboard.map((player, idx) => (
+                        <div key={player._id} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl border transition-all ${player.username === safeUsername ? `${theme==='lavender'?'bg-violet-500/10 border-violet-500/40':'bg-amber-500/10 border-amber-500/40'}` : 'bg-stone-950/40 border-white/5 hover:border-white/10'} text-[10px] md:text-xs`}>
+                          <div className="flex items-center gap-2 md:gap-3 truncate">
+                            <span className={`w-5 h-5 md:w-6 md:h-6 flex items-center justify-center font-mono font-black text-[9px] md:text-[11px] rounded-md ${idx === 0 ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30' : idx === 1 ? 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/30' : idx === 2 ? 'bg-amber-700/10 text-amber-500 border border-amber-700/30' : 'bg-stone-800/80 text-stone-500 border border-white/5'}`}>{idx + 1}</span>
+                            <div className="flex flex-col truncate">
+                               <span className={`font-bold truncate tracking-wide ${player.username === safeUsername ? activeTheme.accent : 'text-stone-200'}`}>{player.username}</span>
+                               <span className="text-[8px] font-black text-stone-500">LVL {player.level || 1}</span>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                            <span className="text-[9px] md:text-[11px] font-bold text-stone-400">🎯 {room.targetScore} ქულა</span>
-                            <button onClick={() => handleRoomClickFromList(room)} className={`px-3 md:px-4 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[11px] font-black transition-all active:scale-95 ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300 hover:bg-stone-700' : `bg-gradient-to-r ${theme==='lavender'?'from-violet-600 to-indigo-500':'from-amber-600 to-amber-500'} text-stone-950 shadow-md`}`}>
-                              {room.isPrivate ? 'პაროლით' : 'შეერთება'}
-                            </button>
-                          </div>
+                          <div className="text-stone-400 font-bold font-mono text-[9px] md:text-[11px] bg-stone-950/60 px-1.5 md:px-2 py-0.5 rounded-md border border-white/5 shrink-0">{player.stats?.gamesWon || 0} მოგება</div>
                         </div>
                       ))}
                     </div>
-                  )}
+                  </div>
+
+                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
+                    <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3">
+                      <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest"><LayoutGrid size={14} className={activeTheme.accent} /> მაგიდები</h3>
+                      <button onClick={() => socket.emit('getLiveRooms')} className={`p-1.5 md:p-2 hover:bg-stone-800 ${activeTheme.accent} rounded-lg bg-stone-950/60 border border-white/5 shadow-md active:scale-95`}><RefreshCw size={12}/></button>
+                    </div>
+                    {liveRooms.length === 0 ? (
+                      <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-stone-950/30">
+                        <p className="text-[10px] md:text-xs text-stone-500 font-bold">მაგიდები არ არის</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                        {liveRooms.map((room) => (
+                          <div key={room.id} className="p-2.5 md:p-3 rounded-xl bg-stone-950/40 border border-white/5 flex justify-between items-center shadow-md">
+                            <div className="flex flex-col gap-1">
+                               <div className={`flex items-center gap-1.5 text-[10px] md:text-xs font-black ${activeTheme.accent} font-mono`}>
+                                 #{room.id} {room.isPrivate && <Lock size={10} className="text-stone-500" />}
+                               </div>
+                               <div className="flex gap-1.5 items-center">
+                                 {room.isRanked ? <span className={`text-[8px] font-bold ${theme==='lavender'?'text-violet-400 bg-violet-500/10 border-violet-500/20':'text-amber-400 bg-amber-500/10 border-amber-500/20'} px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}
+                                 <span className="text-[8px] font-bold text-stone-400 bg-stone-900/80 px-1 py-0.5 rounded border border-white/5 font-mono">👥 {room.currentPlayers}/{room.maxPlayers}</span>
+                               </div>
+                            </div>
+                            <button onClick={() => handleRoomClickFromList(room)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all active:scale-95 ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300' : `bg-gradient-to-r ${theme==='lavender'?'from-violet-600 to-indigo-500':'from-amber-600 to-amber-500'} text-stone-950 shadow-md`}`}>
+                              შესვლა
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
+
               </div>
             </div>
           ) : (
@@ -516,7 +639,6 @@ export default function App() {
             </div>
           )}
 
-          {/* 🟢 შექმნის მოდალი */}
           {isCreateModalOpen && (
             <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
               <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-2xl font-sans relative`}>
