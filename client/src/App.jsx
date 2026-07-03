@@ -197,21 +197,21 @@ export default function App() {
   const winRate = profileData?.stats?.gamesPlayed > 0 ? Math.round((profileData.stats.gamesWon / profileData.stats.gamesPlayed) * 100) : 0;
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
 
-  // 🟢 თემების დინამიური სტილები
+// 🟢 თემების მინიმალისტური, მუქი გრადიენტული სტილები
   const themeStyles = {
     wood: {
-      bg: "url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2560&auto=format&fit=crop')", // მუქი ხის ტექსტურა
-      overlay: "bg-stone-950/85",
+      bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", // მუქი მინიმალისტური ხისფერი 
+      overlay: "bg-black/10",
       accent: "text-amber-500",
       accentBg: "bg-amber-500",
-      card: "bg-stone-900/60",
+      card: "bg-stone-900/80",
     },
     lavender: {
-      bg: "url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2560&auto=format&fit=crop')", // პასტელური/ლავანდისფერი გრადიენტი
-      overlay: "bg-indigo-950/80",
+      bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)", // ძალიან ბნელი და რბილი ლავანდისფერი
+      overlay: "bg-black/10",
       accent: "text-violet-400",
       accentBg: "bg-violet-500",
-      card: "bg-indigo-900/50",
+      card: "bg-indigo-950/70",
     }
   };
   const activeTheme = themeStyles[theme];
