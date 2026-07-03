@@ -157,7 +157,6 @@ io.on('connection', (socket) => {
     socket.join(roomId);
 
     if (!rooms[roomId]) {
-      // 🟢 თუ ბოტები დაშვებულია, ოთახი იძულებით ხდება ურეიტინგო (Casual)
       const finalIsRanked = allowBots ? false : (isRanked !== undefined ? isRanked : true);
 
       rooms[roomId] = {
@@ -193,7 +192,8 @@ io.on('connection', (socket) => {
       return socket.emit('error', 'ეს ოთახი უკვე სავსეა მოთამაშეებით!');
     }
 
-    room.players.push({ id: socket.id, name: playerName, cards: [], captured: [], totalScore: 0, isBot: false });
+    // 🟢 ემატება achievementsEarned (ამ რაუნდის მიღწევების დასაგროვებლად)
+    room.players.push({ id: socket.id, name: playerName, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
     io.to(roomId).emit('roomUpdated', room);
     broadcastActiveRooms();
   });
@@ -205,7 +205,6 @@ io.on('connection', (socket) => {
     if (!room || room.gameStarted) return;
     if (room.players[0] && room.players[0].id !== socket.id) return;
     room.targetScore = targetScore; room.maxPlayers = maxPlayers; room.allowBots = allowBots;
-    // 🟢 თუ განახლებისას ბოტი ჩართო, ოთახი კარგავს რეიტინგს
     if (allowBots) room.isRanked = false;
     
     if (room.players.length > maxPlayers) room.players = room.players.slice(0, maxPlayers);
@@ -242,24 +241,23 @@ io.on('connection', (socket) => {
     if (room.allowBots) {
       const currentRealCount = room.players.length;
       for (let i = currentRealCount; i < room.maxPlayers; i++) {
-        room.players.push({ id: `bot_${Math.random().toString(36).substr(2, 5)}`, name: `რობოტი ${i}`, cards: [], captured: [], totalScore: 0, isBot: true });
+        room.players.push({ id: `bot_${Math.random().toString(36).substr(2, 5)}`, name: `რობოტი ${i}`, cards: [], captured: [], totalScore: 0, isBot: true, achievementsEarned: [] });
       }
     }
     
     room.deck = createDeck(); 
     room.tableCards = [];
 
-    // 🟢 ვალეტი არ დაიდება მაგიდაზე პირველი დარიგებისას
     while (room.tableCards.length < 4) {
       let card = room.deck.shift();
       if (card.rank === 'J') {
-        room.deck.push(card); // თუ ვალეტია, ვაბრუნებთ კალოდის ბოლოში
+        room.deck.push(card);
       } else {
         room.tableCards.push(card);
       }
     }
 
-    room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; });
+    room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; p.achievementsEarned = []; });
     room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.lastCapturerId = null; 
     startTurnTimer(room, roomId);
     io.to(roomId).emit('gameStarted', room);
@@ -276,6 +274,13 @@ io.on('connection', (socket) => {
     if (cardsFromTable && cardsFromTable.length > 0) {
       if (!isValidCapture(cardFromHand, cardsFromTable)) return socket.emit('error', 'არასწორი მოჭრა!');
       if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
+      
+      // 🟢 მიღწევა: მესუფთავე (Sweep)
+      if (room.isRanked && cardFromHand.rank === 'J' && cardsFromTable.length >= 4) {
+        if (!player.achievementsEarned) player.achievementsEarned = [];
+        if (!player.achievementsEarned.includes('🧹 მესუფთავე')) player.achievementsEarned.push('🧹 მესუფთავე');
+      }
+
       player.cards = player.cards.filter(c => !(c.rank === cardFromHand.rank && c.suit === cardFromHand.suit));
       player.captured.push(cardFromHand, ...cardsFromTable);
       const tableIds = cardsFromTable.map(c => `${c.rank}${c.suit}`);
@@ -305,13 +310,12 @@ io.on('connection', (socket) => {
       if (room.roundSummary.matchWinner) {
         room.gameStarted = false; room.deck = []; room.tableCards = []; room.roundSummary = null; room.lastAction = null; room.readyForNextRound = []; room.lastCapturerId = null;
         room.players = room.players.filter(p => !p.isBot);
-        room.players.forEach(p => { p.cards = []; p.captured = []; p.totalScore = 0; });
+        room.players.forEach(p => { p.cards = []; p.captured = []; p.totalScore = 0; p.achievementsEarned = []; });
         io.to(roomId).emit('roomUpdated', room);
         broadcastActiveRooms();
       } else {
         room.deck = createDeck(); 
         room.tableCards = [];
-        // 🟢 შემდეგი რაუნდის პირველ დარიგებაზეც ვბლოკავთ ვალეტს მაგიდაზე
         while (room.tableCards.length < 4) {
           let card = room.deck.shift();
           if (card.rank === 'J') {
@@ -364,6 +368,16 @@ function handleTurnTransition(room, roomId) {
       }
 
       calculateRoundScores(room);
+      
+      // 🟢 მიღწევა: აგურის ოსტატი
+      if (room.isRanked && room.roundSummary.diamond10Winner !== "-") {
+         const d10Player = room.players.find(p => p.name === room.roundSummary.diamond10Winner);
+         if (d10Player && !d10Player.isBot) {
+             if (!d10Player.achievementsEarned) d10Player.achievementsEarned = [];
+             if (!d10Player.achievementsEarned.includes('💎 აგურის ოსტატი')) d10Player.achievementsEarned.push('💎 აგურის ოსტატი');
+         }
+      }
+
       room.readyForNextRound = [];
       room.players.forEach(p => { if (p.isBot) room.readyForNextRound.push(p.id); });
 
@@ -378,7 +392,21 @@ function handleTurnTransition(room, roomId) {
             if (p.isBot) return; 
             try {
               const isWinner = p.name === room.roundSummary.matchWinner;
-              await User.findOneAndUpdate({ username: p.name }, { $inc: { 'stats.gamesPlayed': 1, 'stats.gamesWon': isWinner ? 1 : 0, 'stats.totalPointsScored': p.totalScore }, $push: { gameHistory: { $each: [{ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() }], $position: 0 } } });
+              let matchAchievements = p.achievementsEarned || [];
+              
+              // 🟢 მიღწევა: ჩემპიონი
+              if (isWinner && !matchAchievements.includes('🥇 ჩემპიონი')) {
+                  matchAchievements.push('🥇 ჩემპიონი');
+              }
+
+              await User.findOneAndUpdate(
+                { username: p.name }, 
+                { 
+                  $inc: { 'stats.gamesPlayed': 1, 'stats.gamesWon': isWinner ? 1 : 0, 'stats.totalPointsScored': p.totalScore }, 
+                  $push: { gameHistory: { $each: [{ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() }], $position: 0 } },
+                  $addToSet: { achievements: { $each: matchAchievements } } // 🟢 ვამატებთ უნიკალურ ბეჯებს
+                }
+              );
             } catch (dbErr) { console.error(dbErr.message); }
           });
         }

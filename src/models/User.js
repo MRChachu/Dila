@@ -1,26 +1,39 @@
 const mongoose = require('mongoose');
 
-const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true, trim: true },
-  email: { type: String, required: true, unique: true, trim: true, lowercase: true }, // ✨ იმეილი რეგისტრაციისთვის
-  password: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-  
-  // 📊 გლობალური სტატისტიკა
+const userSchema = new mongoose.Schema({
+  username: { 
+    type: String, 
+    required: true, 
+    unique: true,
+    trim: true
+  },
+  email: { 
+    type: String, 
+    required: false,
+    trim: true
+  },
+  password: { 
+    type: String, 
+    required: true 
+  },
   stats: {
     gamesPlayed: { type: Number, default: 0 },
     gamesWon: { type: Number, default: 0 },
     totalPointsScored: { type: Number, default: 0 }
   },
-  
-  // 📜 მატჩების ისტორიის მასივი
-  gameHistory: [{
-    roomId: String,
-    targetScore: Number,
-    myFinalScore: Number,
-    isWinner: Boolean,
-    playedAt: { type: Date, default: Date.now }
-  }]
-});
+  gameHistory: [
+    {
+      roomId: { type: String },
+      targetScore: { type: Number },
+      myFinalScore: { type: Number },
+      isWinner: { type: Boolean },
+      playedAt: { type: Date, default: Date.now }
+    }
+  ],
+  // 🟢 აქ დაემატა მიღწევების (ბეჯების) მასივი
+  achievements: [
+    { type: String }
+  ]
+}, { timestamps: true });
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model('User', userSchema);
