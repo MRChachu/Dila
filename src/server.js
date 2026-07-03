@@ -70,7 +70,8 @@ io.on('connection', (socket) => {
         maxPlayers: r.maxPlayers,
         targetScore: r.targetScore,
         allowBots: r.allowBots,
-        isPrivate: r.isPrivate
+        isPrivate: r.isPrivate,
+        isRanked: r.isRanked // 🟢 ვატანთ რეიტინგის სტატუსს
       }));
     io.emit('activeRoomsList', activeLobbies); 
   };
@@ -91,9 +92,10 @@ io.on('connection', (socket) => {
           }
         } else {
           const p = room.players[playerIndex];
-          if (!p.isBot) {
+          
+          // 🟢 წაგებას ვწერთ მხოლოდ რეიტინგულ თამაშში!
+          if (!p.isBot && room.isRanked) {
             const originalName = p.name; 
-            
             User.findOneAndUpdate(
               { username: originalName },
               {
@@ -106,23 +108,23 @@ io.on('connection', (socket) => {
                 }
               }
             ).catch(err => console.error("წაგების ჩაწერის შეცდომა:", err));
+          }
 
-            p.isBot = true;
-            p.name = `${originalName} (გავიდა 🤖)`;
-            p.id = `bot_${Math.random().toString(36).substr(2, 5)}`; 
+          p.isBot = true;
+          p.name = `${p.name} (გავიდა 🤖)`;
+          p.id = `bot_${Math.random().toString(36).substr(2, 5)}`; 
 
-            const realPlayers = room.players.filter(pl => !pl.isBot);
-            if (realPlayers.length === 0) {
-              delete rooms[roomId];
+          const realPlayers = room.players.filter(pl => !pl.isBot);
+          if (realPlayers.length === 0) {
+            delete rooms[roomId];
+            if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
+          } else {
+            io.to(roomId).emit('gameUpdated', room);
+            if (room.currentTurn === playerIndex) {
               if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
-            } else {
+              room.turnExpiresAt = null;
               io.to(roomId).emit('gameUpdated', room);
-              if (room.currentTurn === playerIndex) {
-                if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
-                room.turnExpiresAt = null;
-                io.to(roomId).emit('gameUpdated', room);
-                checkAndTriggerBotTurn(room, roomId);
-              }
+              checkAndTriggerBotTurn(room, roomId);
             }
           }
         }
@@ -132,32 +134,37 @@ io.on('connection', (socket) => {
   };
 
   socket.on('reconnectUser', ({ oldSocketId, playerName, roomId }) => {
-    if (disconnectTimeouts[oldSocketId]) {
+    if (oldSocketId && disconnectTimeouts[oldSocketId]) {
       clearTimeout(disconnectTimeouts[oldSocketId]); 
       delete disconnectTimeouts[oldSocketId];
-      
-      const room = rooms[roomId];
-      if (room) {
-        const player = room.players.find(p => p.name === playerName);
-        if (player) {
-          player.id = socket.id; 
-          socket.join(roomId);
-          io.to(roomId).emit('gameUpdated', room);
-        }
+    }
+    
+    const room = rooms[roomId];
+    if (room) {
+      const player = room.players.find(p => p.name === playerName);
+      if (player) {
+        player.id = socket.id; 
+        socket.join(roomId);
+        io.to(roomId).emit('gameUpdated', room);
+      } else {
+        socket.emit('roomNotFound'); // მოთამაშე ოთახში აღარ არის
       }
+    } else {
+      socket.emit('roomNotFound'); // 🟢 ოთახი აღარ არსებობს, ვეუბნებით კლიენტს
     }
   });
 
-  socket.on('joinRoom', ({ roomId, playerName, roomPassword, maxPlayers, targetScore, allowBots }) => {
+  socket.on('joinRoom', ({ roomId, playerName, roomPassword, maxPlayers, targetScore, allowBots, isRanked }) => {
     if (!roomId || !playerName) return socket.emit('error', 'მონაცემები არასრულია');
     socket.join(roomId);
 
     if (!rooms[roomId]) {
       rooms[roomId] = {
         id: roomId, players: [], gameStarted: false, deck: [], tableCards: [],
-        currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null, // 🟢 დამატებულია ლოგიკისთვის
+        currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null,
         targetScore: targetScore || 11, maxPlayers: maxPlayers || 4,
         allowBots: allowBots !== undefined ? allowBots : true,
+        isRanked: isRanked !== undefined ? isRanked : true, // 🟢 რეიტინგული ნაგულისხმევად
         readyForNextRound: [], turnExpiresAt: null,
         password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword 
       };
@@ -236,7 +243,7 @@ io.on('connection', (socket) => {
     }
     room.deck = createDeck(); room.tableCards = room.deck.splice(0, 4);
     room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; });
-    room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.lastCapturerId = null; // 🟢 გასუფთავება
+    room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.lastCapturerId = null; 
     startTurnTimer(room, roomId);
     io.to(roomId).emit('gameStarted', room);
     broadcastActiveRooms(); 
@@ -257,7 +264,7 @@ io.on('connection', (socket) => {
       const tableIds = cardsFromTable.map(c => `${c.rank}${c.suit}`);
       room.tableCards = room.tableCards.filter(c => !tableIds.includes(`${c.rank}${c.suit}`));
       room.lastAction = { playerName: player.name, cardFromHand, cardsFromTable, type: 'CAPTURE' };
-      room.lastCapturerId = player.id; // 🟢 ვიმახსოვრებთ ვინ მოჭრა ბოლოს
+      room.lastCapturerId = player.id; 
     } else {
       if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
       player.cards = player.cards.filter(c => !(c.rank === cardFromHand.rank && c.suit === cardFromHand.suit));
@@ -287,7 +294,7 @@ io.on('connection', (socket) => {
       } else {
         room.deck = createDeck(); room.tableCards = room.deck.splice(0, 4);
         room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; });
-        room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.readyForNextRound = []; room.lastCapturerId = null; // 🟢 გასუფთავება
+        room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.readyForNextRound = []; room.lastCapturerId = null; 
         startTurnTimer(room, roomId);
         io.to(roomId).emit('gameStarted', room);
         checkAndTriggerBotTurn(room, roomId);
@@ -321,12 +328,11 @@ function handleTurnTransition(room, roomId) {
       io.to(roomId).emit('gameUpdated', room);
       checkAndTriggerBotTurn(room, roomId);
     } else {
-      // 🟢 ბოლო წამღების ლოგიკა კალოდის ამოწურვისას
       if (room.tableCards.length > 0 && room.lastCapturerId) {
         const lastCapturer = room.players.find(p => p.id === room.lastCapturerId);
         if (lastCapturer) {
           lastCapturer.captured.push(...room.tableCards);
-          room.tableCards = []; // მაგიდა სუფთავდება
+          room.tableCards = []; 
         }
       }
 
@@ -339,13 +345,17 @@ function handleTurnTransition(room, roomId) {
 
       if (maxScore >= room.targetScore) {
         room.roundSummary.matchWinner = winnerPlayer.name; 
-        room.players.forEach(async (p) => {
-          if (p.isBot) return; 
-          try {
-            const isWinner = p.name === room.roundSummary.matchWinner;
-            await User.findOneAndUpdate({ username: p.name }, { $inc: { 'stats.gamesPlayed': 1, 'stats.gamesWon': isWinner ? 1 : 0, 'stats.totalPointsScored': p.totalScore }, $push: { gameHistory: { $each: [{ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() }], $position: 0 } } });
-          } catch (dbErr) { console.error(dbErr.message); }
-        });
+        
+        // 🟢 მონაცემებს ვაახლებთ მხოლოდ რეიტინგულ თამაშში!
+        if (room.isRanked) {
+          room.players.forEach(async (p) => {
+            if (p.isBot) return; 
+            try {
+              const isWinner = p.name === room.roundSummary.matchWinner;
+              await User.findOneAndUpdate({ username: p.name }, { $inc: { 'stats.gamesPlayed': 1, 'stats.gamesWon': isWinner ? 1 : 0, 'stats.totalPointsScored': p.totalScore }, $push: { gameHistory: { $each: [{ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() }], $position: 0 } } });
+            } catch (dbErr) { console.error(dbErr.message); }
+          });
+        }
       }
       io.to(roomId).emit('gameUpdated', room); 
       return;
@@ -392,7 +402,7 @@ function checkAndTriggerBotTurn(room, roomId) {
         activePlayer.captured.push(botMove.cardFromHand, ...botMove.cardsFromTable);
         const tableIds = botMove.cardsFromTable.map(c => `${c.rank}${c.suit}`);
         room.tableCards = room.tableCards.filter(c => !tableIds.includes(`${c.rank}${c.suit}`));
-        room.lastCapturerId = activePlayer.id; // 🟢 ბოტების შემთხვევაშიც ვიმახსოვრებთ ვინ მოჭრა
+        room.lastCapturerId = activePlayer.id; 
       } else { room.tableCards.push(botMove.cardFromHand); }
       handleTurnTransition(room, roomId);
     }, 1500); 
