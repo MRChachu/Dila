@@ -56,6 +56,68 @@ io.on('connection', (socket) => {
     broadcastOnlineUsers();
   });
 
+  // 🟢 1. მეგობრების სისტემის ლოგიკა
+  socket.on('sendFriendRequest', async ({ targetUsername }) => {
+    try {
+      const senderName = onlineUsersMap[socket.id];
+      if(!senderName || senderName === targetUsername) return;
+      
+      const targetUser = await User.findOne({ username: targetUsername });
+      if(targetUser) {
+        if (!targetUser.friends.includes(senderName) && !targetUser.friendRequests.includes(senderName)) {
+          targetUser.friendRequests.push(senderName);
+          await targetUser.save();
+          
+          const targetSocketEntry = Object.entries(onlineUsersMap).find(([id, name]) => name === targetUsername);
+          if(targetSocketEntry) {
+            io.to(targetSocketEntry[0]).emit('friendRequestReceived', senderName);
+          }
+          socket.emit('successMessage', 'მეგობრობის თხოვნა გაიგზავნა!');
+        } else {
+           socket.emit('error', 'თხოვნა უკვე გაგზავნილია ან უკვე მეგობრები ხართ.');
+        }
+      } else {
+         socket.emit('error', 'მოთამაშე ვერ მოიძებნა.');
+      }
+    } catch(err) { console.error(err); }
+  });
+
+  socket.on('acceptFriendRequest', async ({ senderUsername }) => {
+    try {
+      const myName = onlineUsersMap[socket.id];
+      const me = await User.findOne({ username: myName });
+      const sender = await User.findOne({ username: senderUsername });
+
+      if(me && sender) {
+        me.friendRequests = me.friendRequests.filter(u => u !== senderUsername);
+        if(!me.friends.includes(senderUsername)) me.friends.push(senderUsername);
+        if(!sender.friends.includes(myName)) sender.friends.push(myName);
+        
+        await me.save();
+        await sender.save();
+        
+        socket.emit('friendListUpdated');
+        const senderSocketEntry = Object.entries(onlineUsersMap).find(([id, name]) => name === senderUsername);
+        if(senderSocketEntry) {
+          io.to(senderSocketEntry[0]).emit('friendListUpdated');
+          io.to(senderSocketEntry[0]).emit('successMessage', `${myName}-მ დაგიმატა მეგობრებში!`);
+        }
+      }
+    } catch(err) { console.error(err); }
+  });
+
+  socket.on('rejectFriendRequest', async ({ senderUsername }) => {
+    try {
+      const myName = onlineUsersMap[socket.id];
+      const me = await User.findOne({ username: myName });
+      if(me) {
+        me.friendRequests = me.friendRequests.filter(u => u !== senderUsername);
+        await me.save();
+        socket.emit('friendListUpdated');
+      }
+    } catch(err) { console.error(err); }
+  });
+
   socket.on('sendInvite', ({ targetSocketId, roomId, password, fromName }) => {
     io.to(targetSocketId).emit('receiveInvite', { roomId, password, fromName });
   });
@@ -192,7 +254,6 @@ io.on('connection', (socket) => {
       return socket.emit('error', 'ეს ოთახი უკვე სავსეა მოთამაშეებით!');
     }
 
-    // 🟢 ემატება achievementsEarned (ამ რაუნდის მიღწევების დასაგროვებლად)
     room.players.push({ id: socket.id, name: playerName, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
     io.to(roomId).emit('roomUpdated', room);
     broadcastActiveRooms();
@@ -275,7 +336,6 @@ io.on('connection', (socket) => {
       if (!isValidCapture(cardFromHand, cardsFromTable)) return socket.emit('error', 'არასწორი მოჭრა!');
       if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
       
-      // 🟢 მიღწევა: მესუფთავე (Sweep)
       if (room.isRanked && cardFromHand.rank === 'J' && cardsFromTable.length >= 4) {
         if (!player.achievementsEarned) player.achievementsEarned = [];
         if (!player.achievementsEarned.includes('🧹 მესუფთავე')) player.achievementsEarned.push('🧹 მესუფთავე');
@@ -369,7 +429,6 @@ function handleTurnTransition(room, roomId) {
 
       calculateRoundScores(room);
       
-      // 🟢 მიღწევა: აგურის ოსტატი
       if (room.isRanked && room.roundSummary.diamond10Winner !== "-") {
          const d10Player = room.players.find(p => p.name === room.roundSummary.diamond10Winner);
          if (d10Player && !d10Player.isBot) {
@@ -394,19 +453,64 @@ function handleTurnTransition(room, roomId) {
               const isWinner = p.name === room.roundSummary.matchWinner;
               let matchAchievements = p.achievementsEarned || [];
               
-              // 🟢 მიღწევა: ჩემპიონი
               if (isWinner && !matchAchievements.includes('🥇 ჩემპიონი')) {
                   matchAchievements.push('🥇 ჩემპიონი');
               }
 
-              await User.findOneAndUpdate(
-                { username: p.name }, 
-                { 
-                  $inc: { 'stats.gamesPlayed': 1, 'stats.gamesWon': isWinner ? 1 : 0, 'stats.totalPointsScored': p.totalScore }, 
-                  $push: { gameHistory: { $each: [{ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() }], $position: 0 } },
-                  $addToSet: { achievements: { $each: matchAchievements } } // 🟢 ვამატებთ უნიკალურ ბეჯებს
-                }
-              );
+              // 🟢 2. მისიების და XP ლოგიკა მატჩის დასრულებისას
+              const dbUser = await User.findOne({ username: p.name });
+              if (dbUser) {
+                  const now = new Date();
+                  
+                  // თუ არ აქვს მისიები, ან 24 საათი გავიდა, ვურიგებთ ახალს
+                  if (!dbUser.dailyQuests || dbUser.dailyQuests.length === 0 || (dbUser.lastQuestGeneration && (now - new Date(dbUser.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
+                      dbUser.dailyQuests = [
+                          { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, progress: 0, xpReward: 300, isCompleted: false },
+                          { questId: 'win_ranked', title: 'მოიგე 1 რეიტინგული მატჩი', target: 1, progress: 0, xpReward: 500, isCompleted: false },
+                          { questId: 'get_10_diamond', title: 'მოიპოვე 10 აგური მატჩში', target: 1, progress: 0, xpReward: 400, isCompleted: false }
+                      ];
+                      dbUser.lastQuestGeneration = now;
+                  }
+
+                  let earnedXp = 100; // მატჩის თამაშისთვის 100 XP
+                  if (isWinner) earnedXp += 200; // მოგებისთვის დამატებით 200 XP
+
+                  // მისიების შემოწმება და პროგრესის გაზრდა
+                  dbUser.dailyQuests.forEach(q => {
+                      if (q.isCompleted) return;
+                      
+                      if (q.questId === 'play_ranked') q.progress += 1;
+                      if (q.questId === 'win_ranked' && isWinner) q.progress += 1;
+                      if (q.questId === 'get_10_diamond' && matchAchievements.includes('💎 აგურის ოსტატი')) q.progress += 1;
+
+                      if (q.progress >= q.target) {
+                          q.progress = q.target;
+                          q.isCompleted = true;
+                          earnedXp += q.xpReward; // მისიის შესრულების ჯილდო
+                      }
+                  });
+
+                  dbUser.xp += earnedXp;
+                  
+                  // 🟢 3. Level Up სისტემა (ყოველი 1000 XP-ზე Level-ის მომატება)
+                  let levelThreshold = dbUser.level * 1000;
+                  while (dbUser.xp >= levelThreshold) {
+                      dbUser.xp -= levelThreshold;
+                      dbUser.level += 1;
+                      levelThreshold = dbUser.level * 1000;
+                  }
+
+                  dbUser.stats.gamesPlayed += 1;
+                  if (isWinner) dbUser.stats.gamesWon += 1;
+                  dbUser.stats.totalPointsScored += p.totalScore;
+                  dbUser.gameHistory.unshift({ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() });
+                  
+                  matchAchievements.forEach(ach => {
+                      if (!dbUser.achievements.includes(ach)) dbUser.achievements.push(ach);
+                  });
+
+                  await dbUser.save();
+              }
             } catch (dbErr) { console.error(dbErr.message); }
           });
         }
