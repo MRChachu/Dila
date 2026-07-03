@@ -23,7 +23,7 @@ function getCardValue(rank) {
   return parseInt(rank);
 }
 
-// 3. წაყვანის (მოჭრის) სისწორის შემოწმება (ნამდვილი ფურთის წესები)
+// 3. წაყვანის (მოჭრის) სისწორის შემოწმება (მკაცრი 11-ის წესი)
 function isValidCapture(cardFromHand, cardsFromTable) {
   if (cardsFromTable.length === 0) return false;
   
@@ -43,34 +43,11 @@ function isValidCapture(cardFromHand, cardsFromTable) {
     return cardsFromTable.every(c => c.rank === cardFromHand.rank);
   }
 
-  // 🟢 ციფრებისა და ტუზის ლოგიკა: ხელის კარტი + მაგიდის კარტები უნდა იყოს 11
-  const targetSum = 11 - handValue; // რისი მოგროვებაც გვჭირდება მაგიდიდან
-  let values = cardsFromTable.map(c => getCardValue(c.rank));
+  // 🟢 მკაცრი 11-ის წესი: არჩეული კარტების ჯამი ზუსტად უნდა შეადგენდეს სამიზნეს (მხოლოდ 1 კომბინაცია)
+  const targetSum = 11 - handValue;
+  const tableSum = cardsFromTable.reduce((sum, c) => sum + getCardValue(c.rank), 0);
   
-  // არცერთი შერჩეული კარტი არ უნდა იყოს ფიგურა ან სამიზნეზე დიდი
-  if (values.some(v => v === 0 || v > targetSum)) return false;
-
-  // ვამოწმებთ, იყოფა თუ არა მონიშნული კარტები ზუსტ "11-ის შემავსებელ" ჯგუფებად
-  function canPartition(arr) {
-    if (arr.length === 0) return true;
-    
-    function findSubset(currentSubsetIndices, currentSum, index) {
-      if (currentSum === targetSum) {
-        let remaining = arr.filter((_, i) => !currentSubsetIndices.includes(i));
-        return canPartition(remaining);
-      }
-      if (currentSum > targetSum || index >= arr.length) return false;
-
-      if (findSubset([...currentSubsetIndices, index], currentSum + arr[index], index + 1)) {
-        return true;
-      }
-      return findSubset(currentSubsetIndices, currentSum, index + 1);
-    }
-
-    return findSubset([], 0, 0);
-  }
-
-  return canPartition(values);
+  return tableSum === targetSum;
 }
 
 // 4. რაუნდის ბოლოს 4-ვე ქულის განაწილება
@@ -129,7 +106,7 @@ function calculateRoundScores(room) {
   };
 }
 
-// 5. ბოტის გაძლიერებული ლოგიკა (Smart AI - ითვლის 11-ებს)
+// 5. ბოტის გაძლიერებული ლოგიკა (ირჩევს საუკეთესო 1 კომბინაციას)
 function getBestMove(botCards, tableCards) {
   if (!botCards || botCards.length === 0) return null;
 
@@ -146,7 +123,7 @@ function getBestMove(botCards, tableCards) {
         if (kCount >= 2) cardsToTake.push(...tableCards.filter(c => c.rank === 'K'));
         
         if (cardsToTake.length > 0) {
-            let score = evaluateCapture(cardsToTake) + 1000; // ვალეტით ბევრის წაღება პრიორიტეტია
+            let score = evaluateCapture(cardsToTake) + 1000;
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = { type: 'CAPTURE', cardFromHand: handCard, cardsFromTable: cardsToTake };
@@ -168,14 +145,14 @@ function getBestMove(botCards, tableCards) {
         continue;
      }
 
-     // რიცხვები: პოულობს მაგიდაზე 11-ის შემავსებელ ყველა შესაძლო კომბინაციას
+     // რიცხვები: პოულობს მხოლოდ 1 ჯგუფს, რომლის ჯამიც ზუსტად უდრის სამიზნეს (მაგ: 11 - 2 = 9)
      const handValue = getCardValue(handCard.rank);
      const target = 11 - handValue;
      
-     // ამოვარჩევთ მხოლოდ ციფრებს და ტუზებს მაგიდიდან
      let validTableCards = tableCards.filter(c => getCardValue(c.rank) > 0);
-     let validCaptures = findAllValidPartitions(validTableCards, target);
+     let validCaptures = findAllValidSingleCaptures(validTableCards, target);
      
+     // ირჩევს საუკეთესო 1 კომბინაციას (მაგ: 4+5 აჯობებს ცალკე 9-იანს, რადგან 2 კარტია)
      for (let capture of validCaptures) {
          let score = evaluateCapture(capture);
          if (score > bestScore) {
@@ -187,7 +164,7 @@ function getBestMove(botCards, tableCards) {
 
   if (bestMove) return bestMove;
 
-  // თუ ვერაფერს ჭრის, ინახავს ძვირფას კარტებს (10♦, 2♣, J, A) და აგდებს უსარგებლოს
+  // თუ ვერაფერს ჭრის, ინახავს ძვირფას კარტებს და აგდებს უსარგებლოს
   let discardCard = botCards[0];
   let minVal = 9999;
   for (let c of botCards) {
@@ -208,7 +185,7 @@ function evaluateCapture(cards) {
         if (c.rank === '10' && c.suit === '♦') score += 1000;
         else if (c.rank === '2' && c.suit === '♣') score += 500;
         else if (c.suit === '♣') score += 50;
-        else score += 10; // თითო კარტს 10 ქულას ანიჭებს, რომ ბევრი კარტი წაიღოს
+        else score += 10; // ანიჭებს 10 ქულას თითო კარტს, ამიტომ 4+5 ურჩევნია 9-ს
     }
     return score;
 }
@@ -223,40 +200,27 @@ function evaluateDiscardValue(c) {
     return getCardValue(c.rank); 
 }
 
-// პოულობს ყველა შესაძლო კომბინაციას 11-ის შესავსებად
-function findAllValidPartitions(availableCards, targetSum) {
+// პოულობს ყველა კომბინაციას, რომლის ჯამიც ზუსტად უდრის targetSum-ს (1 წაყვანა)
+function findAllValidSingleCaptures(availableCards, targetSum) {
     let results = [];
-    // ლიმიტი, რომ სერვერი არ გადაიტვირთოს (მაგიდაზე ძაან ბევრი კარტის შემთხვევაში)
-    let n = Math.min(availableCards.length, 12); 
+    let n = availableCards.length; 
     
+    // ვპოულობთ ყველა შესაძლო კომბინაციას (subset)
     for (let i = 1; i < (1 << n); i++) {
         let subset = [];
+        let sum = 0;
         for (let j = 0; j < n; j++) {
             if (i & (1 << j)) {
                 subset.push(availableCards[j]);
+                sum += getCardValue(availableCards[j].rank);
             }
         }
-        if (subset.reduce((a,b) => a + getCardValue(b.rank), 0) % targetSum === 0) {
-             if (canPartitionArray(subset.map(c => getCardValue(c.rank)), targetSum)) {
-                 results.push(subset);
-             }
+        // თუ ჯამი ზუსტად ემთხვევა მოთხოვნილს (მაგ: ზუსტად 9)
+        if (sum === targetSum) {
+             results.push(subset);
         }
     }
     return results;
-}
-
-function canPartitionArray(arr, target) {
-    if (arr.length === 0) return true;
-    function findSubset(currentSubsetIndices, currentSum, index) {
-        if (currentSum === target) {
-            let remaining = arr.filter((_, i) => !currentSubsetIndices.includes(i));
-            return canPartitionArray(remaining, target);
-        }
-        if (currentSum > target || index >= arr.length) return false;
-        if (findSubset([...currentSubsetIndices, index], currentSum + arr[index], index + 1)) return true;
-        return findSubset(currentSubsetIndices, currentSum, index + 1);
-    }
-    return findSubset([], 0, 0);
 }
 
 module.exports = { createDeck, isValidCapture, calculateRoundScores, getBestMove };
