@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Palette, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Palette, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -14,17 +14,31 @@ const AVAILABLE_BADGES = [
   { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' }
 ];
 
-// 🟢 ავატარების მაღაზიის სია
-const AVATAR_SHOP = [
-  { id: '😎', price: 0, name: 'სტანდარტული' },
-  { id: '🥷', price: 100, name: 'ნინძა' },
-  { id: '🧙‍♂️', price: 250, name: 'ჯადოქარი' },
-  { id: '🧛', price: 400, name: 'ვამპირი' },
-  { id: '👑', price: 800, name: 'მეფე' },
-  { id: '🦁', price: 1200, name: 'ლომი' },
-  { id: '🦅', price: 1500, name: 'არწივი' },
-  { id: '🐉', price: 2500, name: 'დრაკონი' }
-];
+// 🟢 მაღაზიის კატალოგი
+const SHOP_ITEMS = {
+  avatars: [
+    { id: '😎', price: 0, name: 'სტანდარტული' },
+    { id: '🥷', price: 100, name: 'ნინძა' },
+    { id: '🧙‍♂️', price: 250, name: 'ჯადოქარი' },
+    { id: '🧛', price: 400, name: 'ვამპირი' },
+    { id: '👑', price: 800, name: 'მეფე' },
+    { id: '🦁', price: 1200, name: 'ლომი' },
+    { id: '🦅', price: 1500, name: 'არწივი' },
+    { id: '🐉', price: 2500, name: 'დრაკონი' }
+  ],
+  tables: [
+    { id: 'wood', price: 0, name: 'Classic Wood' },
+    { id: 'lavender', price: 0, name: 'Soft Lavender' },
+    { id: 'casino', price: 1500, name: 'Dark Casino (Clean)' },
+    { id: 'midnight', price: 2500, name: 'Midnight Gold' }
+  ],
+  cards: [
+    { id: 'classic', price: 0, name: 'Classic Blue' },
+    { id: 'crimson', price: 500, name: 'Deep Crimson' },
+    { id: 'gold', price: 1000, name: 'Solid Gold' },
+    { id: 'obsidian', price: 2000, name: 'Obsidian Black' }
+  ]
+};
 
 export default function App() {
   const [userState, setUserState] = useState(() => {
@@ -49,10 +63,12 @@ export default function App() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isShopOpen, setIsShopOpen] = useState(false); // 🟢 შოპის მოდალი
   
-  const [theme, setTheme] = useState(() => localStorage.getItem('phurti_theme') || 'wood');
+  // 🟢 მოდალები
+  const [isShopOpen, setIsShopOpen] = useState(false); 
+  const [shopTab, setShopTab] = useState('avatars');
+  const [inspectProfile, setInspectProfile] = useState(null); // სხვა მოთამაშის პროფილი
+  
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem('phurti_music') === 'true');
   const audioRef = useRef(typeof Audio !== 'undefined' ? new Audio('/bg-music.mp3') : null);
 
@@ -80,10 +96,6 @@ export default function App() {
     }
   }, [isMusicPlaying, userState]);
 
-  useEffect(() => {
-    localStorage.setItem('phurti_theme', theme);
-  }, [theme]);
-
   const fetchDashboardData = async (username) => {
     try {
       const resProf = await fetch(`https://purti.onrender.com/api/auth/profile/${username}`);
@@ -103,20 +115,15 @@ export default function App() {
     socket.on('updateOnlineUsers', (users) => setOnlineUser(users));
     socket.on('receiveInvite', (data) => setInviteAlert(data));
 
-    socket.on('successMessage', (msg) => {
-      setToastMsg(msg);
-    });
+    socket.on('successMessage', (msg) => setToastMsg(msg));
     socket.on('friendRequestReceived', (sender) => {
       setToastMsg(`${sender}-მ მეგობრობის თხოვნა გამოგიგზავნა!`);
       fetchDashboardData(safeUsername);
     });
-    socket.on('friendListUpdated', () => {
-      fetchDashboardData(safeUsername);
-    });
-
-    socket.on('roomNotFound', () => {
-      handleResetToLobby();
-    });
+    socket.on('friendListUpdated', () => fetchDashboardData(safeUsername));
+    
+    socket.on('receiveUserProfile', (data) => setInspectProfile(data)); // 🟢 პროფილის მიღება
+    socket.on('roomNotFound', () => handleResetToLobby());
 
     const handleOnConnect = () => {
       const oldSocketId = localStorage.getItem('phurti_socketId');
@@ -146,7 +153,7 @@ export default function App() {
 
     return () => {
       socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('activeRoomsList'); 
-      socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('roomNotFound');
+      socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound');
       socket.off('connect', handleOnConnect);
     };
   }, []);
@@ -216,9 +223,10 @@ export default function App() {
   const handleAcceptFriend = (senderName) => socket.emit('acceptFriendRequest', { senderUsername: senderName });
   const handleRejectFriend = (senderName) => socket.emit('rejectFriendRequest', { senderUsername: senderName });
 
-  // 🟢 მაღაზიის ფუნქციები
-  const handleBuyAvatar = (avatarId, price) => socket.emit('buyAvatar', { avatarId, price });
-  const handleEquipAvatar = (avatarId) => socket.emit('equipAvatar', { avatarId });
+  const handleBuyItem = (type, itemId, price) => socket.emit('buyItem', { type, itemId, price });
+  const handleEquipItem = (type, itemId) => socket.emit('equipItem', { type, itemId });
+
+  const handleInspectPlayer = (username) => socket.emit('getUserProfile', { username });
 
   const handleRoomClickFromList = (room) => {
     if (room.isPrivate) { setSelectedRoomIdForJoin(room.id); setIsPasswordModalOpen(true); } else { handleJoinSpecificRoom(room.id); }
@@ -244,34 +252,40 @@ export default function App() {
   
   const myCoins = profileData?.coins || 0;
   const myAvatar = profileData?.avatar || '😎';
+  
   const unlockedAvatars = profileData?.unlockedAvatars || ['😎'];
+  const unlockedTables = profileData?.unlockedTableThemes || ['wood', 'lavender'];
+  const unlockedCards = profileData?.unlockedCardBacks || ['classic'];
 
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
   const myAchievements = profileData?.achievements || [];
 
+  // 🟢 თემები სუფთა და კომფორტული დიზაინით
   const themeStyles = {
     wood: {
       bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", 
-      overlay: "bg-black/10",
-      accent: "text-amber-500",
-      accentBg: "bg-amber-500",
-      card: "bg-stone-900/80",
+      overlay: "bg-black/10", accent: "text-amber-500", accentBg: "bg-amber-500", card: "bg-stone-900/80"
     },
     lavender: {
       bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)",
-      overlay: "bg-black/10",
-      accent: "text-violet-400",
-      accentBg: "bg-violet-500",
-      card: "bg-indigo-950/70",
+      overlay: "bg-black/10", accent: "text-violet-400", accentBg: "bg-violet-500", card: "bg-indigo-950/70"
+    },
+    casino: {
+      bg: "linear-gradient(135deg, #062615 0%, #020c06 100%)", // High contrast dark green
+      overlay: "bg-black/20", accent: "text-emerald-400", accentBg: "bg-emerald-500", card: "bg-stone-950/80"
+    },
+    midnight: {
+      bg: "linear-gradient(135deg, #0b1120 0%, #03050a 100%)", // High contrast midnight blue
+      overlay: "bg-black/10", accent: "text-yellow-500", accentBg: "bg-yellow-500", card: "bg-slate-900/70"
     }
   };
-  const activeTheme = themeStyles[theme];
+
+  // თუ ოთახშია, იყენებს Host-ის თემას, თუ არა - პირადს
+  const activeThemeName = (inRoom && roomData?.hostTheme) ? roomData.hostTheme : (profileData?.tableTheme || 'wood');
+  const activeTheme = themeStyles[activeThemeName] || themeStyles['wood'];
 
   return (
-    <div 
-      className={`relative flex min-h-screen flex-col font-sans antialiased transition-all duration-700`}
-      style={{ background: activeTheme.bg }}
-    >
+    <div className="relative flex min-h-screen flex-col font-sans antialiased transition-all duration-700" style={{ background: activeTheme.bg }}>
       <div className={`absolute inset-0 ${activeTheme.overlay} backdrop-blur-[4px] z-0 transition-colors duration-700`}></div>
 
       {error && (
@@ -281,92 +295,160 @@ export default function App() {
       )}
 
       {toastMsg && (
-        <div className={`fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 rounded-xl ${theme==='lavender'?'bg-violet-500/10 border-violet-500/20 text-violet-400':'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'} border px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black shadow-2xl backdrop-blur-md animate-in slide-in-from-top-10 duration-300 flex items-center gap-2`}>
+        <div className={`fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black shadow-2xl backdrop-blur-md animate-in slide-in-from-top-10 duration-300 flex items-center gap-2`}>
           <CheckCircle2 size={14} /> {toastMsg}
         </div>
       )}
 
       {inviteAlert && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className={`bg-stone-900 border border-${theme==='lavender'?'violet':'emerald'}-500/30 rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-[0_0_50px_rgba(0,0,0,0.3)] font-sans text-center relative overflow-hidden animate-in zoom-in duration-200`}>
-            <div className={`absolute top-0 left-0 w-full h-1 ${theme==='lavender'?'bg-violet-500':'bg-emerald-500'} animate-pulse`}></div>
-            <div className={`w-16 h-16 ${theme==='lavender'?'bg-violet-500/10 border-violet-500/20':'bg-emerald-500/10 border-emerald-500/20'} rounded-full flex items-center justify-center mx-auto border mb-2 shadow-lg`}>
-              <BellRing size={28} className={theme==='lavender'?'text-violet-400':'text-emerald-400'} />
+          <div className={`bg-stone-900 border border-emerald-500/30 rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-[0_0_50px_rgba(0,0,0,0.3)] font-sans text-center relative overflow-hidden animate-in zoom-in duration-200`}>
+            <div className={`absolute top-0 left-0 w-full h-1 bg-emerald-500 animate-pulse`}></div>
+            <div className={`w-16 h-16 bg-emerald-500/10 border-emerald-500/20 rounded-full flex items-center justify-center mx-auto border mb-2 shadow-lg`}>
+              <BellRing size={28} className="text-emerald-400" />
             </div>
             <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">ახალი გამოწვევა!</h3>
             <p className="text-sm font-bold text-stone-400">
-              <span className={`${theme==='lavender'?'text-violet-400':'text-emerald-400'} font-black`}>{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})
+              <span className="text-emerald-400 font-black">{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})
             </p>
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
               <button onClick={() => setInviteAlert(null)} className="py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md">უარყოფა</button>
-              <button onClick={() => { handleJoinSpecificRoom(inviteAlert.roomId, inviteAlert.password); setInviteAlert(null); }} className={`py-3 bg-gradient-to-r ${theme==='lavender'?'from-violet-600 to-violet-500 border-violet-800':'from-emerald-600 to-emerald-500 border-emerald-800'} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 border-b-2 shadow-lg`}>შესვლა 🎮</button>
+              <button onClick={() => { handleJoinSpecificRoom(inviteAlert.roomId, inviteAlert.password); setInviteAlert(null); }} className={`py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 border-emerald-800 text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 border-b-2 shadow-lg`}>შესვლა 🎮</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 🟢 მაღაზიის (Shop) მოდალი */}
+      {/* 🟢 პროფილის ინსპექტირება (Player Inspect Modal) */}
+      {inspectProfile && (
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={(e) => { if(e.target === e.currentTarget) setInspectProfile(null); }}>
+          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl font-sans relative animate-in zoom-in-95 duration-200`}>
+            <div className="flex flex-col items-center gap-3 mb-6">
+               <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center text-5xl border border-white/10 shadow-xl relative`}>
+                 {inspectProfile.avatar || '😎'}
+                 <div className={`absolute -bottom-3 w-8 h-8 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{inspectProfile.level || 1}</div>
+               </div>
+               <h2 className="text-xl font-black text-stone-100 tracking-wide mt-2">{inspectProfile.username}</h2>
+               <div className="flex gap-2">
+                 {!profileData?.friends?.includes(inspectProfile.username) && inspectProfile.username !== safeUsername && (
+                    <button onClick={() => { handleSendFriendReq(inspectProfile.username); setInspectProfile(null); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all flex items-center gap-1.5`}>
+                      <UserPlus size={12} /> დამატება
+                    </button>
+                 )}
+               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mb-6">
+              <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 text-center shadow-inner">
+                <p className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-1">მოგება</p>
+                <p className={`text-lg font-mono font-black ${activeTheme.accent}`}>{inspectProfile.stats?.gamesWon || 0}</p>
+              </div>
+              <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 text-center shadow-inner">
+                <p className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-1">Win Rate</p>
+                <p className="text-lg font-mono font-black text-emerald-400">
+                  {inspectProfile.stats?.gamesPlayed > 0 ? Math.round((inspectProfile.stats.gamesWon / inspectProfile.stats.gamesPlayed) * 100) : 0}%
+                </p>
+              </div>
+            </div>
+
+            <h4 className="text-[10px] font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2 uppercase tracking-widest mb-3">
+              <Award size={14} className={activeTheme.accent} /> მიღწევები
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {AVAILABLE_BADGES.map(b => {
+                 const hasIt = inspectProfile.achievements?.includes(b.id);
+                 return (
+                   <div key={b.id} className={`w-10 h-10 flex items-center justify-center rounded-xl border ${hasIt ? `bg-${theme==='lavender'?'violet':'amber'}-500/20 border-${theme==='lavender'?'violet':'amber'}-500/50 text-xl` : 'bg-stone-950/50 border-white/5 text-lg opacity-30 grayscale'}`} title={b.name}>
+                     {b.icon}
+                   </div>
+                 )
+              })}
+            </div>
+
+            <button onClick={() => setInspectProfile(null)} className="w-full py-3 mt-6 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner uppercase">დახურვა</button>
+          </div>
+        </div>
+      )}
+
+      {/* 🟢 განახლებული მაღაზიის მოდალი (ტაბებით) */}
       {isShopOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-lg w-full shadow-2xl font-sans relative flex flex-col max-h-[80vh]`}>
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-              <h3 className={`text-base md:text-lg font-black ${activeTheme.accent} uppercase tracking-wider flex items-center gap-2`}><ShoppingCart size={20}/> მაღაზია</h3>
-              <div className="flex items-center gap-2 bg-stone-950 px-3 py-1.5 rounded-lg border border-white/5">
+          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-5 md:p-6 max-w-xl w-full shadow-2xl font-sans relative flex flex-col max-h-[85vh]`}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4 mb-4">
+              <div className="flex gap-2 bg-stone-950/50 p-1 rounded-xl border border-white/5 overflow-x-auto custom-scrollbar">
+                <button onClick={() => setShopTab('avatars')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='avatars' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>ავატარები</button>
+                <button onClick={() => setShopTab('tables')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='tables' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>მაგიდები</button>
+                <button onClick={() => setShopTab('cards')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='cards' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>კარტები</button>
+              </div>
+              <div className="flex items-center gap-2 bg-stone-950 px-3 py-2 rounded-lg border border-white/5 shrink-0 w-fit">
                  <Coins size={16} className="text-yellow-500"/>
                  <span className="font-mono font-black text-stone-200">{myCoins}</span>
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                {AVATAR_SHOP.map(avatar => {
-                  const isUnlocked = unlockedAvatars.includes(avatar.id);
-                  const isEquipped = myAvatar === avatar.id;
-                  
-                  return (
-                    <div key={avatar.id} className={`p-4 rounded-2xl flex flex-col items-center justify-between gap-3 border transition-all ${isEquipped ? `bg-${theme==='lavender'?'violet':'amber'}-500/20 border-${theme==='lavender'?'violet':'amber'}-500` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
-                      <span className="text-4xl md:text-5xl drop-shadow-lg filter">{avatar.id}</span>
-                      <span className="text-[10px] font-bold text-stone-400">{avatar.name}</span>
-                      
-                      {isEquipped ? (
-                        <button disabled className="w-full py-1.5 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button>
-                      ) : isUnlocked ? (
-                        <button onClick={() => handleEquipAvatar(avatar.id)} className={`w-full py-1.5 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button>
-                      ) : (
-                        <button onClick={() => handleBuyAvatar(avatar.id, avatar.price)} className="w-full py-1.5 rounded-lg text-[9px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1">
-                          <Coins size={10} /> {avatar.price}
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[300px]">
+              
+              {shopTab === 'avatars' && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {SHOP_ITEMS.avatars.map(item => {
+                    const isUnlocked = unlockedAvatars.includes(item.id);
+                    const isEquipped = profileData?.avatar === item.id;
+                    return (
+                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col items-center justify-between gap-2 border transition-all ${isEquipped ? `bg-${theme==='lavender'?'violet':'amber'}-500/20 border-${theme==='lavender'?'violet':'amber'}-500` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
+                        <span className="text-3xl md:text-4xl drop-shadow-lg">{item.id}</span>
+                        <span className="text-[9px] font-bold text-stone-400 text-center leading-tight">{item.name}</span>
+                        {isEquipped ? <button disabled className="w-full py-1.5 rounded-lg text-[8px] font-black bg-stone-800 text-stone-500 uppercase mt-1">დაყენებულია</button> 
+                        : isUnlocked ? <button onClick={() => handleEquipItem('avatar', item.id)} className={`w-full py-1.5 rounded-lg text-[8px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase mt-1`}>დაყენება</button>
+                        : <button onClick={() => handleBuyItem('avatar', item.id, item.price)} className="w-full py-1.5 rounded-lg text-[9px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1 mt-1"><Coins size={10} /> {item.price}</button>}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
 
+              {shopTab === 'tables' && (
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
+                  {SHOP_ITEMS.tables.map(item => {
+                    const isUnlocked = unlockedTables.includes(item.id);
+                    const isEquipped = profileData?.tableTheme === item.id || (!profileData?.tableTheme && item.id === 'wood');
+                    return (
+                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between gap-3 border transition-all ${isEquipped ? `bg-${theme==='lavender'?'violet':'amber'}-500/20 border-${theme==='lavender'?'violet':'amber'}-500` : 'bg-stone-950/50 border-white/5'}`}>
+                        <div className="h-16 rounded-xl border border-white/10" style={{ background: themeStyles[item.id]?.bg || themeStyles.wood.bg }}></div>
+                        <span className="text-[10px] md:text-xs font-bold text-stone-200 text-center uppercase tracking-widest">{item.name}</span>
+                        {isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> 
+                        : isUnlocked ? <button onClick={() => handleEquipItem('table', item.id)} className={`w-full py-2 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button>
+                        : <button onClick={() => handleBuyItem('table', item.id, item.price)} className="w-full py-2 rounded-lg text-[10px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"><Coins size={12} /> {item.price}</button>}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {shopTab === 'cards' && (
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
+                  {SHOP_ITEMS.cards.map(item => {
+                    const isUnlocked = unlockedCards.includes(item.id);
+                    const isEquipped = profileData?.cardBack === item.id || (!profileData?.cardBack && item.id === 'classic');
+                    
+                    // კარტების ზურგების სტილები
+                    const cBg = item.id === 'classic' ? 'bg-blue-900' : item.id === 'crimson' ? 'bg-red-900' : item.id === 'gold' ? 'bg-yellow-600' : 'bg-stone-950';
+                    const cBorder = item.id === 'gold' ? 'border-yellow-400' : 'border-white/20';
+
+                    return (
+                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between items-center gap-3 border transition-all ${isEquipped ? `bg-${theme==='lavender'?'violet':'amber'}-500/20 border-${theme==='lavender'?'violet':'amber'}-500` : 'bg-stone-950/50 border-white/5'}`}>
+                        <div className={`w-12 h-16 rounded-md ${cBg} border-2 ${cBorder} shadow-lg flex items-center justify-center`}><Shield size={16} className={item.id==='gold'?'text-stone-900':'text-white/30'}/></div>
+                        <span className="text-[10px] md:text-xs font-bold text-stone-200 text-center uppercase tracking-widest">{item.name}</span>
+                        {isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> 
+                        : isUnlocked ? <button onClick={() => handleEquipItem('card', item.id)} className={`w-full py-2 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button>
+                        : <button onClick={() => handleBuyItem('card', item.id, item.price)} className="w-full py-2 rounded-lg text-[10px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"><Coins size={12} /> {item.price}</button>}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+            </div>
             <button onClick={() => setIsShopOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4 uppercase">დახურვა</button>
-          </div>
-        </div>
-      )}
-
-      {isSettingsOpen && (
-        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-xs w-full space-y-6 shadow-2xl font-sans relative`}>
-            <h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> პარამეტრები</h3>
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> ფონური მუსიკა</label>
-              <div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5">
-                <button onClick={() => setIsMusicPlaying(true)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${isMusicPlaying ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500'}`}>ჩართული</button>
-                <button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>გამორთული</button>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Palette size={14}/> თემა (დიზაინი)</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setTheme('wood')} className={`py-3 rounded-xl text-xs font-black border-2 transition-all ${theme === 'wood' ? 'border-amber-500 text-amber-500 bg-amber-500/10' : 'border-transparent bg-stone-950/50 text-stone-500 hover:bg-stone-900'}`}>Wood</button>
-                <button onClick={() => setTheme('lavender')} className={`py-3 rounded-xl text-xs font-black border-2 transition-all ${theme === 'lavender' ? 'border-violet-400 text-violet-400 bg-violet-500/10' : 'border-transparent bg-stone-950/50 text-stone-500 hover:bg-stone-900'}`}>Lavender</button>
-              </div>
-            </div>
-            <button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">დახურვა</button>
           </div>
         </div>
       )}
@@ -380,14 +462,14 @@ export default function App() {
             <span className={`text-sm md:text-lg font-black tracking-widest bg-gradient-to-r ${theme === 'lavender' ? 'from-violet-400 to-indigo-300' : 'from-amber-400 to-amber-200'} bg-clip-text text-transparent`}>PHURTI ARENA</span>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            {/* 🟢 შოპის ღილაკი */}
             <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
               <ShoppingCart size={15} /> <span className="hidden md:block text-[10px] font-black uppercase">მაღაზია</span>
             </button>
-            <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-stone-100 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
-              <Settings size={15} className="md:w-4 md:h-4" />
+            {/* 🟢 მუსიკის ჩართვის ღილაკი გამოტანილია პირდაპირ ჰედერში კომფორტისთვის */}
+            <button onClick={() => setIsMusicPlaying(!isMusicPlaying)} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md ${isMusicPlaying ? activeTheme.accent : 'text-stone-500'}`}>
+              <Music size={15} className="md:w-4 md:h-4" />
             </button>
-            <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:${activeTheme.accent} rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}>
+            <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-stone-100 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}>
               <LogOut size={15} className="md:w-4 md:h-4" />
             </button>
           </div>
@@ -397,19 +479,17 @@ export default function App() {
           
           {!inRoom ? (
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6 items-start">
-              
               <div className="space-y-4 md:space-y-5">
                 
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4">
-                    <div className="flex items-center gap-3 md:gap-4">
-                      {/* 🟢 აქ ჩაჯდა არჩეული ავატარი */}
+                    <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all" onClick={() => handleInspectPlayer(safeUsername)}>
                       <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-3xl md:text-4xl border border-white/10 shadow-xl relative`}>
                         {myAvatar}
                         <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
                       </div>
                       <div className="flex flex-col gap-0.5">
-                        <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate">{safeUsername}</h2>
+                        <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5">{safeUsername} <Eye size={12} className="text-stone-500"/></h2>
                         <div className="flex items-center gap-1.5 text-stone-400">
                            <Coins size={12} className="text-yellow-500"/> 
                            <span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span>
@@ -445,23 +525,6 @@ export default function App() {
                 </div>
 
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                  <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
-                    <Award size={14} className={activeTheme.accent} /> მიღწევები
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {AVAILABLE_BADGES.map((badge) => {
-                      const isUnlocked = myAchievements.includes(badge.id);
-                      return (
-                        <div key={badge.id} className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${isUnlocked ? `bg-${theme==='lavender'?'violet':'amber'}-500/10 border-${theme==='lavender'?'violet':'amber'}-500/30` : 'bg-stone-950/50 border-white/5 opacity-50 grayscale'}`}>
-                          <span className="text-xl md:text-2xl drop-shadow-md">{badge.icon}</span>
-                          <span className={`text-[9px] md:text-[10px] font-bold leading-tight ${isUnlocked ? 'text-stone-200' : 'text-stone-500'}`}>{badge.name}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
                   
                   <div className="flex border-b border-white/5 gap-4">
                     <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 ${theme==='lavender'?'border-violet-400':'border-amber-400'}` : 'text-stone-500'}`}>
@@ -478,15 +541,15 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="space-y-1.5 md:space-y-2 max-h-[140px] md:max-h-[160px] overflow-y-auto pr-1 custom-scrollbar pt-2">
+                  <div className="space-y-1.5 md:space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar pt-2">
                     
                     {socialTab === 'online' && (
                       onlineUser.filter(u => u.username !== safeUsername).length > 0 ? (
                         onlineUser.filter(u => u.username !== safeUsername).map(u => (
-                          <div key={u.socketId} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-${theme==='lavender'?'violet':'amber'}-500/20`}>
-                            <div className="flex items-center gap-2 md:gap-2.5">
+                          <div key={u.socketId} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-white/10`}>
+                            <div className="flex items-center gap-2 md:gap-2.5 cursor-pointer" onClick={() => handleInspectPlayer(u.username)}>
                               <div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${activeTheme.accentBg} rounded-full animate-pulse`} />
-                              <span className="font-bold text-stone-200 truncate max-w-[70px] md:max-w-[90px]">{u.username}</span>
+                              <span className="font-bold text-stone-200 truncate max-w-[70px] md:max-w-[90px] hover:underline">{u.username}</span>
                             </div>
                             <div className="flex gap-1.5">
                               {!profileData?.friends?.includes(u.username) && (
@@ -506,10 +569,10 @@ export default function App() {
                         profileData.friends.map((friendName, i) => {
                           const isOnline = onlineUser.find(u => u.username === friendName);
                           return (
-                            <div key={i} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-${theme==='lavender'?'violet':'amber'}-500/20`}>
-                              <div className="flex items-center gap-2 md:gap-2.5">
+                            <div key={i} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-white/10`}>
+                              <div className="flex items-center gap-2 md:gap-2.5 cursor-pointer" onClick={() => handleInspectPlayer(friendName)}>
                                 <div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${isOnline ? activeTheme.accentBg : 'bg-stone-600'} rounded-full`} />
-                                <span className={`font-bold truncate max-w-[80px] ${isOnline ? 'text-stone-200' : 'text-stone-500'}`}>{friendName}</span>
+                                <span className={`font-bold truncate max-w-[80px] hover:underline ${isOnline ? 'text-stone-200' : 'text-stone-500'}`}>{friendName}</span>
                               </div>
                               {isOnline && (
                                 <button onClick={() => handleSendInvite(isOnline.socketId)} className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}>
@@ -526,7 +589,7 @@ export default function App() {
                       profileData?.friendRequests?.length > 0 ? (
                         profileData.friendRequests.map((reqName, i) => (
                           <div key={i} className="flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs">
-                            <span className="font-bold text-stone-200 truncate">{reqName}</span>
+                            <span className="font-bold text-stone-200 truncate cursor-pointer hover:underline" onClick={() => handleInspectPlayer(reqName)}>{reqName}</span>
                             <div className="flex gap-1.5">
                               <button onClick={() => handleAcceptFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95"><CheckCircle2 size={12} /></button>
                               <button onClick={() => handleRejectFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-md active:scale-95"><XCircle size={12} /></button>
@@ -554,7 +617,7 @@ export default function App() {
                       const isDone = q.isCompleted;
                       const p = Math.min((q.progress / q.target) * 100, 100);
                       return (
-                        <div key={idx} className={`p-3 md:p-4 rounded-xl border transition-all ${isDone ? 'bg-stone-950/80 border-stone-800' : `bg-stone-950/40 border-white/5 hover:border-${theme==='lavender'?'violet':'amber'}-500/30`} flex flex-col justify-between`}>
+                        <div key={idx} className={`p-3 md:p-4 rounded-xl border transition-all ${isDone ? 'bg-stone-950/80 border-stone-800' : `bg-stone-950/40 border-white/5`} flex flex-col justify-between`}>
                           <div className="flex justify-between items-start mb-2">
                             <p className={`text-[10px] md:text-xs font-bold ${isDone ? 'text-stone-500 line-through' : 'text-stone-200'} leading-snug`}>{q.title}</p>
                             {isDone ? <CheckCircle2 size={14} className="text-stone-600 shrink-0 ml-2"/> : <Gift size={14} className={`${activeTheme.accent} shrink-0 ml-2`}/>}
@@ -576,16 +639,16 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                  <button onClick={() => setIsCreateModalOpen(true)} className={`p-4 md:p-5 bg-gradient-to-r ${theme==='lavender' ? 'from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 border-indigo-800' : 'from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 border-amber-800'} rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-lg active:scale-95 text-stone-950 border-b-2 group`}>
+                  <button onClick={() => setIsCreateModalOpen(true)} className={`p-4 md:p-5 bg-stone-100 hover:bg-stone-200 border-stone-300 text-stone-900 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-lg active:scale-95 border-b-4 group`}>
                     <div>
                       <h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><PlusCircle size={14} className="md:w-4 md:h-4"/> მაგიდის შექმნა</h4>
-                      <p className="text-[9px] md:text-xs text-stone-900/80 mt-1 font-bold">გახსენი ოთახი შენი წესებით</p>
+                      <p className="text-[9px] md:text-xs text-stone-500 mt-1 font-bold">შენი წესებით და შენი დიზაინით!</p>
                     </div>
-                    <Play size={18} className="md:w-5 md:h-5 text-stone-950 group-hover:translate-x-0.5 transition-transform" />
+                    <Play size={18} className="md:w-5 md:h-5 text-stone-900 group-hover:translate-x-0.5 transition-transform" />
                   </button>
 
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-3 md:p-4 flex gap-2 md:gap-2.5 items-center shadow-2xl transition-colors duration-700`}>
-                    <input type="text" placeholder="ოთახის ID..." value={roomId} onChange={(e) => setRoomId(e.target.value)} className={`flex-1 rounded-xl bg-stone-950/60 border border-white/5 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none transition-all placeholder-stone-600 shadow-inner focus:border-${theme==='lavender'?'violet':'amber'}-500/40`} />
+                    <input type="text" placeholder="ოთახის ID..." value={roomId} onChange={(e) => setRoomId(e.target.value)} className={`flex-1 rounded-xl bg-stone-950/60 border border-white/5 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none transition-all placeholder-stone-600 shadow-inner`} />
                     <button onClick={() => handleJoinSpecificRoom(roomId)} className={`px-4 md:px-5 py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/10 ${activeTheme.accent} rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md`}>შესვლა</button>
                   </div>
                 </div>
@@ -597,10 +660,10 @@ export default function App() {
                     </h3>
                     <div className="space-y-1.5 md:space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                       {leaderboard.map((player, idx) => (
-                        <div key={player._id} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl border transition-all ${player.username === safeUsername ? `${theme==='lavender'?'bg-violet-500/10 border-violet-500/40':'bg-amber-500/10 border-amber-500/40'}` : 'bg-stone-950/40 border-white/5 hover:border-white/10'} text-[10px] md:text-xs`}>
-                          <div className="flex items-center gap-2 md:gap-3 truncate">
+                        <div key={player._id} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl border transition-all ${player.username === safeUsername ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-40 border-current` : 'bg-stone-950/40 border-white/5 hover:border-white/10'} text-[10px] md:text-xs`}>
+                          <div className="flex items-center gap-2 md:gap-3 truncate cursor-pointer" onClick={() => handleInspectPlayer(player.username)}>
                             <span className={`w-5 h-5 md:w-6 md:h-6 flex items-center justify-center font-mono font-black text-[9px] md:text-[11px] rounded-md ${idx === 0 ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30' : idx === 1 ? 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/30' : idx === 2 ? 'bg-amber-700/10 text-amber-500 border border-amber-700/30' : 'bg-stone-800/80 text-stone-500 border border-white/5'}`}>{idx + 1}</span>
-                            <div className="flex flex-col truncate">
+                            <div className="flex flex-col truncate hover:underline">
                                <span className={`font-bold truncate tracking-wide ${player.username === safeUsername ? activeTheme.accent : 'text-stone-200'}`}>{player.username}</span>
                                <span className="text-[8px] font-black text-stone-500">LVL {player.level || 1}</span>
                             </div>
@@ -626,14 +689,14 @@ export default function App() {
                           <div key={room.id} className="p-2.5 md:p-3 rounded-xl bg-stone-950/40 border border-white/5 flex justify-between items-center shadow-md">
                             <div className="flex flex-col gap-1">
                                <div className={`flex items-center gap-1.5 text-[10px] md:text-xs font-black ${activeTheme.accent} font-mono`}>
-                                 #{room.id} {room.isPrivate && <Lock size={10} className="text-stone-500" />}
+                                 <span className="text-xs">{room.hostAvatar || '😎'}</span> #{room.id} {room.isPrivate && <Lock size={10} className="text-stone-500" />}
                                </div>
                                <div className="flex gap-1.5 items-center">
                                  {room.isRanked ? <span className={`text-[8px] font-bold ${theme==='lavender'?'text-violet-400 bg-violet-500/10 border-violet-500/20':'text-amber-400 bg-amber-500/10 border-amber-500/20'} px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}
                                  <span className="text-[8px] font-bold text-stone-400 bg-stone-900/80 px-1 py-0.5 rounded border border-white/5 font-mono">👥 {room.currentPlayers}/{room.maxPlayers}</span>
                                </div>
                             </div>
-                            <button onClick={() => handleRoomClickFromList(room)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all active:scale-95 ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300' : `bg-gradient-to-r ${theme==='lavender'?'from-violet-600 to-indigo-500':'from-amber-600 to-amber-500'} text-stone-950 shadow-md`}`}>
+                            <button onClick={() => handleRoomClickFromList(room)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all active:scale-95 ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300' : `bg-white text-stone-900 shadow-md`}`}>
                               შესვლა
                             </button>
                           </div>
@@ -652,25 +715,25 @@ export default function App() {
                   {!roomData.gameStarted ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto py-2 md:py-4">
                       <div className={`${activeTheme.card} backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-6 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
-                        <div className="border-b border-white/10 pb-3 md:pb-4">
+                        <div className="border-b border-white/10 pb-3 md:pb-4 flex justify-between items-center">
                           <h3 className={`text-lg md:text-xl font-black ${activeTheme.accent} font-mono`}>ROOM #{roomData.id}</h3>
-                          <p className="text-[10px] md:text-xs font-bold text-stone-400 mt-1">სათამაშო რიგი: {roomData.players?.length} / {roomData.maxPlayers}</p>
+                          <span className="text-[9px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400">{roomData.hostTheme || 'wood'} Theme</span>
                         </div>
                         <div className="space-y-1.5 md:space-y-2 max-h-[180px] md:max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
                           {roomData.players?.map((p, idx) => (
                             <div key={idx} className="flex items-center justify-between rounded-xl bg-stone-950/60 p-2.5 md:p-3.5 border border-white/5 shadow-inner">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 cursor-pointer hover:opacity-80" onClick={() => handleInspectPlayer(p.name)}>
                                 <span className="text-xl">{p.avatar || '😎'}</span>
                                 <span className="font-bold text-[10px] md:text-xs text-stone-200">{p.name} {p.id === socket.id && '(შენ)'}</span>
                               </div>
-                              <span className={`text-[8px] md:text-[10px] font-black px-2 md:px-2.5 py-0.5 md:py-1 rounded-md border ${idx === 0 ? `${theme==='lavender'?'bg-violet-500/10 text-violet-400 border-violet-500/20':'bg-amber-500/10 text-amber-400 border-amber-500/20'}` : 'bg-stone-900 text-stone-500 border-white/5'}`}>{idx === 0 ? 'HOST' : 'READY'}</span>
+                              <span className={`text-[8px] md:text-[10px] font-black px-2 md:px-2.5 py-0.5 md:py-1 rounded-md border ${idx === 0 ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current ${activeTheme.accent}` : 'bg-stone-900 text-stone-500 border-white/5'}`}>{idx === 0 ? 'HOST' : 'READY'}</span>
                             </div>
                           ))}
                         </div>
                         <div className="grid grid-cols-2 gap-2 md:gap-3 pt-3 md:pt-4 border-t border-white/10">
                           <button onClick={handleResetToLobby} className="py-2.5 md:py-3 bg-stone-800/80 hover:bg-stone-700 border border-white/10 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md">გამოსვლა ↩️</button>
                           {isHost && (
-                            <button onClick={() => socket.emit('startGame', { roomId: roomData.id })} className={`py-2.5 md:py-3 bg-gradient-to-r ${theme==='lavender'?'from-violet-600 to-indigo-500 border-indigo-800':'from-amber-600 to-amber-500 border-amber-800'} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 border-b-2 shadow-lg`}>დაწყება 🎮</button>
+                            <button onClick={() => socket.emit('startGame', { roomId: roomData.id })} className={`py-2.5 md:py-3 bg-white hover:bg-stone-200 text-stone-900 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 border-b-2 border-stone-300 shadow-lg`}>დაწყება 🎮</button>
                           )}
                         </div>
                       </div>
@@ -704,72 +767,10 @@ export default function App() {
                       </div>
                     </div>
                   ) : (
-                    <GameBoard room={roomData} socket={socket} onLeave={handleResetToLobby} theme={theme} activeTheme={activeTheme} />
+                    <GameBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} />
                   )}
                 </>
               )}
-            </div>
-          )}
-
-          {isCreateModalOpen && (
-            <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-              <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-2xl font-sans relative`}>
-                <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} border-b border-white/10 pb-2.5 md:pb-3 uppercase tracking-wider`}>ახალი მაგიდის კონფიგურაცია</h3>
-                
-                <div className="space-y-2 md:space-y-2.5">
-                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🏆 თამაშის ტიპი</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" disabled={mAllowBots} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots ? 'opacity-30 cursor-not-allowed' : ''}`}>რეიტინგული</button>
-                    <button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>გასართობი</button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 md:space-y-2.5">
-                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🤖 რობოტების დაშვება</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => { setMAllowBots(true); setMIsRanked(false); }} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mAllowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>ჩართული</button>
-                    <button type="button" onClick={() => setMAllowBots(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mAllowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>გამორთული</button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 md:space-y-2.5">
-                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">მიზნობრივი ქულა</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[11, 21].map(sc => (
-                      <button type="button" key={sc} onClick={() => setMTargetScore(sc)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mTargetScore === sc ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{sc} ქულამდე</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2 md:space-y-2.5">
-                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">მოთამაშეების ლიმიტი</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[2, 3, 4].map(num => (
-                      <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num} კაცი</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-1.5 md:space-y-2">
-                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">ოთახის პაროლი (საჯაროსთვის ცარიელი)</label>
-                  <input type="password" value={mRoomPassword} onChange={(e) => setMRoomPassword(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 focus:border-${theme==='lavender'?'violet':'amber'}-500/50 outline-none placeholder-stone-700 shadow-inner`} placeholder="••••••••" />
-                </div>
-                <div className="grid grid-cols-2 gap-2 md:gap-3 pt-2 md:pt-3 border-t border-white/5">
-                  <button type="button" onClick={() => setIsCreateModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">გაუქმება</button>
-                  <button type="submit" className={`py-2 md:py-2.5 bg-gradient-to-r ${theme==='lavender'?'from-violet-600 to-indigo-500 border-indigo-800':'from-amber-600 to-amber-500 border-amber-800'} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 border-b-2 shadow-lg`}>შექმნა</button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {isPasswordModalOpen && (
-            <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-              <div className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-5 max-w-xs w-full space-y-3 md:space-y-4 shadow-2xl font-sans`}>
-                <h3 className={`text-xs md:text-sm font-black ${activeTheme.accent} border-b border-white/10 pb-2 md:pb-2.5 uppercase tracking-wider`}>დაცული მაგიდა</h3>
-                <input type="password" placeholder="შეიყვანე პაროლი..." value={joinPasswordInput} onChange={(e) => setJoinPasswordInput(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 focus:border-${theme==='lavender'?'violet':'amber'}-500/50 outline-none shadow-inner`} />
-                <div className="grid grid-cols-2 gap-2 md:gap-3 pt-1">
-                  <button onClick={() => setIsPasswordModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">უკან</button>
-                  <button onClick={() => handleJoinSpecificRoom(selectedRoomIdForJoin, joinPasswordInput)} className={`py-2 md:py-2.5 bg-gradient-to-r ${theme==='lavender'?'from-violet-600 to-indigo-500 border-indigo-800':'from-amber-600 to-amber-500 border-amber-800'} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 border-b-2 shadow-lg`}>შესვლა</button>
-                </div>
-              </div>
             </div>
           )}
         </main>

@@ -38,10 +38,16 @@ const userSchema = new mongoose.Schema({
   friends: [{ type: String }],
   friendRequests: [{ type: String }],
 
-  // 🟢 მაღაზიის და ავატარების სისტემა
+  // 🟢 მაღაზიის და ინვენტარის სისტემა
   coins: { type: Number, default: 0 },
   avatar: { type: String, default: '😎' },
-  unlockedAvatars: { type: [String], default: ['😎'] }
+  unlockedAvatars: { type: [String], default: ['😎'] },
+  
+  tableTheme: { type: String, default: 'wood' },
+  unlockedTableThemes: { type: [String], default: ['wood', 'lavender'] },
+  
+  cardBack: { type: String, default: 'classic' },
+  unlockedCardBacks: { type: [String], default: ['classic'] }
 
 }, { timestamps: true });
 
