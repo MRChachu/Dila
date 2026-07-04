@@ -517,7 +517,7 @@ export default function App() {
                     </div>
                     <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner">
                       <p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">Win %</p>
-                      <p className="text-sm md:text-base font-mono font-black text-emerald-400 mt-0.5 md:mt-1">{winRate}%</p>
+                      <p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1`}>{winRate}%</p>
                     </div>
                   </div>
                 </div>
@@ -675,7 +675,7 @@ export default function App() {
                     </h3>
                     <div className="space-y-1.5 md:space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                       {leaderboard.map((player, idx) => (
-                        <div key={player._id} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl border transition-all ${player.username === safeUsername ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-40 border-current` : 'bg-stone-950/40 border-white/5 hover:border-white/10'} text-[10px] md:text-xs`}>
+                        <div key={player._id} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl border transition-all ${player.username === safeUsername ? 'bg-stone-800 border-stone-500 shadow-md' : 'bg-stone-950/40 border-white/5 hover:border-white/10'} text-[10px] md:text-xs`}>
                           <div className="flex items-center gap-2 md:gap-3 truncate cursor-pointer" onClick={() => handleInspectPlayer(player.username)}>
                             <span className={`w-5 h-5 md:w-6 md:h-6 flex items-center justify-center font-mono font-black text-[9px] md:text-[11px] rounded-md ${idx === 0 ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30' : idx === 1 ? 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/30' : idx === 2 ? 'bg-amber-700/10 text-amber-500 border border-amber-700/30' : 'bg-stone-800/80 text-stone-500 border border-white/5'}`}>{idx + 1}</span>
                             <div className="flex flex-col truncate hover:underline">
@@ -790,6 +790,71 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {/* 🟢 მაგიდის შექმნის მოდალი */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-2xl font-sans relative`}>
+            <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} border-b border-white/10 pb-2.5 md:pb-3 uppercase tracking-wider`}>ახალი მაგიდის კონფიგურაცია</h3>
+            
+            <div className="space-y-2 md:space-y-2.5">
+              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🏆 თამაშის ტიპი</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" disabled={mAllowBots} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots ? 'opacity-30 cursor-not-allowed' : ''}`}>რეიტინგული</button>
+                <button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>გასართობი</button>
+              </div>
+            </div>
+
+            <div className="space-y-2 md:space-y-2.5">
+              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🤖 რობოტების დაშვება</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => { setMAllowBots(true); setMIsRanked(false); }} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mAllowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>ჩართული</button>
+                <button type="button" onClick={() => setMAllowBots(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mAllowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>გამორთული</button>
+              </div>
+            </div>
+
+            <div className="space-y-2 md:space-y-2.5">
+              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">მიზნობრივი ქულა</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[11, 21].map(sc => (
+                  <button type="button" key={sc} onClick={() => setMTargetScore(sc)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mTargetScore === sc ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{sc} ქულამდე</button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2 md:space-y-2.5">
+              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">მოთამაშეების ლიმიტი</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[2, 3, 4].map(num => (
+                  <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num} კაცი</button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">ოთახის პაროლი (საჯაროსთვის ცარიელი)</label>
+              <input type="password" value={mRoomPassword} onChange={(e) => setMRoomPassword(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none placeholder-stone-700 shadow-inner`} placeholder="••••••••" />
+            </div>
+            <div className="grid grid-cols-2 gap-2 md:gap-3 pt-2 md:pt-3 border-t border-white/5">
+              <button type="button" onClick={() => setIsCreateModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">გაუქმება</button>
+              <button type="submit" className={`py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg`}>შექმნა</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 🟢 პაროლიანი ოთახის მოდალი */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-5 max-w-xs w-full space-y-3 md:space-y-4 shadow-2xl font-sans`}>
+            <h3 className={`text-xs md:text-sm font-black ${activeTheme.accent} border-b border-white/10 pb-2 md:pb-2.5 uppercase tracking-wider`}>დაცული მაგიდა</h3>
+            <input type="password" placeholder="შეიყვანე პაროლი..." value={joinPasswordInput} onChange={(e) => setJoinPasswordInput(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none shadow-inner`} />
+            <div className="grid grid-cols-2 gap-2 md:gap-3 pt-1">
+              <button onClick={() => setIsPasswordModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">უკან</button>
+              <button onClick={() => handleJoinSpecificRoom(selectedRoomIdForJoin, joinPasswordInput)} className={`py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg`}>შესვლა</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
