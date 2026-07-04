@@ -39,7 +39,6 @@ const SHOP_ITEMS = {
   ]
 };
 
-// 🟢 VIP ფუნქციები
 export const checkIsVip = (vipDate) => {
   return vipDate && new Date(vipDate) > new Date();
 };
@@ -90,7 +89,6 @@ export default function App() {
   const [selectedRoomIdForJoin, setSelectedRoomIdForJoin] = useState('');
   const [joinPasswordInput, setJoinPasswordInput] = useState('');
 
-  // 🟢 ნაგულისხმევად არჩეულია რეიტინგული რეჟიმი და გამორთულია ბოტები
   const [mTargetScore, setMTargetScore] = useState(11);
   const [mMaxPlayers, setMMaxPlayers] = useState(4);
   const [mAllowBots, setMAllowBots] = useState(false);
@@ -292,15 +290,23 @@ export default function App() {
     <div className="relative flex min-h-screen flex-col font-sans antialiased transition-all duration-700" style={{ background: activeTheme.bg }}>
       <div className={`absolute inset-0 ${activeTheme.overlay} backdrop-blur-[4px] z-0 transition-colors duration-700`}></div>
 
+      {/* 🟢 ახალი, პრემიუმ დახვეწილი Error Alert */}
       {error && (
-        <div className={`fixed top-20 md:top-24 right-4 md:right-6 z-50 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black text-rose-400 shadow-2xl backdrop-blur-md animate-in fade-in duration-200 flex items-center gap-2`}>
-          <XCircle size={14} /> {error}
+        <div className="fixed top-20 md:top-24 right-4 md:right-6 z-[100] rounded-2xl bg-stone-900/95 border border-rose-500/20 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-right-8 fade-in duration-300 flex items-center gap-3">
+          <div className="flex items-center justify-center p-1 rounded-full bg-rose-500/20 text-rose-500 border border-rose-500/30">
+             <XCircle size={16} className="md:w-5 md:h-5" />
+          </div>
+          <span className="text-stone-100 tracking-wide uppercase">{error}</span>
         </div>
       )}
 
+      {/* 🟢 ახალი, პრემიუმ დახვეწილი Success Toast (აღარ დაიმალება ფერებში) */}
       {toastMsg && (
-        <div className={`fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 rounded-xl ${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current ${activeTheme.accent} border px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black shadow-2xl backdrop-blur-md animate-in slide-in-from-top-10 duration-300 flex items-center gap-2`}>
-          <CheckCircle2 size={14} /> {toastMsg}
+        <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-[100] rounded-2xl bg-stone-900/95 border border-white/10 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-top-5 fade-in duration-300 flex items-center gap-3">
+          <div className={`flex items-center justify-center p-1 rounded-full ${activeTheme.accentBg} bg-opacity-20 ${activeTheme.accent} border border-current border-opacity-30`}>
+             <CheckCircle2 size={16} className="md:w-5 md:h-5" />
+          </div>
+          <span className="text-stone-100 tracking-wide uppercase">{toastMsg}</span>
         </div>
       )}
 
@@ -840,7 +846,6 @@ export default function App() {
         </main>
       </div>
 
-      {/* მაგიდის შექმნის მოდალი */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-2xl font-sans relative`}>
