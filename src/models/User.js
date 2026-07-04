@@ -18,7 +18,15 @@ const userSchema = new mongoose.Schema({
       playedAt: { type: Date, default: Date.now }
     }
   ],
+  
   achievements: [{ type: String }],
+  
+  // 🟢 აქ დაემატა პროგრესის მთვლელი
+  achievementProgress: {
+    diamond_10: { type: Number, default: 0 },
+    club_2: { type: Number, default: 0 },
+    sweeper: { type: Number, default: 0 }
+  },
   
   level: { type: Number, default: 1 },
   xp: { type: Number, default: 0 },
@@ -48,7 +56,6 @@ const userSchema = new mongoose.Schema({
   cardBack: { type: String, default: 'classic' },
   unlockedCardBacks: { type: [String], default: ['classic'] },
 
-  // 🟢 VIP სისტემა
   vipUntil: { type: Date, default: null }
 
 }, { timestamps: true });

@@ -11,7 +11,6 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 const User = require('./models/User');
 const { createDeck, isValidCapture, calculateRoundScores, getBestMove } = require('./gameLogic');
 
-// 🎯 ყოველდღიური მისიების ბაზა
 const ALL_DAILY_QUESTS = [
   { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 300 },
   { questId: 'win_ranked', title: 'მოიგე 2 რეიტინგული მატჩი', target: 2, xpReward: 500 },
@@ -79,7 +78,6 @@ io.on('connection', (socket) => {
     } catch(err) {}
   });
 
-  // 🟢 VIP-ის ყიდვის ლოგიკა
   socket.on('buyVip', async ({ days, price }) => {
     try {
       const uname = onlineUsersMap[socket.id];
@@ -100,7 +98,6 @@ io.on('connection', (socket) => {
     } catch(err) { console.error(err); }
   });
 
-  // 🟢 ნივთების ყიდვის ლოგიკა
   socket.on('buyItem', async ({ type, itemId, price }) => {
     try {
       const uname = onlineUsersMap[socket.id];
@@ -396,7 +393,7 @@ io.on('connection', (socket) => {
       if (!isValidCapture(cardFromHand, cardsFromTable)) return socket.emit('error', 'არასწორი მოჭრა!');
       if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
       
-      // 🟢 მიღწევა: მესუფთავე (J) - ვამოწმებთ, რომ ორჯერ არ ჩაემატოს
+      // 🟢 მიმდინარე მატჩში ვინიშნავთ, რომ "მესუფთავის" პირობა შეასრულა
       if (room.isRanked && cardFromHand.rank === 'J' && cardsFromTable.length >= 4) {
         if (!player.achievementsEarned.includes('sweeper')) {
             player.achievementsEarned.push('sweeper');
@@ -479,7 +476,7 @@ function handleTurnTransition(room, roomId) {
 
       calculateRoundScores(room);
       
-      // 🟢 მიღწევა: 10 აგური (მხოლოდ ერთხელ ენიჭება)
+      // 🟢 მიმდინარე მატჩში ვინიშნავთ, რომ "10 აგურის" პირობა შეასრულა
       if (room.isRanked && room.roundSummary.diamond10Winner !== "-") {
          const d10Player = room.players.find(p => p.name === room.roundSummary.diamond10Winner);
          if (d10Player && !d10Player.isBot) {
@@ -489,7 +486,7 @@ function handleTurnTransition(room, roomId) {
          }
       }
       
-      // 🟢 მიღწევა: 2 ჯვარი (მხოლოდ ერთხელ ენიჭება)
+      // 🟢 მიმდინარე მატჩში ვინიშნავთ, რომ "2 ჯვარის" პირობა შეასრულა
       if (room.isRanked && room.roundSummary.club2Winner !== "-") {
          const c2Player = room.players.find(p => p.name === room.roundSummary.club2Winner);
          if (c2Player && !c2Player.isBot) {
@@ -559,25 +556,47 @@ function handleTurnTransition(room, roomId) {
 
                   dbUser.stats.gamesPlayed += 1;
                   
-                  // 🟢 ვამოწმებთ "პირველი მოგების" და "ვეტერანის" ბეჯებს
-                  if (dbUser.stats.gamesPlayed >= 10 && !dbUser.achievements.includes('veteran') && !matchAchievements.includes('veteran')) {
-                      matchAchievements.push('veteran');
-                  }
-                  if (isWinner && !dbUser.achievements.includes('first_win') && !matchAchievements.includes('first_win')) {
-                      matchAchievements.push('first_win');
+                  // 🟢 ბაზაში პროგრესის ობიექტის შექმნა (თუ ძველ იუზერს არ აქვს)
+                  if (!dbUser.achievementProgress) {
+                      dbUser.achievementProgress = { diamond_10: 0, club_2: 0, sweeper: 0 };
                   }
 
-                  if (isWinner) dbUser.stats.gamesWon += 1;
+                  // 🟢 მიღწევების ლოგიკა: ეთვლებათ მხოლოდ მატჩის მოგების შემთხვევაში!
+                  if (isWinner) {
+                      dbUser.stats.gamesWon += 1;
+                      
+                      // პირველი მოგება
+                      if (!dbUser.achievements.includes('first_win')) {
+                          dbUser.achievements.push('first_win');
+                      }
+                      
+                      // ვეტერანი - 100 მოგება
+                      if (dbUser.stats.gamesWon >= 100 && !dbUser.achievements.includes('veteran')) {
+                          dbUser.achievements.push('veteran');
+                      }
+
+                      // 10 აგურის წაღება 50-ჯერ მოგებულ მატჩში
+                      if (matchAchievements.includes('diamond_10') && !dbUser.achievements.includes('diamond_10')) {
+                          dbUser.achievementProgress.diamond_10 = (dbUser.achievementProgress.diamond_10 || 0) + 1;
+                          if (dbUser.achievementProgress.diamond_10 >= 50) dbUser.achievements.push('diamond_10');
+                      }
+
+                      // 2 ჯვარის წაღება 50-ჯერ მოგებულ მატჩში
+                      if (matchAchievements.includes('club_2') && !dbUser.achievements.includes('club_2')) {
+                          dbUser.achievementProgress.club_2 = (dbUser.achievementProgress.club_2 || 0) + 1;
+                          if (dbUser.achievementProgress.club_2 >= 50) dbUser.achievements.push('club_2');
+                      }
+
+                      // ვალეტით გასუფთავება 50-ჯერ მოგებულ მატჩში
+                      if (matchAchievements.includes('sweeper') && !dbUser.achievements.includes('sweeper')) {
+                          dbUser.achievementProgress.sweeper = (dbUser.achievementProgress.sweeper || 0) + 1;
+                          if (dbUser.achievementProgress.sweeper >= 50) dbUser.achievements.push('sweeper');
+                      }
+                  }
+
                   dbUser.stats.totalPointsScored += p.totalScore;
                   dbUser.gameHistory.unshift({ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() });
                   
-                  // 🟢 ბაზაში ვინახავთ მხოლოდ იმ ბეჯებს, რომლებიც აქამდე არ ჰქონდა მოთამაშეს
-                  matchAchievements.forEach(ach => {
-                      if (!dbUser.achievements.includes(ach)) {
-                          dbUser.achievements.push(ach);
-                      }
-                  });
-
                   await dbUser.save();
               }
             } catch (dbErr) { console.error(dbErr.message); }
