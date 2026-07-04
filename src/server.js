@@ -396,9 +396,11 @@ io.on('connection', (socket) => {
       if (!isValidCapture(cardFromHand, cardsFromTable)) return socket.emit('error', 'არასწორი მოჭრა!');
       if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
       
+      // 🟢 მიღწევა: მესუფთავე (J) - ვამოწმებთ, რომ ორჯერ არ ჩაემატოს
       if (room.isRanked && cardFromHand.rank === 'J' && cardsFromTable.length >= 4) {
-        if (!player.achievementsEarned) player.achievementsEarned = [];
-        if (!player.achievementsEarned.includes('sweeper')) player.achievementsEarned.push('sweeper');
+        if (!player.achievementsEarned.includes('sweeper')) {
+            player.achievementsEarned.push('sweeper');
+        }
       }
 
       player.cards = player.cards.filter(c => !(c.rank === cardFromHand.rank && c.suit === cardFromHand.suit));
@@ -477,18 +479,23 @@ function handleTurnTransition(room, roomId) {
 
       calculateRoundScores(room);
       
+      // 🟢 მიღწევა: 10 აგური (მხოლოდ ერთხელ ენიჭება)
       if (room.isRanked && room.roundSummary.diamond10Winner !== "-") {
          const d10Player = room.players.find(p => p.name === room.roundSummary.diamond10Winner);
          if (d10Player && !d10Player.isBot) {
-             if (!d10Player.achievementsEarned) d10Player.achievementsEarned = [];
-             if (!d10Player.achievementsEarned.includes('diamond_10')) d10Player.achievementsEarned.push('diamond_10');
+             if (!d10Player.achievementsEarned.includes('diamond_10')) {
+                 d10Player.achievementsEarned.push('diamond_10');
+             }
          }
       }
+      
+      // 🟢 მიღწევა: 2 ჯვარი (მხოლოდ ერთხელ ენიჭება)
       if (room.isRanked && room.roundSummary.club2Winner !== "-") {
          const c2Player = room.players.find(p => p.name === room.roundSummary.club2Winner);
          if (c2Player && !c2Player.isBot) {
-             if (!c2Player.achievementsEarned) c2Player.achievementsEarned = [];
-             if (!c2Player.achievementsEarned.includes('club_2')) c2Player.achievementsEarned.push('club_2');
+             if (!c2Player.achievementsEarned.includes('club_2')) {
+                 c2Player.achievementsEarned.push('club_2');
+             }
          }
       }
 
@@ -507,13 +514,11 @@ function handleTurnTransition(room, roomId) {
             try {
               const isWinner = p.name === room.roundSummary.matchWinner;
               let matchAchievements = p.achievementsEarned || [];
-              if (isWinner && !matchAchievements.includes('first_win')) matchAchievements.push('first_win');
 
               const dbUser = await User.findOne({ username: p.name });
               if (dbUser) {
                   const now = new Date();
                   
-                  // 🟢 1. თუ მისიები არ აქვს, ან 24 საათი გავიდა -> ვურჩევთ 3 ახალს რანდომულად
                   if (!dbUser.dailyQuests || dbUser.dailyQuests.length === 0 || (dbUser.lastQuestGeneration && (now - new Date(dbUser.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
                       const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
                       dbUser.dailyQuests = shuffled.slice(0, 3).map(q => ({
@@ -525,7 +530,6 @@ function handleTurnTransition(room, roomId) {
                   let earnedXp = 100; let earnedCoins = 10;
                   if (isWinner) { earnedXp += 200; earnedCoins += 40; }
 
-                  // 🟢 2. ვამოწმებთ თითოეული მისიის შესრულებას
                   dbUser.dailyQuests.forEach(q => {
                       if (q.isCompleted) return;
                       
@@ -537,12 +541,11 @@ function handleTurnTransition(room, roomId) {
                       if (q.questId === 'win_3_games' && isWinner) q.progress += 1;
                       if (q.questId === 'sweep_table' && matchAchievements.includes('sweeper')) q.progress += 1;
 
-                      // თუ შეასრულა მიზანი:
                       if (q.progress >= q.target) {
                           q.progress = q.target; 
                           q.isCompleted = true;
                           earnedXp += q.xpReward; 
-                          earnedCoins += 50; // +50 მონეტა ბონუსი
+                          earnedCoins += 50; 
                       }
                   });
 
@@ -555,14 +558,24 @@ function handleTurnTransition(room, roomId) {
                   }
 
                   dbUser.stats.gamesPlayed += 1;
-                  if (dbUser.stats.gamesPlayed >= 10 && !matchAchievements.includes('veteran')) matchAchievements.push('veteran');
+                  
+                  // 🟢 ვამოწმებთ "პირველი მოგების" და "ვეტერანის" ბეჯებს
+                  if (dbUser.stats.gamesPlayed >= 10 && !dbUser.achievements.includes('veteran') && !matchAchievements.includes('veteran')) {
+                      matchAchievements.push('veteran');
+                  }
+                  if (isWinner && !dbUser.achievements.includes('first_win') && !matchAchievements.includes('first_win')) {
+                      matchAchievements.push('first_win');
+                  }
 
                   if (isWinner) dbUser.stats.gamesWon += 1;
                   dbUser.stats.totalPointsScored += p.totalScore;
                   dbUser.gameHistory.unshift({ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() });
                   
+                  // 🟢 ბაზაში ვინახავთ მხოლოდ იმ ბეჯებს, რომლებიც აქამდე არ ჰქონდა მოთამაშეს
                   matchAchievements.forEach(ach => {
-                      if (!dbUser.achievements.includes(ach)) dbUser.achievements.push(ach);
+                      if (!dbUser.achievements.includes(ach)) {
+                          dbUser.achievements.push(ach);
+                      }
                   });
 
                   await dbUser.save();
