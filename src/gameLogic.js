@@ -44,6 +44,7 @@ function isValidCapture(cardFromHand, cardsFromTable) {
   return tableSum === targetSum;
 }
 
+// 4. რაუნდის ბოლოს 4-ვე ქულის განაწილება
 function calculateRoundScores(room) {
   const stats = room.players.map(p => {
     let clubsCount = 0;
@@ -79,7 +80,8 @@ function calculateRoundScores(room) {
     else if (s.clubsCount === maxClubs) { clubsWinner = null; }
   });
 
-  if (cardsWinner) cardsWinner.playerRef.totalScore += 1;
+  // 🟢 ზუსტად აქ შევცვალეთ: ბევრ კარტზე იწერება 2 ქულა
+  if (cardsWinner) cardsWinner.playerRef.totalScore += 2;
   if (clubsWinner) clubsWinner.playerRef.totalScore += 1;
   
   let diamond10WinnerName = "-";
