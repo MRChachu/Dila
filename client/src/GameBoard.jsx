@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { LogOut, Send, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users } from 'lucide-react';
+import { LogOut, Send, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users, Lock } from 'lucide-react';
 
-export default function GameBoard({ room, socket, onLeave, activeTheme }) {
+export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName }) {
   const [selectedCardFromHand, setSelectedCardFromHand] = useState(null);
   const [selectedCardsFromTable, setSelectedCardsFromTable] = useState([]);
   const [chatMessage, setChatMessage] = useState('');
@@ -14,8 +14,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme }) {
 
   const me = room?.players?.find(p => p.id === socket.id);
   const isMyTurn = room?.players?.[room.currentTurn]?.id === socket.id;
+  const amIVip = checkIsVip(me?.vipUntil);
 
-  const emotes = ['🔥', '😂', '😎', '🤯', '🃏', '⏳', '👏', '💀'];
+  const standardEmotes = ['🔥', '😂', '😎', '🤯', '🃏', '⏳', '👏', '💀'];
+  const vipEmotes = ['🤑', '🤬', '🍻', '🤡', '👽']; // 🟢 ექსკლუზიური ემოჯები
 
   const playSoftSound = (isCapture = false) => {
     if (isMuted) return;
@@ -123,7 +125,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme }) {
 
   const getSuitColor = (suit) => (['♥', '♦'].includes(suit) ? 'text-rose-500' : 'text-stone-900');
 
-  // 🟢 კარტის ზურგის სტილები (Host-ის დიზაინის მიხედვით)
   const cardBackStyles = {
     classic: 'bg-blue-900 border-white/20',
     crimson: 'bg-red-900 border-white/20',
@@ -150,14 +151,13 @@ export default function GameBoard({ room, socket, onLeave, activeTheme }) {
                 <div className="flex items-center gap-2 z-10">
                   <span className="text-xl md:text-2xl drop-shadow-md">{p.avatar || '😎'}</span>
                   <div className="flex flex-col">
-                    <span className={`font-bold text-xs md:text-sm ${p.id === socket.id ? activeTheme.accent : 'text-stone-200'}`}>
-                      {p.name} {p.id === socket.id && '(შენ)'}
+                    <span className="font-bold text-xs md:text-sm">
+                      <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={p.id === socket.id ? activeTheme.accent : 'text-stone-200'} />
                     </span>
                     <span className="text-[9px] md:text-[10px] text-stone-500 font-bold mt-0.5 tracking-wider">ქულა: {p.totalScore}</span>
                   </div>
                 </div>
                 
-                {/* 🟢 აქ გამოჩნდება მოწინააღმდეგის კარტის ზურგები ნაყიდი დიზაინით */}
                 <div className="flex items-center -space-x-1 md:-space-x-2">
                    {Array.from({length: p.cards?.length || 0}).map((_, idx) => (
                       <div key={idx} className={`w-3 h-5 md:w-4 md:h-6 rounded-sm border shadow-sm ${activeCardBack}`}></div>
@@ -185,7 +185,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme }) {
             ) : (
               messages.map((m, i) => (
                 <div key={i} className={`flex flex-col max-w-[85%] ${m.senderId === socket.id ? 'self-end items-end' : 'self-start items-start'}`}>
-                  <span className="text-[8px] md:text-[9px] text-stone-500 font-bold mb-1 ml-1">{m.sender} • {m.timestamp}</span>
+                  <span className="text-[8px] md:text-[9px] text-stone-500 font-bold mb-1 ml-1">
+                     <VipName name={m.sender} isVip={checkIsVip(m.isVip)} /> • {m.timestamp}
+                  </span>
                   <div className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-2xl text-[10px] md:text-xs font-medium shadow-md ${m.senderId === socket.id ? `${activeTheme.accentBg} text-stone-950 rounded-tr-sm` : 'bg-stone-800 text-stone-200 rounded-tl-sm border border-white/5'}`}>
                     {m.text}
                   </div>
@@ -244,7 +246,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme }) {
             {room.lastAction && (
               <div className="absolute -top-3 md:-top-6 left-1/2 -translate-x-1/2 bg-stone-900/90 border border-white/10 px-3 md:px-5 py-1.5 md:py-2 rounded-xl md:rounded-2xl shadow-xl z-20 flex flex-col items-center gap-1 md:gap-1.5 animate-in slide-in-from-top-4 duration-300">
                 <span className="text-[8px] md:text-[10px] font-black text-stone-400 uppercase tracking-widest whitespace-nowrap">
-                  <span className={activeTheme.accent}>{room.lastAction.playerName}</span>-მ {room.lastAction.type === 'CAPTURE' ? 'მოჭრა' : 'დააგდო'}
+                  <VipName name={room.lastAction.playerName} isVip={checkIsVip(room.lastAction.isVip)} className={activeTheme.accent} />-მ {room.lastAction.type === 'CAPTURE' ? 'მოჭრა' : 'დააგდო'}
                 </span>
                 <div className="flex items-center gap-1.5 md:gap-2">
                   <div className="flex items-center gap-0.5 px-1.5 md:px-2 py-0.5 md:py-1 bg-stone-950 rounded-md md:rounded-lg border border-white/5">
@@ -292,10 +294,17 @@ export default function GameBoard({ room, socket, onLeave, activeTheme }) {
 
           <div className="flex flex-col items-center gap-3 md:gap-5 mt-4">
             
+            {/* 🟢 ემოჯები დაყოფილია VIP და ჩვეულებრივებად */}
             <div className="flex flex-wrap justify-center items-center gap-2 md:gap-4 bg-stone-950/60 p-2 rounded-2xl border border-white/5 backdrop-blur-md shadow-lg z-10 w-full max-w-[280px] md:max-w-none md:w-auto">
               <div className="flex gap-1 md:gap-1.5 px-1 md:px-2 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
-                {emotes.map(emo => (
+                {standardEmotes.map(emo => (
                   <button key={emo} onClick={() => handleSendEmote(emo)} className="text-sm md:text-lg hover:scale-125 hover:-translate-y-1 transition-all active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 flex-shrink-0">{emo}</button>
+                ))}
+                <div className="w-px h-5 bg-white/10 mx-1 shrink-0"></div>
+                {vipEmotes.map(emo => (
+                  <button key={emo} onClick={() => amIVip && handleSendEmote(emo)} className={`relative text-sm md:text-lg transition-all shrink-0 ${amIVip ? 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' : 'opacity-20 cursor-not-allowed grayscale'}`}>
+                    {emo} {!amIVip && <Lock size={10} className="absolute -bottom-1 -right-1 text-yellow-500/50"/>}
+                  </button>
                 ))}
               </div>
               <div className="hidden md:block w-px h-6 bg-white/10 mx-1"></div>
@@ -341,7 +350,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme }) {
                 {room.roundSummary.matchWinner && (
                   <div className={`${activeTheme.accentBg} bg-opacity-10 border border-opacity-30 border-current rounded-xl p-3 md:p-4 mb-4 md:mb-6`}>
                     <p className="text-[10px] md:text-sm font-bold uppercase opacity-80">გამარჯვებული</p>
-                    <p className="text-xl md:text-2xl font-black mt-1">{room.roundSummary.matchWinner} 🎉</p>
+                    <p className="text-xl md:text-2xl font-black mt-1">
+                      <VipName name={room.roundSummary.matchWinner} isVip={checkIsVip(room.players.find(p=>p.name===room.roundSummary.matchWinner)?.vipUntil)} /> 🎉
+                    </p>
                   </div>
                 )}
 
