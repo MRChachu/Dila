@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Palette, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -14,7 +14,6 @@ const AVAILABLE_BADGES = [
   { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' }
 ];
 
-// 🟢 მაღაზიის კატალოგი
 const SHOP_ITEMS = {
   avatars: [
     { id: '😎', price: 0, name: 'სტანდარტული' },
@@ -64,10 +63,10 @@ export default function App() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   
-  // 🟢 მოდალები
   const [isShopOpen, setIsShopOpen] = useState(false); 
   const [shopTab, setShopTab] = useState('avatars');
-  const [inspectProfile, setInspectProfile] = useState(null); // სხვა მოთამაშის პროფილი
+  const [inspectProfile, setInspectProfile] = useState(null); 
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem('phurti_music') === 'true');
   const audioRef = useRef(typeof Audio !== 'undefined' ? new Audio('/bg-music.mp3') : null);
@@ -122,7 +121,7 @@ export default function App() {
     });
     socket.on('friendListUpdated', () => fetchDashboardData(safeUsername));
     
-    socket.on('receiveUserProfile', (data) => setInspectProfile(data)); // 🟢 პროფილის მიღება
+    socket.on('receiveUserProfile', (data) => setInspectProfile(data)); 
     socket.on('roomNotFound', () => handleResetToLobby());
 
     const handleOnConnect = () => {
@@ -260,27 +259,13 @@ export default function App() {
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
   const myAchievements = profileData?.achievements || [];
 
-  // 🟢 თემები სუფთა და კომფორტული დიზაინით
   const themeStyles = {
-    wood: {
-      bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", 
-      overlay: "bg-black/10", accent: "text-amber-500", accentBg: "bg-amber-500", card: "bg-stone-900/80"
-    },
-    lavender: {
-      bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)",
-      overlay: "bg-black/10", accent: "text-violet-400", accentBg: "bg-violet-500", card: "bg-indigo-950/70"
-    },
-    casino: {
-      bg: "linear-gradient(135deg, #062615 0%, #020c06 100%)", // High contrast dark green
-      overlay: "bg-black/20", accent: "text-emerald-400", accentBg: "bg-emerald-500", card: "bg-stone-950/80"
-    },
-    midnight: {
-      bg: "linear-gradient(135deg, #0b1120 0%, #03050a 100%)", // High contrast midnight blue
-      overlay: "bg-black/10", accent: "text-yellow-500", accentBg: "bg-yellow-500", card: "bg-slate-900/70"
-    }
+    wood: { bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", overlay: "bg-black/10", accent: "text-amber-500", accentBg: "bg-amber-500", card: "bg-stone-900/80" },
+    lavender: { bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)", overlay: "bg-black/10", accent: "text-violet-400", accentBg: "bg-violet-500", card: "bg-indigo-950/70" },
+    casino: { bg: "linear-gradient(135deg, #062615 0%, #020c06 100%)", overlay: "bg-black/20", accent: "text-emerald-400", accentBg: "bg-emerald-500", card: "bg-stone-950/80" },
+    midnight: { bg: "linear-gradient(135deg, #0b1120 0%, #03050a 100%)", overlay: "bg-black/10", accent: "text-yellow-500", accentBg: "bg-yellow-500", card: "bg-slate-900/70" }
   };
 
-  // თუ ოთახშია, იყენებს Host-ის თემას, თუ არა - პირადს
   const activeThemeName = (inRoom && roomData?.hostTheme) ? roomData.hostTheme : (profileData?.tableTheme || 'wood');
   const activeTheme = themeStyles[activeThemeName] || themeStyles['wood'];
 
@@ -289,37 +274,36 @@ export default function App() {
       <div className={`absolute inset-0 ${activeTheme.overlay} backdrop-blur-[4px] z-0 transition-colors duration-700`}></div>
 
       {error && (
-        <div className="fixed top-20 md:top-24 right-4 md:right-6 z-50 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black text-rose-400 shadow-2xl backdrop-blur-md animate-in fade-in duration-200 flex items-center gap-2">
+        <div className={`fixed top-20 md:top-24 right-4 md:right-6 z-50 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black text-rose-400 shadow-2xl backdrop-blur-md animate-in fade-in duration-200 flex items-center gap-2`}>
           <XCircle size={14} /> {error}
         </div>
       )}
 
       {toastMsg && (
-        <div className={`fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black shadow-2xl backdrop-blur-md animate-in slide-in-from-top-10 duration-300 flex items-center gap-2`}>
+        <div className={`fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 rounded-xl ${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current ${activeTheme.accent} border px-4 md:px-5 py-2.5 md:py-3 text-[10px] md:text-xs font-black shadow-2xl backdrop-blur-md animate-in slide-in-from-top-10 duration-300 flex items-center gap-2`}>
           <CheckCircle2 size={14} /> {toastMsg}
         </div>
       )}
 
       {inviteAlert && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className={`bg-stone-900 border border-emerald-500/30 rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-[0_0_50px_rgba(0,0,0,0.3)] font-sans text-center relative overflow-hidden animate-in zoom-in duration-200`}>
-            <div className={`absolute top-0 left-0 w-full h-1 bg-emerald-500 animate-pulse`}></div>
-            <div className={`w-16 h-16 bg-emerald-500/10 border-emerald-500/20 rounded-full flex items-center justify-center mx-auto border mb-2 shadow-lg`}>
-              <BellRing size={28} className="text-emerald-400" />
+          <div className={`bg-stone-900 border border-opacity-30 border-current ${activeTheme.accent} rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-[0_0_50px_rgba(0,0,0,0.3)] font-sans text-center relative overflow-hidden animate-in zoom-in duration-200`}>
+            <div className={`absolute top-0 left-0 w-full h-1 ${activeTheme.accentBg} animate-pulse`}></div>
+            <div className={`w-16 h-16 ${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current rounded-full flex items-center justify-center mx-auto border mb-2 shadow-lg`}>
+              <BellRing size={28} />
             </div>
             <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">ახალი გამოწვევა!</h3>
             <p className="text-sm font-bold text-stone-400">
-              <span className="text-emerald-400 font-black">{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})
+              <span className="font-black">{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})
             </p>
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
               <button onClick={() => setInviteAlert(null)} className="py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md">უარყოფა</button>
-              <button onClick={() => { handleJoinSpecificRoom(inviteAlert.roomId, inviteAlert.password); setInviteAlert(null); }} className={`py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 border-emerald-800 text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 border-b-2 shadow-lg`}>შესვლა 🎮</button>
+              <button onClick={() => { handleJoinSpecificRoom(inviteAlert.roomId, inviteAlert.password); setInviteAlert(null); }} className={`py-3 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg`}>შესვლა 🎮</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 🟢 პროფილის ინსპექტირება (Player Inspect Modal) */}
       {inspectProfile && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={(e) => { if(e.target === e.currentTarget) setInspectProfile(null); }}>
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl font-sans relative animate-in zoom-in-95 duration-200`}>
@@ -351,14 +335,14 @@ export default function App() {
               </div>
             </div>
 
-            <h4 className="text-[10px] font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2 uppercase tracking-widest mb-3">
+            <h4 className={`text-[10px] font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2 uppercase tracking-widest mb-3`}>
               <Award size={14} className={activeTheme.accent} /> მიღწევები
             </h4>
             <div className="flex flex-wrap gap-2">
               {AVAILABLE_BADGES.map(b => {
                  const hasIt = inspectProfile.achievements?.includes(b.id);
                  return (
-                   <div key={b.id} className={`w-10 h-10 flex items-center justify-center rounded-xl border ${hasIt ? `bg-${theme==='lavender'?'violet':'amber'}-500/20 border-${theme==='lavender'?'violet':'amber'}-500/50 text-xl` : 'bg-stone-950/50 border-white/5 text-lg opacity-30 grayscale'}`} title={b.name}>
+                   <div key={b.id} className={`w-10 h-10 flex items-center justify-center rounded-xl border ${hasIt ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-50 border-current ${activeTheme.accent} text-xl` : 'bg-stone-950/50 border-white/5 text-lg opacity-30 grayscale'}`} title={b.name}>
                      {b.icon}
                    </div>
                  )
@@ -370,7 +354,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 განახლებული მაღაზიის მოდალი (ტაბებით) */}
       {isShopOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-5 md:p-6 max-w-xl w-full shadow-2xl font-sans relative flex flex-col max-h-[85vh]`}>
@@ -394,7 +377,7 @@ export default function App() {
                     const isUnlocked = unlockedAvatars.includes(item.id);
                     const isEquipped = profileData?.avatar === item.id;
                     return (
-                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col items-center justify-between gap-2 border transition-all ${isEquipped ? `bg-${theme==='lavender'?'violet':'amber'}-500/20 border-${theme==='lavender'?'violet':'amber'}-500` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
+                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col items-center justify-between gap-2 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
                         <span className="text-3xl md:text-4xl drop-shadow-lg">{item.id}</span>
                         <span className="text-[9px] font-bold text-stone-400 text-center leading-tight">{item.name}</span>
                         {isEquipped ? <button disabled className="w-full py-1.5 rounded-lg text-[8px] font-black bg-stone-800 text-stone-500 uppercase mt-1">დაყენებულია</button> 
@@ -412,7 +395,7 @@ export default function App() {
                     const isUnlocked = unlockedTables.includes(item.id);
                     const isEquipped = profileData?.tableTheme === item.id || (!profileData?.tableTheme && item.id === 'wood');
                     return (
-                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between gap-3 border transition-all ${isEquipped ? `bg-${theme==='lavender'?'violet':'amber'}-500/20 border-${theme==='lavender'?'violet':'amber'}-500` : 'bg-stone-950/50 border-white/5'}`}>
+                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
                         <div className="h-16 rounded-xl border border-white/10" style={{ background: themeStyles[item.id]?.bg || themeStyles.wood.bg }}></div>
                         <span className="text-[10px] md:text-xs font-bold text-stone-200 text-center uppercase tracking-widest">{item.name}</span>
                         {isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> 
@@ -430,12 +413,11 @@ export default function App() {
                     const isUnlocked = unlockedCards.includes(item.id);
                     const isEquipped = profileData?.cardBack === item.id || (!profileData?.cardBack && item.id === 'classic');
                     
-                    // კარტების ზურგების სტილები
                     const cBg = item.id === 'classic' ? 'bg-blue-900' : item.id === 'crimson' ? 'bg-red-900' : item.id === 'gold' ? 'bg-yellow-600' : 'bg-stone-950';
                     const cBorder = item.id === 'gold' ? 'border-yellow-400' : 'border-white/20';
 
                     return (
-                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between items-center gap-3 border transition-all ${isEquipped ? `bg-${theme==='lavender'?'violet':'amber'}-500/20 border-${theme==='lavender'?'violet':'amber'}-500` : 'bg-stone-950/50 border-white/5'}`}>
+                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between items-center gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
                         <div className={`w-12 h-16 rounded-md ${cBg} border-2 ${cBorder} shadow-lg flex items-center justify-center`}><Shield size={16} className={item.id==='gold'?'text-stone-900':'text-white/30'}/></div>
                         <span className="text-[10px] md:text-xs font-bold text-stone-200 text-center uppercase tracking-widest">{item.name}</span>
                         {isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> 
@@ -453,23 +435,38 @@ export default function App() {
         </div>
       )}
 
+      {isSettingsOpen && (
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-xs w-full space-y-6 shadow-2xl font-sans relative`}>
+            <h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> პარამეტრები</h3>
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> ფონური მუსიკა</label>
+              <div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5">
+                <button onClick={() => setIsMusicPlaying(true)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${isMusicPlaying ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500'}`}>ჩართული</button>
+                <button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>გამორთული</button>
+              </div>
+            </div>
+            <button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">დახურვა</button>
+          </div>
+        </div>
+      )}
+
       <div className="relative z-10 flex flex-col flex-1 w-full h-full text-stone-100">
         <header className={`${activeTheme.card} flex items-center justify-between border-b border-white/5 backdrop-blur-xl px-4 md:px-8 py-3 md:py-4 sticky top-0 z-40 shadow-lg transition-colors duration-700`}>
           <div className="flex items-center gap-2.5 md:gap-3">
             <div className={`p-1.5 md:p-2 bg-stone-900/80 rounded-lg md:rounded-xl border border-white/10 shadow-inner`}>
               <Shield size={18} className={activeTheme.accent} />
             </div>
-            <span className={`text-sm md:text-lg font-black tracking-widest bg-gradient-to-r ${theme === 'lavender' ? 'from-violet-400 to-indigo-300' : 'from-amber-400 to-amber-200'} bg-clip-text text-transparent`}>PHURTI ARENA</span>
+            <span className={`text-sm md:text-lg font-black tracking-widest ${activeTheme.accent}`}>PHURTI ARENA</span>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
             <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
               <ShoppingCart size={15} /> <span className="hidden md:block text-[10px] font-black uppercase">მაღაზია</span>
             </button>
-            {/* 🟢 მუსიკის ჩართვის ღილაკი გამოტანილია პირდაპირ ჰედერში კომფორტისთვის */}
             <button onClick={() => setIsMusicPlaying(!isMusicPlaying)} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md ${isMusicPlaying ? activeTheme.accent : 'text-stone-500'}`}>
               <Music size={15} className="md:w-4 md:h-4" />
             </button>
-            <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-stone-100 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}>
+            <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:${activeTheme.accent} rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}>
               <LogOut size={15} className="md:w-4 md:h-4" />
             </button>
           </div>
@@ -479,6 +476,7 @@ export default function App() {
           
           {!inRoom ? (
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6 items-start">
+              
               <div className="space-y-4 md:space-y-5">
                 
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
@@ -525,15 +523,32 @@ export default function App() {
                 </div>
 
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
+                  <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
+                    <Award size={14} className={activeTheme.accent} /> მიღწევები
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {AVAILABLE_BADGES.map((badge) => {
+                      const isUnlocked = myAchievements.includes(badge.id);
+                      return (
+                        <div key={badge.id} className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${isUnlocked ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current` : 'bg-stone-950/50 border-white/5 opacity-50 grayscale'}`}>
+                          <span className="text-xl md:text-2xl drop-shadow-md">{badge.icon}</span>
+                          <span className={`text-[9px] md:text-[10px] font-bold leading-tight ${isUnlocked ? 'text-stone-200' : 'text-stone-500'}`}>{badge.name}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
                   
                   <div className="flex border-b border-white/5 gap-4">
-                    <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 ${theme==='lavender'?'border-violet-400':'border-amber-400'}` : 'text-stone-500'}`}>
+                    <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>
                       ონლაინ ({onlineUser.length})
                     </button>
-                    <button onClick={() => setSocialTab('friends')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'friends' ? `${activeTheme.accent} border-b-2 ${theme==='lavender'?'border-violet-400':'border-amber-400'}` : 'text-stone-500'}`}>
+                    <button onClick={() => setSocialTab('friends')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'friends' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>
                       მეგობრები
                     </button>
-                    <button onClick={() => setSocialTab('requests')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all relative ${socialTab === 'requests' ? `${activeTheme.accent} border-b-2 ${theme==='lavender'?'border-violet-400':'border-amber-400'}` : 'text-stone-500'}`}>
+                    <button onClick={() => setSocialTab('requests')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all relative ${socialTab === 'requests' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>
                       თხოვნები
                       {profileData?.friendRequests?.length > 0 && (
                         <span className="absolute -top-1 -right-3 w-3.5 h-3.5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[8px] font-black">{profileData.friendRequests.length}</span>
@@ -541,7 +556,7 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="space-y-1.5 md:space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar pt-2">
+                  <div className="space-y-1.5 md:space-y-2 max-h-[140px] md:max-h-[160px] overflow-y-auto pr-1 custom-scrollbar pt-2">
                     
                     {socialTab === 'online' && (
                       onlineUser.filter(u => u.username !== safeUsername).length > 0 ? (
@@ -692,7 +707,7 @@ export default function App() {
                                  <span className="text-xs">{room.hostAvatar || '😎'}</span> #{room.id} {room.isPrivate && <Lock size={10} className="text-stone-500" />}
                                </div>
                                <div className="flex gap-1.5 items-center">
-                                 {room.isRanked ? <span className={`text-[8px] font-bold ${theme==='lavender'?'text-violet-400 bg-violet-500/10 border-violet-500/20':'text-amber-400 bg-amber-500/10 border-amber-500/20'} px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}
+                                 {room.isRanked ? <span className={`text-[8px] font-bold ${activeTheme.accentBg} bg-opacity-10 border-opacity-20 border-current px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}
                                  <span className="text-[8px] font-bold text-stone-400 bg-stone-900/80 px-1 py-0.5 rounded border border-white/5 font-mono">👥 {room.currentPlayers}/{room.maxPlayers}</span>
                                </div>
                             </div>
