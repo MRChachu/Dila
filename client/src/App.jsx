@@ -2,17 +2,28 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, History, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Palette, Award, CheckCircle2, XCircle, Swords, Gift } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Palette, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
-// 🟢 შეცვლილია ინგლისურ ID-ებზე
 const AVAILABLE_BADGES = [
   { id: 'first_win', icon: '🥇', name: 'პირველი მოგება' },
   { id: 'diamond_10', icon: '💎', name: '10 აგური' },
   { id: 'club_2', icon: '♣️', name: '2 ჯვარი' },
   { id: 'veteran', icon: '🛡️', name: 'ვეტერანი (10 მატჩი)' },
   { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' }
+];
+
+// 🟢 ავატარების მაღაზიის სია
+const AVATAR_SHOP = [
+  { id: '😎', price: 0, name: 'სტანდარტული' },
+  { id: '🥷', price: 100, name: 'ნინძა' },
+  { id: '🧙‍♂️', price: 250, name: 'ჯადოქარი' },
+  { id: '🧛', price: 400, name: 'ვამპირი' },
+  { id: '👑', price: 800, name: 'მეფე' },
+  { id: '🦁', price: 1200, name: 'ლომი' },
+  { id: '🦅', price: 1500, name: 'არწივი' },
+  { id: '🐉', price: 2500, name: 'დრაკონი' }
 ];
 
 export default function App() {
@@ -23,7 +34,6 @@ export default function App() {
 
   const user = userState?.user || userState; 
   const safeUsername = user?.username || 'მოთამაშე';
-  const initial = safeUsername.charAt(0).toUpperCase();
 
   const [roomId, setRoomId] = useState(() => localStorage.getItem('phurti_roomId') || '');
   const [inRoom, setInRoom] = useState(() => localStorage.getItem('phurti_inRoom') === 'true');
@@ -40,6 +50,7 @@ export default function App() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isShopOpen, setIsShopOpen] = useState(false); // 🟢 შოპის მოდალი
   
   const [theme, setTheme] = useState(() => localStorage.getItem('phurti_theme') || 'wood');
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem('phurti_music') === 'true');
@@ -197,22 +208,17 @@ export default function App() {
       setInRoom(true);
       localStorage.setItem('phurti_roomId', generatedId); 
       localStorage.setItem('phurti_inRoom', 'true');
-      
-      setTimeout(() => {
-        socket.emit('sendInvite', { targetSocketId, roomId: generatedId, password: null, fromName: safeUsername });
-      }, 300);
+      setTimeout(() => { socket.emit('sendInvite', { targetSocketId, roomId: generatedId, password: null, fromName: safeUsername }); }, 300);
     }
   };
 
-  const handleSendFriendReq = (targetName) => {
-    socket.emit('sendFriendRequest', { targetUsername: targetName });
-  };
-  const handleAcceptFriend = (senderName) => {
-    socket.emit('acceptFriendRequest', { senderUsername: senderName });
-  };
-  const handleRejectFriend = (senderName) => {
-    socket.emit('rejectFriendRequest', { senderUsername: senderName });
-  };
+  const handleSendFriendReq = (targetName) => socket.emit('sendFriendRequest', { targetUsername: targetName });
+  const handleAcceptFriend = (senderName) => socket.emit('acceptFriendRequest', { senderUsername: senderName });
+  const handleRejectFriend = (senderName) => socket.emit('rejectFriendRequest', { senderUsername: senderName });
+
+  // 🟢 მაღაზიის ფუნქციები
+  const handleBuyAvatar = (avatarId, price) => socket.emit('buyAvatar', { avatarId, price });
+  const handleEquipAvatar = (avatarId) => socket.emit('equipAvatar', { avatarId });
 
   const handleRoomClickFromList = (room) => {
     if (room.isPrivate) { setSelectedRoomIdForJoin(room.id); setIsPasswordModalOpen(true); } else { handleJoinSpecificRoom(room.id); }
@@ -235,10 +241,12 @@ export default function App() {
   const currentXp = profileData?.xp || 0;
   const targetXp = currentLevel * 1000;
   const xpPercentage = Math.min((currentXp / targetXp) * 100, 100);
+  
+  const myCoins = profileData?.coins || 0;
+  const myAvatar = profileData?.avatar || '😎';
+  const unlockedAvatars = profileData?.unlockedAvatars || ['😎'];
 
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
-
-  // 🟢 ამოწმებს ბეჯებს
   const myAchievements = profileData?.achievements || [];
 
   const themeStyles = {
@@ -297,11 +305,53 @@ export default function App() {
         </div>
       )}
 
+      {/* 🟢 მაღაზიის (Shop) მოდალი */}
+      {isShopOpen && (
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-lg w-full shadow-2xl font-sans relative flex flex-col max-h-[80vh]`}>
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+              <h3 className={`text-base md:text-lg font-black ${activeTheme.accent} uppercase tracking-wider flex items-center gap-2`}><ShoppingCart size={20}/> მაღაზია</h3>
+              <div className="flex items-center gap-2 bg-stone-950 px-3 py-1.5 rounded-lg border border-white/5">
+                 <Coins size={16} className="text-yellow-500"/>
+                 <span className="font-mono font-black text-stone-200">{myCoins}</span>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                {AVATAR_SHOP.map(avatar => {
+                  const isUnlocked = unlockedAvatars.includes(avatar.id);
+                  const isEquipped = myAvatar === avatar.id;
+                  
+                  return (
+                    <div key={avatar.id} className={`p-4 rounded-2xl flex flex-col items-center justify-between gap-3 border transition-all ${isEquipped ? `bg-${theme==='lavender'?'violet':'amber'}-500/20 border-${theme==='lavender'?'violet':'amber'}-500` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
+                      <span className="text-4xl md:text-5xl drop-shadow-lg filter">{avatar.id}</span>
+                      <span className="text-[10px] font-bold text-stone-400">{avatar.name}</span>
+                      
+                      {isEquipped ? (
+                        <button disabled className="w-full py-1.5 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button>
+                      ) : isUnlocked ? (
+                        <button onClick={() => handleEquipAvatar(avatar.id)} className={`w-full py-1.5 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button>
+                      ) : (
+                        <button onClick={() => handleBuyAvatar(avatar.id, avatar.price)} className="w-full py-1.5 rounded-lg text-[9px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1">
+                          <Coins size={10} /> {avatar.price}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <button onClick={() => setIsShopOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4 uppercase">დახურვა</button>
+          </div>
+        </div>
+      )}
+
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-xs w-full space-y-6 shadow-2xl font-sans relative`}>
             <h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> პარამეტრები</h3>
-            
             <div className="space-y-3">
               <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> ფონური მუსიკა</label>
               <div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5">
@@ -309,15 +359,13 @@ export default function App() {
                 <button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>გამორთული</button>
               </div>
             </div>
-
             <div className="space-y-3">
               <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Palette size={14}/> თემა (დიზაინი)</label>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setTheme('wood')} className={`py-3 rounded-xl text-xs font-black border-2 transition-all ${theme === 'wood' ? 'border-amber-500 text-amber-500 bg-amber-500/10' : 'border-transparent bg-stone-950/50 text-stone-500 hover:bg-stone-900'}`}>Classic Wood</button>
+                <button onClick={() => setTheme('wood')} className={`py-3 rounded-xl text-xs font-black border-2 transition-all ${theme === 'wood' ? 'border-amber-500 text-amber-500 bg-amber-500/10' : 'border-transparent bg-stone-950/50 text-stone-500 hover:bg-stone-900'}`}>Wood</button>
                 <button onClick={() => setTheme('lavender')} className={`py-3 rounded-xl text-xs font-black border-2 transition-all ${theme === 'lavender' ? 'border-violet-400 text-violet-400 bg-violet-500/10' : 'border-transparent bg-stone-950/50 text-stone-500 hover:bg-stone-900'}`}>Lavender</button>
               </div>
             </div>
-
             <button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">დახურვა</button>
           </div>
         </div>
@@ -332,15 +380,13 @@ export default function App() {
             <span className={`text-sm md:text-lg font-black tracking-widest bg-gradient-to-r ${theme === 'lavender' ? 'from-violet-400 to-indigo-300' : 'from-amber-400 to-amber-200'} bg-clip-text text-transparent`}>PHURTI ARENA</span>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <div className="hidden md:flex items-center gap-2.5 bg-stone-900/60 border border-white/5 rounded-xl px-4 py-2 shadow-inner">
-              <div className={`w-2 h-2 ${activeTheme.accentBg} rounded-full animate-pulse`} />
-              <span className="text-xs font-bold text-stone-200 tracking-wide">{safeUsername}</span>
-            </div>
-            
+            {/* 🟢 შოპის ღილაკი */}
+            <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
+              <ShoppingCart size={15} /> <span className="hidden md:block text-[10px] font-black uppercase">მაღაზია</span>
+            </button>
             <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-stone-100 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
               <Settings size={15} className="md:w-4 md:h-4" />
             </button>
-
             <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:${activeTheme.accent} rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}>
               <LogOut size={15} className="md:w-4 md:h-4" />
             </button>
@@ -357,13 +403,17 @@ export default function App() {
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4">
                     <div className="flex items-center gap-3 md:gap-4">
-                      <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-lg md:text-xl ${activeTheme.accent} border border-white/10 shadow-xl relative`}>
-                        {initial}
+                      {/* 🟢 აქ ჩაჯდა არჩეული ავატარი */}
+                      <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-3xl md:text-4xl border border-white/10 shadow-xl relative`}>
+                        {myAvatar}
                         <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
                       </div>
-                      <div className="truncate">
+                      <div className="flex flex-col gap-0.5">
                         <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate">{safeUsername}</h2>
-                        <p className="text-[10px] md:text-xs text-stone-400 font-medium mt-0.5 truncate">{user?.email || 'Premium Player'}</p>
+                        <div className="flex items-center gap-1.5 text-stone-400">
+                           <Coins size={12} className="text-yellow-500"/> 
+                           <span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -609,7 +659,10 @@ export default function App() {
                         <div className="space-y-1.5 md:space-y-2 max-h-[180px] md:max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
                           {roomData.players?.map((p, idx) => (
                             <div key={idx} className="flex items-center justify-between rounded-xl bg-stone-950/60 p-2.5 md:p-3.5 border border-white/5 shadow-inner">
-                              <span className="font-bold text-[10px] md:text-xs text-stone-200">{p.name} {p.id === socket.id && '(შენ)'}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl">{p.avatar || '😎'}</span>
+                                <span className="font-bold text-[10px] md:text-xs text-stone-200">{p.name} {p.id === socket.id && '(შენ)'}</span>
+                              </div>
                               <span className={`text-[8px] md:text-[10px] font-black px-2 md:px-2.5 py-0.5 md:py-1 rounded-md border ${idx === 0 ? `${theme==='lavender'?'bg-violet-500/10 text-violet-400 border-violet-500/20':'bg-amber-500/10 text-amber-400 border-amber-500/20'}` : 'bg-stone-900 text-stone-500 border-white/5'}`}>{idx === 0 ? 'HOST' : 'READY'}</span>
                             </div>
                           ))}
