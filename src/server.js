@@ -56,7 +56,6 @@ io.on('connection', (socket) => {
     broadcastOnlineUsers();
   });
 
-  // 🟢 1. მეგობრების სისტემის ლოგიკა
   socket.on('sendFriendRequest', async ({ targetUsername }) => {
     try {
       const senderName = onlineUsersMap[socket.id];
@@ -336,9 +335,10 @@ io.on('connection', (socket) => {
       if (!isValidCapture(cardFromHand, cardsFromTable)) return socket.emit('error', 'არასწორი მოჭრა!');
       if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
       
+      // 🟢 მიღწევა: მესუფთავე (J)
       if (room.isRanked && cardFromHand.rank === 'J' && cardsFromTable.length >= 4) {
         if (!player.achievementsEarned) player.achievementsEarned = [];
-        if (!player.achievementsEarned.includes('🧹 მესუფთავე')) player.achievementsEarned.push('🧹 მესუფთავე');
+        if (!player.achievementsEarned.includes('sweeper')) player.achievementsEarned.push('sweeper');
       }
 
       player.cards = player.cards.filter(c => !(c.rank === cardFromHand.rank && c.suit === cardFromHand.suit));
@@ -429,11 +429,19 @@ function handleTurnTransition(room, roomId) {
 
       calculateRoundScores(room);
       
+      // 🟢 მიღწევა: 10 აგური და 2 ჯვარი
       if (room.isRanked && room.roundSummary.diamond10Winner !== "-") {
          const d10Player = room.players.find(p => p.name === room.roundSummary.diamond10Winner);
          if (d10Player && !d10Player.isBot) {
              if (!d10Player.achievementsEarned) d10Player.achievementsEarned = [];
-             if (!d10Player.achievementsEarned.includes('💎 აგურის ოსტატი')) d10Player.achievementsEarned.push('💎 აგურის ოსტატი');
+             if (!d10Player.achievementsEarned.includes('diamond_10')) d10Player.achievementsEarned.push('diamond_10');
+         }
+      }
+      if (room.isRanked && room.roundSummary.club2Winner !== "-") {
+         const c2Player = room.players.find(p => p.name === room.roundSummary.club2Winner);
+         if (c2Player && !c2Player.isBot) {
+             if (!c2Player.achievementsEarned) c2Player.achievementsEarned = [];
+             if (!c2Player.achievementsEarned.includes('club_2')) c2Player.achievementsEarned.push('club_2');
          }
       }
 
@@ -453,16 +461,14 @@ function handleTurnTransition(room, roomId) {
               const isWinner = p.name === room.roundSummary.matchWinner;
               let matchAchievements = p.achievementsEarned || [];
               
-              if (isWinner && !matchAchievements.includes('🥇 ჩემპიონი')) {
-                  matchAchievements.push('🥇 ჩემპიონი');
+              if (isWinner && !matchAchievements.includes('first_win')) {
+                  matchAchievements.push('first_win');
               }
 
-              // 🟢 2. მისიების და XP ლოგიკა მატჩის დასრულებისას
               const dbUser = await User.findOne({ username: p.name });
               if (dbUser) {
                   const now = new Date();
                   
-                  // თუ არ აქვს მისიები, ან 24 საათი გავიდა, ვურიგებთ ახალს
                   if (!dbUser.dailyQuests || dbUser.dailyQuests.length === 0 || (dbUser.lastQuestGeneration && (now - new Date(dbUser.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
                       dbUser.dailyQuests = [
                           { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, progress: 0, xpReward: 300, isCompleted: false },
@@ -472,27 +478,25 @@ function handleTurnTransition(room, roomId) {
                       dbUser.lastQuestGeneration = now;
                   }
 
-                  let earnedXp = 100; // მატჩის თამაშისთვის 100 XP
-                  if (isWinner) earnedXp += 200; // მოგებისთვის დამატებით 200 XP
+                  let earnedXp = 100;
+                  if (isWinner) earnedXp += 200; 
 
-                  // მისიების შემოწმება და პროგრესის გაზრდა
                   dbUser.dailyQuests.forEach(q => {
                       if (q.isCompleted) return;
                       
                       if (q.questId === 'play_ranked') q.progress += 1;
                       if (q.questId === 'win_ranked' && isWinner) q.progress += 1;
-                      if (q.questId === 'get_10_diamond' && matchAchievements.includes('💎 აგურის ოსტატი')) q.progress += 1;
+                      if (q.questId === 'get_10_diamond' && matchAchievements.includes('diamond_10')) q.progress += 1;
 
                       if (q.progress >= q.target) {
                           q.progress = q.target;
                           q.isCompleted = true;
-                          earnedXp += q.xpReward; // მისიის შესრულების ჯილდო
+                          earnedXp += q.xpReward; 
                       }
                   });
 
                   dbUser.xp += earnedXp;
                   
-                  // 🟢 3. Level Up სისტემა (ყოველი 1000 XP-ზე Level-ის მომატება)
                   let levelThreshold = dbUser.level * 1000;
                   while (dbUser.xp >= levelThreshold) {
                       dbUser.xp -= levelThreshold;
@@ -501,6 +505,12 @@ function handleTurnTransition(room, roomId) {
                   }
 
                   dbUser.stats.gamesPlayed += 1;
+                  
+                  // 🟢 მიღწევა: ვეტერანი (10 თამაში)
+                  if (dbUser.stats.gamesPlayed >= 10 && !matchAchievements.includes('veteran')) {
+                      matchAchievements.push('veteran');
+                  }
+
                   if (isWinner) dbUser.stats.gamesWon += 1;
                   dbUser.stats.totalPointsScored += p.totalScore;
                   dbUser.gameHistory.unshift({ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() });

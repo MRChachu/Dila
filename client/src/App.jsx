@@ -2,9 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, History, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Palette, Award, CheckCircle2, XCircle, Users, Swords, Gift, Info } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, History, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Palette, Award, CheckCircle2, XCircle, Swords, Gift } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
+
+// 🟢 შეცვლილია ინგლისურ ID-ებზე
+const AVAILABLE_BADGES = [
+  { id: 'first_win', icon: '🥇', name: 'პირველი მოგება' },
+  { id: 'diamond_10', icon: '💎', name: '10 აგური' },
+  { id: 'club_2', icon: '♣️', name: '2 ჯვარი' },
+  { id: 'veteran', icon: '🛡️', name: 'ვეტერანი (10 მატჩი)' },
+  { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' }
+];
 
 export default function App() {
   const [userState, setUserState] = useState(() => {
@@ -45,7 +54,6 @@ export default function App() {
   const [mRoomPassword, setMRoomPassword] = useState('');
   const [mIsRanked, setMIsRanked] = useState(false); 
 
-  // 🟢 სოციალური ტაბების სტეიტი (ონლაინ, მეგობრები, თხოვნები)
   const [socialTab, setSocialTab] = useState('online');
 
   useEffect(() => {
@@ -84,7 +92,6 @@ export default function App() {
     socket.on('updateOnlineUsers', (users) => setOnlineUser(users));
     socket.on('receiveInvite', (data) => setInviteAlert(data));
 
-    // 🟢 მეგობრების სისტემის ლისენერები
     socket.on('successMessage', (msg) => {
       setToastMsg(msg);
     });
@@ -197,7 +204,6 @@ export default function App() {
     }
   };
 
-  // 🟢 მეგობრების კონტროლერები
   const handleSendFriendReq = (targetName) => {
     socket.emit('sendFriendRequest', { targetUsername: targetName });
   };
@@ -231,6 +237,9 @@ export default function App() {
   const xpPercentage = Math.min((currentXp / targetXp) * 100, 100);
 
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
+
+  // 🟢 ამოწმებს ბეჯებს
+  const myAchievements = profileData?.achievements || [];
 
   const themeStyles = {
     wood: {
@@ -343,10 +352,8 @@ export default function App() {
           {!inRoom ? (
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6 items-start">
               
-              {/* 🟢 მარცხენა სვეტი: პროფილი, მეგობრები, ისტორია */}
               <div className="space-y-4 md:space-y-5">
                 
-                {/* 🟢 პროფილი & XP */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4">
                     <div className="flex items-center gap-3 md:gap-4">
@@ -387,7 +394,23 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 🟢 სოციალური ბლოკი (მეგობრები & ონლაინ) */}
+                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
+                  <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
+                    <Award size={14} className={activeTheme.accent} /> მიღწევები
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {AVAILABLE_BADGES.map((badge) => {
+                      const isUnlocked = myAchievements.includes(badge.id);
+                      return (
+                        <div key={badge.id} className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${isUnlocked ? `bg-${theme==='lavender'?'violet':'amber'}-500/10 border-${theme==='lavender'?'violet':'amber'}-500/30` : 'bg-stone-950/50 border-white/5 opacity-50 grayscale'}`}>
+                          <span className="text-xl md:text-2xl drop-shadow-md">{badge.icon}</span>
+                          <span className={`text-[9px] md:text-[10px] font-bold leading-tight ${isUnlocked ? 'text-stone-200' : 'text-stone-500'}`}>{badge.name}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
                   
                   <div className="flex border-b border-white/5 gap-4">
@@ -468,10 +491,8 @@ export default function App() {
 
               </div>
 
-              {/* 🟢 მარჯვენა სვეტი: მისიები, მაგიდები, რეიტინგი */}
               <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full">
                 
-                {/* 🟢 ყოველდღიური მისიები (Daily Quests) */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 relative overflow-hidden`}>
                    <div className={`absolute top-0 right-0 w-32 h-32 ${activeTheme.accentBg} opacity-5 blur-[60px] rounded-full`}></div>
                    <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest mb-3">
@@ -504,7 +525,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 🟢 მაგიდის შექმნა */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <button onClick={() => setIsCreateModalOpen(true)} className={`p-4 md:p-5 bg-gradient-to-r ${theme==='lavender' ? 'from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 border-indigo-800' : 'from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 border-amber-800'} rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-lg active:scale-95 text-stone-950 border-b-2 group`}>
                     <div>
@@ -520,7 +540,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 🟢 რეიტინგი და ოთახები */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
                     <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
