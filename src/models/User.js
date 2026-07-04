@@ -38,7 +38,6 @@ const userSchema = new mongoose.Schema({
   friends: [{ type: String }],
   friendRequests: [{ type: String }],
 
-  // 🟢 მაღაზიის და ინვენტარის სისტემა
   coins: { type: Number, default: 0 },
   avatar: { type: String, default: '😎' },
   unlockedAvatars: { type: [String], default: ['😎'] },
@@ -47,7 +46,10 @@ const userSchema = new mongoose.Schema({
   unlockedTableThemes: { type: [String], default: ['wood', 'lavender'] },
   
   cardBack: { type: String, default: 'classic' },
-  unlockedCardBacks: { type: [String], default: ['classic'] }
+  unlockedCardBacks: { type: [String], default: ['classic'] },
+
+  // 🟢 VIP სისტემა
+  vipUntil: { type: Date, default: null }
 
 }, { timestamps: true });
 

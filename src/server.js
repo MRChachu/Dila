@@ -55,20 +55,40 @@ io.on('connection', (socket) => {
     broadcastOnlineUsers();
   });
 
-  // 🟢 სხვა მოთამაშის პროფილის ნახვა (Player Inspect)
   socket.on('getUserProfile', async ({ username }) => {
     try {
       const p = await User.findOne({ username });
       if (p) {
         socket.emit('receiveUserProfile', {
           username: p.username, level: p.level, xp: p.xp,
-          stats: p.stats, achievements: p.achievements, avatar: p.avatar
+          stats: p.stats, achievements: p.achievements, avatar: p.avatar,
+          vipUntil: p.vipUntil
         });
       }
     } catch(err) {}
   });
 
-  // 🟢 უნივერსალური მაღაზია (ავატარები, მაგიდები, კარტები)
+  // 🟢 VIP-ის ყიდვის ლოგიკა
+  socket.on('buyVip', async ({ days, price }) => {
+    try {
+      const uname = onlineUsersMap[socket.id];
+      if(!uname) return;
+      const user = await User.findOne({username: uname});
+      if(user) {
+        if(user.coins >= price) {
+          user.coins -= price;
+          const currentVip = user.vipUntil && user.vipUntil > new Date() ? user.vipUntil.getTime() : Date.now();
+          user.vipUntil = new Date(currentVip + days * 24 * 60 * 60 * 1000); // ვუმატებთ დღეებს
+          await user.save();
+          socket.emit('successMessage', `VIP სტატუსი ${days} დღით გააქტიურდა!`);
+          socket.emit('friendListUpdated');
+        } else {
+          socket.emit('error', 'არასაკმარისი მონეტები!');
+        }
+      }
+    } catch(err) { console.error(err); }
+  });
+
   socket.on('buyItem', async ({ type, itemId, price }) => {
     try {
       const uname = onlineUsersMap[socket.id];
@@ -87,7 +107,7 @@ io.on('connection', (socket) => {
           
           await user.save();
           socket.emit('successMessage', 'წარმატებით შეიძინე!');
-          socket.emit('friendListUpdated'); // ვააფდეითებთ ფრონტს
+          socket.emit('friendListUpdated'); 
         } else {
           socket.emit('error', 'არასაკმარისი მონეტები!');
         }
@@ -115,7 +135,6 @@ io.on('connection', (socket) => {
     } catch(err) { console.error(err); }
   });
 
-  // მეგობრების ლოგიკა
   socket.on('sendFriendRequest', async ({ targetUsername }) => {
     try {
       const senderName = onlineUsersMap[socket.id];
@@ -172,6 +191,7 @@ io.on('connection', (socket) => {
   const broadcastActiveRooms = () => {
     const activeLobbies = Object.values(rooms).filter(r => !r.gameStarted).map(r => ({
       id: r.id, hostName: r.players[0]?.name || 'უცნობი', hostAvatar: r.players[0]?.avatar || '😎',
+      hostVip: r.players[0]?.vipUntil, // ვამატებთ VIP-ს
       currentPlayers: r.players.length, maxPlayers: r.maxPlayers, targetScore: r.targetScore,
       allowBots: r.allowBots, isPrivate: r.isPrivate, isRanked: r.isRanked
     }));
@@ -245,12 +265,15 @@ io.on('connection', (socket) => {
     let userAvatar = '😎';
     let hostTheme = 'wood';
     let hostCardBack = 'classic';
+    let userVip = null;
+    
     try {
         const dbUser = await User.findOne({ username: playerName });
         if (dbUser) {
           userAvatar = dbUser.avatar || '😎';
           hostTheme = dbUser.tableTheme || 'wood';
           hostCardBack = dbUser.cardBack || 'classic';
+          userVip = dbUser.vipUntil; // 🟢 მიაქვს VIP
         }
     } catch(e) {}
 
@@ -263,7 +286,7 @@ io.on('connection', (socket) => {
         isRanked: allowBots ? false : (isRanked !== undefined ? isRanked : true), 
         readyForNextRound: [], turnExpiresAt: null,
         password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword,
-        hostTheme, hostCardBack // 🟢 ოთახი იმახსოვრებს Host-ის დიზაინს
+        hostTheme, hostCardBack 
       };
     }
 
@@ -280,6 +303,7 @@ io.on('connection', (socket) => {
     if (playerExists) {
       playerExists.id = socket.id; 
       playerExists.avatar = userAvatar;
+      playerExists.vipUntil = userVip; // 🟢 ვანახლებთ VIP-ს დაბრუნებისას
       if (room.gameStarted) socket.emit('gameStarted', room);
       else socket.emit('roomUpdated', room);
       broadcastActiveRooms();
@@ -290,7 +314,7 @@ io.on('connection', (socket) => {
       return socket.emit('error', 'ოთახი უკვე სავსეა!');
     }
 
-    room.players.push({ id: socket.id, name: playerName, avatar: userAvatar, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
+    room.players.push({ id: socket.id, name: playerName, avatar: userAvatar, vipUntil: userVip, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
     io.to(roomId).emit('roomUpdated', room);
     broadcastActiveRooms();
   });
@@ -318,7 +342,7 @@ io.on('connection', (socket) => {
     if (!room) return;
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
-    io.to(roomId).emit('receiveMessage', { sender: player.name, senderId: player.id, text: message, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+    io.to(roomId).emit('receiveMessage', { sender: player.name, senderId: player.id, isVip: player.vipUntil, text: message, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
   });
 
   socket.on('sendEmote', ({ roomId, emote }) => {
@@ -334,7 +358,7 @@ io.on('connection', (socket) => {
     if (room.allowBots) {
       const currentRealCount = room.players.length;
       for (let i = currentRealCount; i < room.maxPlayers; i++) {
-        room.players.push({ id: `bot_${Math.random().toString(36).substr(2, 5)}`, name: `რობოტი ${i}`, avatar: '🤖', cards: [], captured: [], totalScore: 0, isBot: true, achievementsEarned: [] });
+        room.players.push({ id: `bot_${Math.random().toString(36).substr(2, 5)}`, name: `რობოტი ${i}`, avatar: '🤖', vipUntil: null, cards: [], captured: [], totalScore: 0, isBot: true, achievementsEarned: [] });
       }
     }
     room.deck = createDeck(); room.tableCards = [];
@@ -369,13 +393,13 @@ io.on('connection', (socket) => {
       player.captured.push(cardFromHand, ...cardsFromTable);
       const tableIds = cardsFromTable.map(c => `${c.rank}${c.suit}`);
       room.tableCards = room.tableCards.filter(c => !tableIds.includes(`${c.rank}${c.suit}`));
-      room.lastAction = { playerName: player.name, cardFromHand, cardsFromTable, type: 'CAPTURE' };
+      room.lastAction = { playerName: player.name, isVip: player.vipUntil, cardFromHand, cardsFromTable, type: 'CAPTURE' };
       room.lastCapturerId = player.id; 
     } else {
       if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
       player.cards = player.cards.filter(c => !(c.rank === cardFromHand.rank && c.suit === cardFromHand.suit));
       room.tableCards.push(cardFromHand);
-      room.lastAction = { playerName: player.name, cardFromHand, cardsFromTable: [], type: 'DISCARD' };
+      room.lastAction = { playerName: player.name, isVip: player.vipUntil, cardFromHand, cardsFromTable: [], type: 'DISCARD' };
     }
     handleTurnTransition(room, roomId);
   });
@@ -552,7 +576,7 @@ function startTurnTimer(room, roomId) {
     const autoCard = timeoutPlayer.cards[0];
     timeoutPlayer.cards = timeoutPlayer.cards.filter(c => !(c.rank === autoCard.rank && c.suit === autoCard.suit));
     room.tableCards.push(autoCard);
-    room.lastAction = { playerName: `${timeoutPlayer.name} (🕒 დრო)`, cardFromHand: autoCard, cardsFromTable: [], type: 'DISCARD' };
+    room.lastAction = { playerName: `${timeoutPlayer.name} (🕒)`, isVip: timeoutPlayer.vipUntil, cardFromHand: autoCard, cardsFromTable: [], type: 'DISCARD' };
     handleTurnTransition(room, roomId);
   }, 20000);
 }
@@ -565,7 +589,7 @@ function checkAndTriggerBotTurn(room, roomId) {
       const botMove = getBestMove(activePlayer.cards, room.tableCards);
       if (!botMove) return;
       activePlayer.cards = activePlayer.cards.filter(c => !(c.rank === botMove.cardFromHand.rank && c.suit === botMove.cardFromHand.suit));
-      room.lastAction = { playerName: activePlayer.name, cardFromHand: botMove.cardFromHand, cardsFromTable: botMove.cardsFromTable, type: botMove.type };
+      room.lastAction = { playerName: activePlayer.name, isVip: null, cardFromHand: botMove.cardFromHand, cardsFromTable: botMove.cardsFromTable, type: botMove.type };
       if (botMove.type === 'CAPTURE' && botMove.cardsFromTable.length > 0) {
         activePlayer.captured.push(botMove.cardFromHand, ...botMove.cardsFromTable);
         const tableIds = botMove.cardsFromTable.map(c => `${c.rank}${c.suit}`);
