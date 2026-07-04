@@ -2,27 +2,30 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// 🟢 1. რეგისტრაცია (Register)
+// 🎯 ყოველდღიური მისიების ბაზა
+const ALL_DAILY_QUESTS = [
+  { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 300 },
+  { questId: 'win_ranked', title: 'მოიგე 2 რეიტინგული მატჩი', target: 2, xpReward: 500 },
+  { questId: 'get_10_diamond', title: 'მოიპოვე 10 აგური მატჩში', target: 1, xpReward: 400 },
+  { questId: 'get_2_club', title: 'მოიპოვე 2 ჯვარი მატჩში', target: 1, xpReward: 400 },
+  { questId: 'play_5_games', title: 'ითამაშე 5 მატჩი', target: 5, xpReward: 350 },
+  { questId: 'win_3_games', title: 'მოიგე 3 მატჩი', target: 3, xpReward: 600 },
+  { questId: 'sweep_table', title: 'გაასუფთავე მაგიდა (ვალეტით)', target: 1, xpReward: 300 }
+];
+
+// 🟢 1. რეგისტრაცია
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
     
-    // ვამოწმებთ, ხომ არ არსებობს უკვე ასეთი სახელი
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ message: 'ეს სახელი უკვე დაკავებულია!' });
     }
 
-    // ვქმნით ახალ მომხმარებელს (საწყისი მონეტებით და XP-ით)
-    const newUser = new User({ 
-      username, 
-      email, 
-      password // თუ რეალურ პროექტად უშვებ, აქ ჯობია bcrypt-ით დაიჰეშოს ხოლმე
-    }); 
-    
+    const newUser = new User({ username, email, password }); 
     await newUser.save();
 
-    // პაროლის გარეშე ვაბრუნებთ მომხმარებლის ინფორმაციას
     const { password: _, ...userData } = newUser._doc;
     res.status(201).json({ user: userData, message: 'წარმატებით დარეგისტრირდით!' });
   } catch (err) {
@@ -53,13 +56,25 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 🟢 3. მოთამაშის პროფილის და სტატისტიკის გამოთხოვა (XP, Coins, Achievements)
+// 🟢 3. მოთამაშის პროფილის და სტატისტიკის გამოთხოვა
 router.get('/profile/:username', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username });
     if (!user) return res.status(404).json({ message: 'მოთამაშე ვერ მოიძებნა' });
     
-    // ვიზუალს ვუგზავნით ყველაფერს, პაროლის გარდა
+    const now = new Date();
+    
+    // 🎯 თუ მისიები არ აქვს, ან 24 საათი გავიდა -> ვუგენერირებთ 3 ახალს ლოგინისას!
+    if (!user.dailyQuests || user.dailyQuests.length === 0 || (user.lastQuestGeneration && (now - new Date(user.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
+        const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
+        user.dailyQuests = shuffled.slice(0, 3).map(q => ({
+            questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false
+        }));
+        user.lastQuestGeneration = now;
+        await user.save(); // ვინახავთ ახალ მისიებს ბაზაში
+    }
+
+    // ვიზუალს ვუგზავნით განახლებულ მონაცემებს
     const { password, ...userData } = user._doc;
     res.json(userData);
   } catch (err) {
@@ -72,9 +87,9 @@ router.get('/profile/:username', async (req, res) => {
 router.get('/leaderboard', async (req, res) => {
   try {
     const topUsers = await User.find()
-      .sort({ 'stats.gamesWon': -1, xp: -1 }) // ვალაგებთ მოგებების, შემდეგ კი XP-ის მიხედვით
-      .limit(10) // ვაგზავნით მხოლოდ საუკეთესო 10-ს
-      .select('-password'); // პაროლებს ვმალავთ უსაფრთხოებისთვის
+      .sort({ 'stats.gamesWon': -1, xp: -1 })
+      .limit(10)
+      .select('-password');
       
     res.json(topUsers);
   } catch (err) {
