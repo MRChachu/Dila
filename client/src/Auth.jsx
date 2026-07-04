@@ -146,7 +146,8 @@ export default function Auth({ onAuthSuccess }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { icon: Target, title: 'მიზანი', desc: 'მოთამაშეების მიზანია დააგროვონ 11 ან 21 ქულა დადგენილი წესებით.' },
-              { icon: BookOpen, title: 'ქულების სისტემა', desc: 'ბევრი კარტი (1 ქულა), ბევრი ჯვარი (1 ქულა), 10 აგური (2 ქულა), 2 ჯვარი (1 ქულა).' },
+              // 🟢 ზუსტად აქ გასწორდა ქულების სისტემა
+              { icon: BookOpen, title: 'ქულების სისტემა', desc: 'ბევრი კარტი (2 ქულა), მეტი ჯვარი (1 ქულა), 10 აგური (1 ქულა), 2 ჯვარი (1 ქულა).' },
               { icon: Shield, title: 'მოჭრა და გასუფთავება', desc: 'ვალეტი (J) ჭრის ნებისმიერ კარტს. მაგიდის სრულად გასუფთავება უპირატესობას გაძლევს.' }
             ].map((rule, i) => (
               <div key={i} className="bg-stone-900/50 p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
