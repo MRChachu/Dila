@@ -55,23 +55,39 @@ io.on('connection', (socket) => {
     broadcastOnlineUsers();
   });
 
-  // 🟢 მაღაზიის (Shop) ლოგიკა
-  socket.on('buyAvatar', async ({ avatarId, price }) => {
+  // 🟢 სხვა მოთამაშის პროფილის ნახვა (Player Inspect)
+  socket.on('getUserProfile', async ({ username }) => {
+    try {
+      const p = await User.findOne({ username });
+      if (p) {
+        socket.emit('receiveUserProfile', {
+          username: p.username, level: p.level, xp: p.xp,
+          stats: p.stats, achievements: p.achievements, avatar: p.avatar
+        });
+      }
+    } catch(err) {}
+  });
+
+  // 🟢 უნივერსალური მაღაზია (ავატარები, მაგიდები, კარტები)
+  socket.on('buyItem', async ({ type, itemId, price }) => {
     try {
       const uname = onlineUsersMap[socket.id];
       if(!uname) return;
       const user = await User.findOne({username: uname});
       if(user) {
-        if(user.unlockedAvatars.includes(avatarId)) {
-          return socket.emit('error', 'ეს ავატარი უკვე გაქვს!');
-        }
+        let unlockedArray = type === 'avatar' ? user.unlockedAvatars : type === 'table' ? user.unlockedTableThemes : user.unlockedCardBacks;
+        if(unlockedArray.includes(itemId)) return socket.emit('error', 'ეს ნივთი უკვე გაქვს!');
+        
         if(user.coins >= price) {
           user.coins -= price;
-          user.unlockedAvatars.push(avatarId);
-          user.avatar = avatarId;
+          unlockedArray.push(itemId);
+          if (type === 'avatar') user.avatar = itemId;
+          else if (type === 'table') user.tableTheme = itemId;
+          else if (type === 'card') user.cardBack = itemId;
+          
           await user.save();
-          socket.emit('successMessage', 'ავატარი წარმატებით შეიძინე!');
-          socket.emit('friendListUpdated'); 
+          socket.emit('successMessage', 'წარმატებით შეიძინე!');
+          socket.emit('friendListUpdated'); // ვააფდეითებთ ფრონტს
         } else {
           socket.emit('error', 'არასაკმარისი მონეტები!');
         }
@@ -79,20 +95,27 @@ io.on('connection', (socket) => {
     } catch(err) { console.error(err); }
   });
 
-  socket.on('equipAvatar', async ({ avatarId }) => {
+  socket.on('equipItem', async ({ type, itemId }) => {
     try {
       const uname = onlineUsersMap[socket.id];
       if(!uname) return;
       const user = await User.findOne({username: uname});
-      if(user && user.unlockedAvatars.includes(avatarId)) {
-        user.avatar = avatarId;
-        await user.save();
-        socket.emit('successMessage', 'ავატარი დაყენებულია!');
-        socket.emit('friendListUpdated'); 
+      if(user) {
+        let unlockedArray = type === 'avatar' ? user.unlockedAvatars : type === 'table' ? user.unlockedTableThemes : user.unlockedCardBacks;
+        if(unlockedArray.includes(itemId)) {
+          if (type === 'avatar') user.avatar = itemId;
+          else if (type === 'table') user.tableTheme = itemId;
+          else if (type === 'card') user.cardBack = itemId;
+          
+          await user.save();
+          socket.emit('successMessage', 'დიზაინი დაყენებულია!');
+          socket.emit('friendListUpdated');
+        }
       }
     } catch(err) { console.error(err); }
   });
 
+  // მეგობრების ლოგიკა
   socket.on('sendFriendRequest', async ({ targetUsername }) => {
     try {
       const senderName = onlineUsersMap[socket.id];
@@ -104,8 +127,8 @@ io.on('connection', (socket) => {
           await targetUser.save();
           const targetSocketEntry = Object.entries(onlineUsersMap).find(([id, name]) => name === targetUsername);
           if(targetSocketEntry) io.to(targetSocketEntry[0]).emit('friendRequestReceived', senderName);
-          socket.emit('successMessage', 'მეგობრობის თხოვნა გაიგზავნა!');
-        } else { socket.emit('error', 'თხოვნა უკვე გაგზავნილია.'); }
+          socket.emit('successMessage', 'თხოვნა გაიგზავნა!');
+        } else { socket.emit('error', 'უკვე გაგზავნილია.'); }
       } else { socket.emit('error', 'მოთამაშე ვერ მოიძებნა.'); }
     } catch(err) { console.error(err); }
   });
@@ -119,13 +142,12 @@ io.on('connection', (socket) => {
         me.friendRequests = me.friendRequests.filter(u => u !== senderUsername);
         if(!me.friends.includes(senderUsername)) me.friends.push(senderUsername);
         if(!sender.friends.includes(myName)) sender.friends.push(myName);
-        await me.save();
-        await sender.save();
+        await me.save(); await sender.save();
         socket.emit('friendListUpdated');
         const senderSocketEntry = Object.entries(onlineUsersMap).find(([id, name]) => name === senderUsername);
         if(senderSocketEntry) {
           io.to(senderSocketEntry[0]).emit('friendListUpdated');
-          io.to(senderSocketEntry[0]).emit('successMessage', `${myName}-მ დაგიმატა მეგობრებში!`);
+          io.to(senderSocketEntry[0]).emit('successMessage', `${myName}-მ დაგიმატა!`);
         }
       }
     } catch(err) { console.error(err); }
@@ -148,19 +170,11 @@ io.on('connection', (socket) => {
   });
 
   const broadcastActiveRooms = () => {
-    const activeLobbies = Object.values(rooms)
-      .filter(r => !r.gameStarted) 
-      .map(r => ({
-        id: r.id,
-        hostName: r.players[0]?.name || 'უცნობი',
-        hostAvatar: r.players[0]?.avatar || '😎',
-        currentPlayers: r.players.length,
-        maxPlayers: r.maxPlayers,
-        targetScore: r.targetScore,
-        allowBots: r.allowBots,
-        isPrivate: r.isPrivate,
-        isRanked: r.isRanked
-      }));
+    const activeLobbies = Object.values(rooms).filter(r => !r.gameStarted).map(r => ({
+      id: r.id, hostName: r.players[0]?.name || 'უცნობი', hostAvatar: r.players[0]?.avatar || '😎',
+      currentPlayers: r.players.length, maxPlayers: r.maxPlayers, targetScore: r.targetScore,
+      allowBots: r.allowBots, isPrivate: r.isPrivate, isRanked: r.isRanked
+    }));
     io.emit('activeRoomsList', activeLobbies); 
   };
 
@@ -175,28 +189,22 @@ io.on('connection', (socket) => {
           if (room.players.length === 0) {
             delete rooms[roomId];
             if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
-          } else {
-            io.to(roomId).emit('roomUpdated', room);
-          }
+          } else { io.to(roomId).emit('roomUpdated', room); }
         } else {
           const p = room.players[playerIndex];
           const originalName = p.name; 
           const isMatchOver = room.roundSummary && room.roundSummary.matchWinner;
           
           if (!p.isBot && room.isRanked && !isMatchOver) {
-            User.findOneAndUpdate(
-              { username: originalName },
+            User.findOneAndUpdate({ username: originalName },
               { $inc: { 'stats.gamesPlayed': 1, 'stats.totalPointsScored': -room.targetScore }, 
                 $push: { gameHistory: { $each: [{ roomId: room.id, targetScore: room.targetScore, myFinalScore: -room.targetScore, isWinner: false, playedAt: new Date() }], $position: 0 } }
-              }
-            ).catch(err => console.error(err));
+              }).catch(err => console.error(err));
           }
 
-          p.isBot = true;
-          p.name = `${originalName} (გავიდა 🤖)`;
-          p.id = `bot_${Math.random().toString(36).substr(2, 5)}`; 
-
+          p.isBot = true; p.name = `${originalName} (გავიდა 🤖)`; p.id = `bot_${Math.random().toString(36).substr(2, 5)}`; 
           const realPlayers = room.players.filter(pl => !pl.isBot);
+          
           if (realPlayers.length === 0) {
             delete rooms[roomId];
             if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
@@ -217,8 +225,7 @@ io.on('connection', (socket) => {
 
   socket.on('reconnectUser', ({ oldSocketId, playerName, roomId }) => {
     if (oldSocketId && disconnectTimeouts[oldSocketId]) {
-      clearTimeout(disconnectTimeouts[oldSocketId]); 
-      delete disconnectTimeouts[oldSocketId];
+      clearTimeout(disconnectTimeouts[oldSocketId]); delete disconnectTimeouts[oldSocketId];
     }
     const room = rooms[roomId];
     if (room) {
@@ -236,9 +243,15 @@ io.on('connection', (socket) => {
     socket.join(roomId);
 
     let userAvatar = '😎';
+    let hostTheme = 'wood';
+    let hostCardBack = 'classic';
     try {
         const dbUser = await User.findOne({ username: playerName });
-        if (dbUser) userAvatar = dbUser.avatar || '😎';
+        if (dbUser) {
+          userAvatar = dbUser.avatar || '😎';
+          hostTheme = dbUser.tableTheme || 'wood';
+          hostCardBack = dbUser.cardBack || 'classic';
+        }
     } catch(e) {}
 
     if (!rooms[roomId]) {
@@ -249,7 +262,8 @@ io.on('connection', (socket) => {
         allowBots: allowBots !== undefined ? allowBots : true,
         isRanked: allowBots ? false : (isRanked !== undefined ? isRanked : true), 
         readyForNextRound: [], turnExpiresAt: null,
-        password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword 
+        password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword,
+        hostTheme, hostCardBack // 🟢 ოთახი იმახსოვრებს Host-ის დიზაინს
       };
     }
 
@@ -289,7 +303,6 @@ io.on('connection', (socket) => {
     if (room.players[0] && room.players[0].id !== socket.id) return;
     room.targetScore = targetScore; room.maxPlayers = maxPlayers; room.allowBots = allowBots;
     if (allowBots) room.isRanked = false;
-    
     if (room.players.length > maxPlayers) room.players = room.players.slice(0, maxPlayers);
     io.to(roomId).emit('roomUpdated', room);
     broadcastActiveRooms();
@@ -324,15 +337,11 @@ io.on('connection', (socket) => {
         room.players.push({ id: `bot_${Math.random().toString(36).substr(2, 5)}`, name: `რობოტი ${i}`, avatar: '🤖', cards: [], captured: [], totalScore: 0, isBot: true, achievementsEarned: [] });
       }
     }
-    
-    room.deck = createDeck(); 
-    room.tableCards = [];
-
+    room.deck = createDeck(); room.tableCards = [];
     while (room.tableCards.length < 4) {
       let card = room.deck.shift();
       if (card.rank === 'J') { room.deck.push(card); } else { room.tableCards.push(card); }
     }
-
     room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; p.achievementsEarned = []; });
     room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.lastCapturerId = null; 
     startTurnTimer(room, roomId);
@@ -389,8 +398,7 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('roomUpdated', room);
         broadcastActiveRooms();
       } else {
-        room.deck = createDeck(); 
-        room.tableCards = [];
+        room.deck = createDeck(); room.tableCards = [];
         while (room.tableCards.length < 4) {
           let card = room.deck.shift();
           if (card.rank === 'J') { room.deck.push(card); } else { room.tableCards.push(card); }
@@ -401,19 +409,15 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('gameStarted', room);
         checkAndTriggerBotTurn(room, roomId);
       }
-    } else {
-      io.to(roomId).emit('gameUpdated', room);
-    }
+    } else { io.to(roomId).emit('gameUpdated', room); }
   });
 
   socket.on('disconnect', () => {
     console.log(`❌ მოთამაშე გაითიშა: ${socket.id}`);
     delete onlineUsersMap[socket.id];
     broadcastOnlineUsers();
-
     disconnectTimeouts[socket.id] = setTimeout(() => {
-      handlePlayerLeave(socket.id);
-      delete disconnectTimeouts[socket.id];
+      handlePlayerLeave(socket.id); delete disconnectTimeouts[socket.id];
     }, 5000);
   });
 });
@@ -432,10 +436,7 @@ function handleTurnTransition(room, roomId) {
     } else {
       if (room.tableCards.length > 0 && room.lastCapturerId) {
         const lastCapturer = room.players.find(p => p.id === room.lastCapturerId);
-        if (lastCapturer) {
-          lastCapturer.captured.push(...room.tableCards);
-          room.tableCards = []; 
-        }
+        if (lastCapturer) { lastCapturer.captured.push(...room.tableCards); room.tableCards = []; }
       }
 
       calculateRoundScores(room);
@@ -475,7 +476,6 @@ function handleTurnTransition(room, roomId) {
               const dbUser = await User.findOne({ username: p.name });
               if (dbUser) {
                   const now = new Date();
-                  
                   if (!dbUser.dailyQuests || dbUser.dailyQuests.length === 0 || (dbUser.lastQuestGeneration && (now - new Date(dbUser.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
                       dbUser.dailyQuests = [
                           { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, progress: 0, xpReward: 300, isCompleted: false },
@@ -485,12 +485,8 @@ function handleTurnTransition(room, roomId) {
                       dbUser.lastQuestGeneration = now;
                   }
 
-                  let earnedXp = 100;
-                  let earnedCoins = 10; // 🟢 მონეტები თამაშისთვის
-                  if (isWinner) {
-                    earnedXp += 200; 
-                    earnedCoins += 40; // 🟢 მონეტები მოგებისთვის
-                  }
+                  let earnedXp = 100; let earnedCoins = 10;
+                  if (isWinner) { earnedXp += 200; earnedCoins += 40; }
 
                   dbUser.dailyQuests.forEach(q => {
                       if (q.isCompleted) return;
@@ -499,20 +495,16 @@ function handleTurnTransition(room, roomId) {
                       if (q.questId === 'get_10_diamond' && matchAchievements.includes('diamond_10')) q.progress += 1;
 
                       if (q.progress >= q.target) {
-                          q.progress = q.target;
-                          q.isCompleted = true;
-                          earnedXp += q.xpReward; 
-                          earnedCoins += 50; // 🟢 ბონუს მონეტები მისიის შესრულებისთვის
+                          q.progress = q.target; q.isCompleted = true;
+                          earnedXp += q.xpReward; earnedCoins += 50; 
                       }
                   });
 
-                  dbUser.xp += earnedXp;
-                  dbUser.coins = (dbUser.coins || 0) + earnedCoins;
+                  dbUser.xp += earnedXp; dbUser.coins = (dbUser.coins || 0) + earnedCoins;
                   
                   let levelThreshold = dbUser.level * 1000;
                   while (dbUser.xp >= levelThreshold) {
-                      dbUser.xp -= levelThreshold;
-                      dbUser.level += 1;
+                      dbUser.xp -= levelThreshold; dbUser.level += 1;
                       levelThreshold = dbUser.level * 1000;
                   }
 
