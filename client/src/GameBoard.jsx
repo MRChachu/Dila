@@ -145,28 +145,51 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           {room?.players?.map((p, i) => {
             const isCurrentTurn = room.currentTurn === i;
             const emote = activeEmotes.find(e => e.playerId === p.id);
+            
+            // 🟢 მოთამაშის დეტალური სტატისტიკა
+            const capturedCards = p.captured?.length || 0;
+            const capturedClubs = p.captured?.filter(c => c.suit === '♣' || c.suit === '♣️').length || 0;
+            const has10Diamond = p.captured?.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
+            const has2Club = p.captured?.some(c => c.rank === '2' && (c.suit === '♣' || c.suit === '♣️'));
+
             return (
-              // 🟢 სრულად დახვეწილი და ლამაზი Active Turn ინდიკატორი
               <div key={p.id} className={`relative flex items-center justify-between p-2.5 md:p-3 rounded-2xl border transition-all duration-500 ${isCurrentTurn ? `bg-stone-900 border-white/10 shadow-2xl scale-[1.03] z-10 ${activeTheme.accent.replace('text-', 'ring-1 ring-')}` : 'bg-stone-950/40 border-white/5'}`}>
                 
-                {/* ულამაზესი მანათობელი ეფექტები (Glow) */}
                 {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-[0.03] rounded-2xl`} />}
                 {isCurrentTurn && <div className={`absolute -left-[1px] top-1/2 -translate-y-1/2 w-1.5 h-8 ${activeTheme.accentBg} rounded-r-md shadow-[0_0_12px_currentColor] animate-pulse z-20`} />}
                 
-                <div className="flex items-center gap-2 z-10">
-                  <span className="text-xl md:text-2xl drop-shadow-md">{p.avatar || '😎'}</span>
+                <div className="flex items-start gap-2.5 z-10">
+                  <span className="text-2xl drop-shadow-md mt-0.5">{p.avatar || '😎'}</span>
                   <div className="flex flex-col">
-                    <span className="font-bold text-xs md:text-sm">
+                    <span className="font-bold text-xs md:text-sm truncate max-w-[120px]">
                       <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
                     </span>
-                    <span className="text-[9px] md:text-[10px] text-stone-500 font-bold mt-0.5 tracking-wider">ქულა: {p.totalScore}</span>
+                    
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className="text-[9px] md:text-[10px] text-stone-500 font-bold tracking-wider">ქულა: <span className="text-stone-200">{p.totalScore}</span></span>
+                      
+                      {/* 🟢 ბარათების და ჯვრების მთვლელი */}
+                      <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-stone-950/60 rounded border border-white/5">
+                        <span className="text-[9px] font-mono font-black text-stone-300" title="წაღებული კარტები">🃏 {capturedCards}</span>
+                        <span className="text-stone-700 text-[8px]">|</span>
+                        <span className="text-[9px] font-mono font-black text-stone-300" title="წაღებული ჯვრები">♣️ {capturedClubs}</span>
+                      </div>
+                      
+                      {/* 🟢 10 აგურის და 2 ჯვრის ინდიკატორი */}
+                      <div className="flex gap-1">
+                        {has10Diamond && <span className="text-[11px] drop-shadow-md" title="10 აგური">💎</span>}
+                        {has2Club && <span className="text-[11px] drop-shadow-md" title="2 ჯვარი">♣️</span>}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="flex items-center -space-x-1 md:-space-x-2 z-10">
-                   {Array.from({length: p.cards?.length || 0}).map((_, idx) => (
-                      <div key={idx} className={`w-3 h-5 md:w-4 md:h-6 rounded-sm border shadow-sm ${activeCardBack}`}></div>
-                   ))}
+                <div className="flex flex-col items-end z-10">
+                   <div className="flex items-center -space-x-1.5">
+                     {Array.from({length: p.cards?.length || 0}).map((_, idx) => (
+                        <div key={idx} className={`w-3.5 h-5 md:w-4 md:h-6 rounded-sm border shadow-md ${activeCardBack}`}></div>
+                     ))}
+                   </div>
                 </div>
 
                 {emote && (
@@ -236,7 +259,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           
           <div className="text-center h-8 md:h-10 relative">
             {isMyTurn ? (
-              // 🟢 "შენი სვლაა" ღილაკის დახვეწილი დიზაინი
               <div className={`inline-flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-stone-900 border border-white/10 rounded-full ${activeTheme.accent} text-[10px] md:text-xs font-black shadow-[0_0_15px_currentColor] animate-pulse`}>
                 <Sparkles size={14} className="md:w-[16px] md:h-[16px]" /> შენი სვლაა!
               </div>
@@ -247,36 +269,39 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             )}
           </div>
 
-          <div className="flex-1 flex items-center justify-center relative mt-2 md:mt-4">
+          <div className="flex-1 flex flex-col items-center justify-center relative mt-2 w-full">
             
-            {room.lastAction && (
-              <div className="absolute -top-3 md:-top-6 left-1/2 -translate-x-1/2 bg-stone-900/90 border border-white/10 px-3 md:px-5 py-1.5 md:py-2 rounded-xl md:rounded-2xl shadow-xl z-20 flex flex-col items-center gap-1 md:gap-1.5 animate-in slide-in-from-top-4 duration-300">
-                <span className="text-[8px] md:text-[10px] font-black text-stone-400 uppercase tracking-widest whitespace-nowrap">
-                  <VipName name={room.lastAction.playerName} isVip={checkIsVip(room.lastAction.isVip)} className={activeTheme.accent} />-მ {room.lastAction.type === 'CAPTURE' ? 'მოჭრა' : 'დააგდო'}
-                </span>
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <div className="flex items-center gap-0.5 px-1.5 md:px-2 py-0.5 md:py-1 bg-stone-950 rounded-md md:rounded-lg border border-white/5">
-                    <span className={`text-[10px] md:text-xs font-black ${getSuitColor(room.lastAction.cardFromHand.suit)}`}>{room.lastAction.cardFromHand.rank}</span>
-                    <span className={`text-xs md:text-sm ${getSuitColor(room.lastAction.cardFromHand.suit)}`}>{room.lastAction.cardFromHand.suit}</span>
+            {/* 🟢 ბოლო სვლის ველი (აღარ ფარავს მაგიდას, ამოწეულია ზემოთ) */}
+            <div className="h-10 md:h-14 mb-2 flex items-center justify-center w-full z-20">
+              {room.lastAction && (
+                <div className="bg-stone-900/90 border border-white/10 px-3 md:px-5 py-1.5 md:py-2 rounded-xl md:rounded-2xl shadow-xl flex items-center gap-1.5 md:gap-2 animate-in slide-in-from-bottom-2 duration-300">
+                  <span className="text-[8px] md:text-[10px] font-black text-stone-400 uppercase tracking-widest whitespace-nowrap">
+                    <VipName name={room.lastAction.playerName} isVip={checkIsVip(room.lastAction.isVip)} className={activeTheme.accent} />-მ {room.lastAction.type === 'CAPTURE' ? 'მოჭრა' : 'დააგდო'}
+                  </span>
+                  <div className="flex items-center gap-1 md:gap-1.5 ml-1">
+                    <div className="flex items-center gap-0.5 px-1.5 md:px-2 py-0.5 md:py-1 bg-stone-950 rounded-md md:rounded-lg border border-white/5">
+                      <span className={`text-[10px] md:text-xs font-black ${getSuitColor(room.lastAction.cardFromHand.suit)}`}>{room.lastAction.cardFromHand.rank}</span>
+                      <span className={`text-xs md:text-sm ${getSuitColor(room.lastAction.cardFromHand.suit)}`}>{room.lastAction.cardFromHand.suit}</span>
+                    </div>
+                    {room.lastAction.type === 'CAPTURE' && room.lastAction.cardsFromTable?.length > 0 && (
+                      <>
+                        <span className="text-stone-600 text-[10px] md:text-xs font-black">+</span>
+                        <div className="flex items-center gap-0.5 md:gap-1">
+                          {room.lastAction.cardsFromTable.map((c, idx) => (
+                            <div key={idx} className="flex items-center gap-0.5 px-1.5 md:px-2 py-0.5 md:py-1 bg-stone-950 rounded-md md:rounded-lg border border-white/5">
+                              <span className={`text-[10px] md:text-xs font-black ${getSuitColor(c.suit)}`}>{c.rank}</span>
+                              <span className={`text-xs md:text-sm ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
-                  {room.lastAction.type === 'CAPTURE' && room.lastAction.cardsFromTable?.length > 0 && (
-                    <>
-                      <span className="text-stone-600 text-[10px] md:text-xs font-black">+</span>
-                      <div className="flex items-center gap-0.5 md:gap-1">
-                        {room.lastAction.cardsFromTable.map((c, idx) => (
-                          <div key={idx} className="flex items-center gap-0.5 px-1.5 md:px-2 py-0.5 md:py-1 bg-stone-950 rounded-md md:rounded-lg border border-white/5">
-                            <span className={`text-[10px] md:text-xs font-black ${getSuitColor(c.suit)}`}>{c.rank}</span>
-                            <span className={`text-xs md:text-sm ${getSuitColor(c.suit)}`}>{c.suit}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            <div className="w-full md:w-[85%] max-w-2xl min-h-[11rem] md:min-h-[14rem] py-6 md:py-8 bg-stone-950/30 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 shadow-inner relative flex items-center justify-center px-2 md:px-4 overflow-visible">
+            <div className="w-full md:w-[85%] max-w-2xl min-h-[11rem] md:min-h-[14rem] py-6 md:py-8 bg-stone-950/30 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 shadow-inner flex items-center justify-center px-2 md:px-4 z-10 relative">
               <div className="flex flex-wrap justify-center gap-2 md:gap-3">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
                   const isSelected = selectedCardsFromTable.some(tc => tc.rank === c.rank && tc.suit === c.suit);
@@ -300,40 +325,43 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
           <div className="flex flex-col items-center gap-3 md:gap-5 mt-4">
             
-            <div className="flex flex-wrap justify-center items-center gap-2 md:gap-4 bg-stone-950/60 p-2 rounded-2xl border border-white/5 backdrop-blur-md shadow-lg z-10 w-full max-w-[280px] md:max-w-none md:w-auto">
-              <div className="flex gap-1 md:gap-1.5 px-1 md:px-2 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
+            {/* 🟢 ემოჯები და მოქმედების ღილაკი (სქროლი მოიხსნა, იყენებს flex-wrap) */}
+            <div className="flex flex-wrap justify-center items-center gap-3 md:gap-4 bg-stone-950/60 p-2.5 rounded-2xl border border-white/5 backdrop-blur-md shadow-lg z-10 w-full max-w-[320px] md:max-w-max mx-auto">
+              <div className="flex flex-wrap justify-center gap-1.5 md:gap-2 px-1">
                 {standardEmotes.map(emo => (
-                  <button key={emo} onClick={() => handleSendEmote(emo)} className="text-sm md:text-lg hover:scale-125 hover:-translate-y-1 transition-all active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 flex-shrink-0">{emo}</button>
+                  <button key={emo} onClick={() => handleSendEmote(emo)} className="text-lg md:text-xl hover:scale-125 hover:-translate-y-1 transition-all active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 flex-shrink-0">{emo}</button>
                 ))}
-                <div className="w-px h-5 bg-white/10 mx-1 shrink-0"></div>
+                <div className="w-px h-6 bg-white/10 mx-1 shrink-0 hidden md:block"></div>
                 {vipEmotes.map(emo => (
-                  <button key={emo} onClick={() => amIVip && handleSendEmote(emo)} className={`relative text-sm md:text-lg transition-all shrink-0 ${amIVip ? 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' : 'opacity-20 cursor-not-allowed grayscale'}`}>
+                  <button key={emo} onClick={() => amIVip && handleSendEmote(emo)} className={`relative text-lg md:text-xl transition-all shrink-0 ${amIVip ? 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' : 'opacity-20 cursor-not-allowed grayscale'}`}>
                     {emo} {!amIVip && <Lock size={10} className="absolute -bottom-1 -right-1 text-yellow-500/50"/>}
                   </button>
                 ))}
               </div>
-              <div className="hidden md:block w-px h-6 bg-white/10 mx-1"></div>
+              <div className="w-full h-px bg-white/5 my-0.5 md:hidden"></div>
+              <div className="hidden md:block w-px h-8 bg-white/10 mx-1"></div>
               <button 
                 onClick={handlePlayCard}
                 disabled={!isMyTurn || !selectedCardFromHand}
-                className={`w-full md:w-auto px-4 md:px-6 py-2 md:py-2 rounded-xl text-[10px] md:text-xs font-black transition-all shadow-md active:scale-95 ${!isMyTurn || !selectedCardFromHand ? 'bg-stone-800 text-stone-500 cursor-not-allowed' : selectedCardsFromTable.length > 0 ? 'bg-white text-stone-900 shadow-xl' : `${activeTheme.accentBg} text-stone-950 shadow-xl`}`}
+                className={`w-full md:w-auto px-5 md:px-6 py-2.5 md:py-2 rounded-xl text-[11px] md:text-xs font-black transition-all shadow-md active:scale-95 uppercase tracking-wide ${!isMyTurn || !selectedCardFromHand ? 'bg-stone-800 text-stone-500 cursor-not-allowed' : selectedCardsFromTable.length > 0 ? 'bg-white text-stone-900 shadow-xl' : `${activeTheme.accentBg} text-stone-950 shadow-xl`}`}
               >
                 {selectedCardsFromTable.length > 0 ? 'მოჭრა ⚔️' : 'დაგდება 🃏'}
               </button>
             </div>
 
-            <div className="flex justify-center gap-1.5 md:gap-4 h-28 md:h-40 pt-4 md:pt-8 items-end perspective-1000 overflow-visible w-full">
+            {/* 🟢 ხელის კარტები (დაპატარავებულია, აღარ ფარავს ემოჯებს) */}
+            <div className="flex justify-center gap-1.5 md:gap-3 h-24 md:h-32 pt-3 md:pt-4 items-end perspective-1000 overflow-visible w-full mt-2 md:mt-4">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 return (
                   <div 
                     key={i}
                     onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
-                    className={`w-14 h-20 md:w-24 md:h-36 bg-stone-100 rounded-lg md:rounded-xl shadow-2xl flex flex-col justify-between p-1.5 md:p-2.5 select-none transition-all duration-300 ease-out cursor-pointer transform-gpu flex-shrink-0 ${isSelected ? `-translate-y-4 md:-translate-y-8 scale-110 shadow-[0_15px_30px_rgba(0,0,0,0.6)] ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')} z-20` : 'hover:-translate-y-2 md:hover:-translate-y-4 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-10'}`}
+                    className={`w-14 h-20 md:w-20 md:h-28 bg-stone-100 rounded-lg md:rounded-xl shadow-2xl flex flex-col justify-between p-1.5 md:p-2 select-none transition-all duration-300 ease-out cursor-pointer transform-gpu flex-shrink-0 ${isSelected ? `-translate-y-3 md:-translate-y-6 scale-105 shadow-[0_15px_30px_rgba(0,0,0,0.6)] ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')} z-20` : 'hover:-translate-y-1.5 md:hover:-translate-y-3 hover:shadow-[0_10px_20px_rgba(0,0,0,0.5)] z-10'}`}
                   >
-                    <span className={`text-xs md:text-lg font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
-                    <span className={`text-xl md:text-4xl self-center ${getSuitColor(c.suit)} drop-shadow-lg`}>{c.suit}</span>
-                    <span className={`text-xs md:text-lg font-black ${getSuitColor(c.suit)} self-end rotate-180 leading-none`}>{c.rank}</span>
+                    <span className={`text-[11px] md:text-sm font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
+                    <span className={`text-xl md:text-3xl self-center ${getSuitColor(c.suit)} drop-shadow-md`}>{c.suit}</span>
+                    <span className={`text-[11px] md:text-sm font-black ${getSuitColor(c.suit)} self-end rotate-180 leading-none`}>{c.rank}</span>
                   </div>
                 );
               })}
