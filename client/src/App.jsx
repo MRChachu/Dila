@@ -23,8 +23,8 @@ const SHOP_ITEMS = {
     { id: '👑', price: 800, name: 'მეფე' },
     { id: '🦁', price: 1200, name: 'ლომი' },
     { id: '🦅', price: 1500, name: 'არწივი' },
+    { id: '🎱', price: 1500, name: 'რვიანი' },
     { id: '🐉', price: 2500, name: 'დრაკონი' }
-    { id: '🎱', price: 5500, name: 'რვიანი' }
   ],
   tables: [
     { id: 'wood', price: 0, name: 'Classic Wood' },
