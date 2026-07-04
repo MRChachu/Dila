@@ -21,7 +21,10 @@ export default function Auth({ onAuthSuccess }) {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'შეცდომა სერვერზე');
+      
+      // 🟢 ზუსტად აქ გასწორდა: data.error-ის მაგივრად ვკითხულობთ data.message-ს
+      if (!res.ok) throw new Error(data.message || 'შეცდომა სერვერზე');
+      
       onAuthSuccess(data);
     } catch (err) { 
       setError(err.message); 
