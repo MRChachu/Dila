@@ -290,7 +290,6 @@ export default function App() {
     <div className="relative flex min-h-screen flex-col font-sans antialiased transition-all duration-700" style={{ background: activeTheme.bg }}>
       <div className={`absolute inset-0 ${activeTheme.overlay} backdrop-blur-[4px] z-0 transition-colors duration-700`}></div>
 
-      {/* 🟢 ახალი, პრემიუმ დახვეწილი Error Alert */}
       {error && (
         <div className="fixed top-20 md:top-24 right-4 md:right-6 z-[100] rounded-2xl bg-stone-900/95 border border-rose-500/20 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-right-8 fade-in duration-300 flex items-center gap-3">
           <div className="flex items-center justify-center p-1 rounded-full bg-rose-500/20 text-rose-500 border border-rose-500/30">
@@ -300,7 +299,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 ახალი, პრემიუმ დახვეწილი Success Toast (აღარ დაიმალება ფერებში) */}
       {toastMsg && (
         <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-[100] rounded-2xl bg-stone-900/95 border border-white/10 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-top-5 fade-in duration-300 flex items-center gap-3">
           <div className={`flex items-center justify-center p-1 rounded-full ${activeTheme.accentBg} bg-opacity-20 ${activeTheme.accent} border border-current border-opacity-30`}>
@@ -796,7 +794,8 @@ export default function App() {
                                 <span className="text-xl">{p.avatar || '😎'}</span>
                                 <span className="font-bold text-[10px] md:text-xs text-stone-200"><VipName name={p.name} isVip={checkIsVip(p.vipUntil)} className={p.id === socket.id ? activeTheme.accent : 'text-stone-200'} /></span>
                               </div>
-                              <span className={`text-[8px] md:text-[10px] font-black px-2 md:px-2.5 py-0.5 md:py-1 rounded-md border ${idx === 0 ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current ${activeTheme.accent}` : 'bg-stone-900 text-stone-500 border-white/5'}`}>{idx === 0 ? 'HOST' : 'READY'}</span>
+                              {/* 🟢 HOST და READY ღილაკების ახალი დიზაინი (opacity-ის გარეშე) */}
+                              <span className={`text-[8px] md:text-[10px] font-black px-3 py-1 rounded-md tracking-wider shadow-sm transition-all ${idx === 0 ? `${activeTheme.accentBg} text-stone-950` : 'bg-stone-800 border border-white/5 text-stone-400'}`}>{idx === 0 ? 'HOST' : 'READY'}</span>
                             </div>
                           ))}
                         </div>
