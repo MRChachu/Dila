@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Mail, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Instagram, Facebook, MessageCircle, Info, Sparkles, Gem, Swords } from 'lucide-react';
+import { Shield, Mail, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords } from 'lucide-react';
 
 export default function Auth({ onAuthSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -191,7 +191,6 @@ export default function Auth({ onAuthSuccess }) {
               </div>
             </div>
             <div className="flex-1 relative w-full h-[500px]">
-               {/* აქ შეგიძლია სამომავლოდ თამაშის სქრინშოტი ან ილუსტრაცია ჩასვა */}
                <div className="absolute inset-0 bg-stone-900 rounded-3xl border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden">
                  <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-900/20 via-[#0a0a0a] to-[#0a0a0a]"></div>
                  <Trophy size={120} className="text-yellow-500/20" />
@@ -247,8 +246,8 @@ export default function Auth({ onAuthSuccess }) {
                 <li className="flex items-center gap-2"><Info size={14}/> FAQ</li>
               </ul>
               <div className="flex items-center gap-3 pt-2">
-                <a href="#" className="p-2 bg-stone-900 rounded-lg hover:bg-stone-800 text-stone-400 hover:text-stone-200 transition-colors border border-white/5"><Facebook size={16}/></a>
-                <a href="#" className="p-2 bg-stone-900 rounded-lg hover:bg-stone-800 text-stone-400 hover:text-stone-200 transition-colors border border-white/5"><Instagram size={16}/></a>
+                <a href="#" className="p-2 bg-stone-900 rounded-lg hover:bg-stone-800 text-stone-400 hover:text-stone-200 transition-colors border border-white/5"><Globe size={16}/></a>
+                <a href="#" className="p-2 bg-stone-900 rounded-lg hover:bg-stone-800 text-stone-400 hover:text-stone-200 transition-colors border border-white/5"><Share2 size={16}/></a>
                 <a href="#" className="p-2 bg-stone-900 rounded-lg hover:bg-stone-800 text-stone-400 hover:text-stone-200 transition-colors border border-white/5"><MessageCircle size={16}/></a>
               </div>
             </div>
