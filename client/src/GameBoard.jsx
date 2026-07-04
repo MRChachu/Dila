@@ -17,7 +17,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const amIVip = checkIsVip(me?.vipUntil);
 
   const standardEmotes = ['🔥', '😂', '😎', '🤯', '🃏', '⏳', '👏', '💀'];
-  const vipEmotes = ['🤑', '🤬', '🍻', '🤡', '👽']; // 🟢 ექსკლუზიური ემოჯები
+  const vipEmotes = ['🤑', '🤬', '🍻', '🤡', '👽'];
 
   const playSoftSound = (isCapture = false) => {
     if (isMuted) return;
@@ -146,19 +146,24 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             const isCurrentTurn = room.currentTurn === i;
             const emote = activeEmotes.find(e => e.playerId === p.id);
             return (
-              <div key={p.id} className={`relative flex items-center justify-between p-2.5 md:p-3 rounded-2xl border transition-all duration-300 ${isCurrentTurn ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-40 border-current shadow-lg` : 'bg-stone-950/40 border-white/5'}`}>
-                {isCurrentTurn && <div className={`absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-6 ${activeTheme.accentBg} rounded-r-full animate-pulse`} />}
+              // 🟢 სრულად დახვეწილი და ლამაზი Active Turn ინდიკატორი
+              <div key={p.id} className={`relative flex items-center justify-between p-2.5 md:p-3 rounded-2xl border transition-all duration-500 ${isCurrentTurn ? `bg-stone-900 border-white/10 shadow-2xl scale-[1.03] z-10 ${activeTheme.accent.replace('text-', 'ring-1 ring-')}` : 'bg-stone-950/40 border-white/5'}`}>
+                
+                {/* ულამაზესი მანათობელი ეფექტები (Glow) */}
+                {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-[0.03] rounded-2xl`} />}
+                {isCurrentTurn && <div className={`absolute -left-[1px] top-1/2 -translate-y-1/2 w-1.5 h-8 ${activeTheme.accentBg} rounded-r-md shadow-[0_0_12px_currentColor] animate-pulse z-20`} />}
+                
                 <div className="flex items-center gap-2 z-10">
                   <span className="text-xl md:text-2xl drop-shadow-md">{p.avatar || '😎'}</span>
                   <div className="flex flex-col">
                     <span className="font-bold text-xs md:text-sm">
-                      <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={p.id === socket.id ? activeTheme.accent : 'text-stone-200'} />
+                      <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
                     </span>
                     <span className="text-[9px] md:text-[10px] text-stone-500 font-bold mt-0.5 tracking-wider">ქულა: {p.totalScore}</span>
                   </div>
                 </div>
                 
-                <div className="flex items-center -space-x-1 md:-space-x-2">
+                <div className="flex items-center -space-x-1 md:-space-x-2 z-10">
                    {Array.from({length: p.cards?.length || 0}).map((_, idx) => (
                       <div key={idx} className={`w-3 h-5 md:w-4 md:h-6 rounded-sm border shadow-sm ${activeCardBack}`}></div>
                    ))}
@@ -231,8 +236,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           
           <div className="text-center h-8 md:h-10 relative">
             {isMyTurn ? (
-              <div className={`inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 ${activeTheme.accentBg} bg-opacity-10 border border-opacity-30 border-current rounded-full ${activeTheme.accent} text-[10px] md:text-xs font-black shadow-lg animate-pulse`}>
-                <Sparkles size={12} className="md:w-[14px] md:h-[14px]" /> შენი სვლაა!
+              // 🟢 "შენი სვლაა" ღილაკის დახვეწილი დიზაინი
+              <div className={`inline-flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-stone-900 border border-white/10 rounded-full ${activeTheme.accent} text-[10px] md:text-xs font-black shadow-[0_0_15px_currentColor] animate-pulse`}>
+                <Sparkles size={14} className="md:w-[16px] md:h-[16px]" /> შენი სვლაა!
               </div>
             ) : (
               <div className="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-stone-950/60 border border-white/5 rounded-full text-stone-400 text-[10px] md:text-xs font-bold shadow-inner">
@@ -294,7 +300,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
           <div className="flex flex-col items-center gap-3 md:gap-5 mt-4">
             
-            {/* 🟢 ემოჯები დაყოფილია VIP და ჩვეულებრივებად */}
             <div className="flex flex-wrap justify-center items-center gap-2 md:gap-4 bg-stone-950/60 p-2 rounded-2xl border border-white/5 backdrop-blur-md shadow-lg z-10 w-full max-w-[280px] md:max-w-none md:w-auto">
               <div className="flex gap-1 md:gap-1.5 px-1 md:px-2 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
                 {standardEmotes.map(emo => (
