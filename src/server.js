@@ -11,6 +11,17 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 const User = require('./models/User');
 const { createDeck, isValidCapture, calculateRoundScores, getBestMove } = require('./gameLogic');
 
+// 🎯 ყოველდღიური მისიების ბაზა
+const ALL_DAILY_QUESTS = [
+  { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 300 },
+  { questId: 'win_ranked', title: 'მოიგე 2 რეიტინგული მატჩი', target: 2, xpReward: 500 },
+  { questId: 'get_10_diamond', title: 'მოიპოვე 10 აგური მატჩში', target: 1, xpReward: 400 },
+  { questId: 'get_2_club', title: 'მოიპოვე 2 ჯვარი მატჩში', target: 1, xpReward: 400 },
+  { questId: 'play_5_games', title: 'ითამაშე 5 მატჩი', target: 5, xpReward: 350 },
+  { questId: 'win_3_games', title: 'მოიგე 3 მატჩი', target: 3, xpReward: 600 },
+  { questId: 'sweep_table', title: 'გაასუფთავე მაგიდა (ვალეტით)', target: 1, xpReward: 300 }
+];
+
 const app = express();
 const server = http.createServer(app);
 
@@ -78,7 +89,7 @@ io.on('connection', (socket) => {
         if(user.coins >= price) {
           user.coins -= price;
           const currentVip = user.vipUntil && user.vipUntil > new Date() ? user.vipUntil.getTime() : Date.now();
-          user.vipUntil = new Date(currentVip + days * 24 * 60 * 60 * 1000); // ვუმატებთ დღეებს
+          user.vipUntil = new Date(currentVip + days * 24 * 60 * 60 * 1000); 
           await user.save();
           socket.emit('successMessage', `VIP სტატუსი ${days} დღით გააქტიურდა!`);
           socket.emit('friendListUpdated');
@@ -89,6 +100,7 @@ io.on('connection', (socket) => {
     } catch(err) { console.error(err); }
   });
 
+  // 🟢 ნივთების ყიდვის ლოგიკა
   socket.on('buyItem', async ({ type, itemId, price }) => {
     try {
       const uname = onlineUsersMap[socket.id];
@@ -191,7 +203,7 @@ io.on('connection', (socket) => {
   const broadcastActiveRooms = () => {
     const activeLobbies = Object.values(rooms).filter(r => !r.gameStarted).map(r => ({
       id: r.id, hostName: r.players[0]?.name || 'უცნობი', hostAvatar: r.players[0]?.avatar || '😎',
-      hostVip: r.players[0]?.vipUntil, // ვამატებთ VIP-ს
+      hostVip: r.players[0]?.vipUntil,
       currentPlayers: r.players.length, maxPlayers: r.maxPlayers, targetScore: r.targetScore,
       allowBots: r.allowBots, isPrivate: r.isPrivate, isRanked: r.isRanked
     }));
@@ -273,7 +285,7 @@ io.on('connection', (socket) => {
           userAvatar = dbUser.avatar || '😎';
           hostTheme = dbUser.tableTheme || 'wood';
           hostCardBack = dbUser.cardBack || 'classic';
-          userVip = dbUser.vipUntil; // 🟢 მიაქვს VIP
+          userVip = dbUser.vipUntil; 
         }
     } catch(e) {}
 
@@ -303,7 +315,7 @@ io.on('connection', (socket) => {
     if (playerExists) {
       playerExists.id = socket.id; 
       playerExists.avatar = userAvatar;
-      playerExists.vipUntil = userVip; // 🟢 ვანახლებთ VIP-ს დაბრუნებისას
+      playerExists.vipUntil = userVip; 
       if (room.gameStarted) socket.emit('gameStarted', room);
       else socket.emit('roomUpdated', room);
       broadcastActiveRooms();
@@ -500,27 +512,37 @@ function handleTurnTransition(room, roomId) {
               const dbUser = await User.findOne({ username: p.name });
               if (dbUser) {
                   const now = new Date();
+                  
+                  // 🟢 1. თუ მისიები არ აქვს, ან 24 საათი გავიდა -> ვურჩევთ 3 ახალს რანდომულად
                   if (!dbUser.dailyQuests || dbUser.dailyQuests.length === 0 || (dbUser.lastQuestGeneration && (now - new Date(dbUser.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
-                      dbUser.dailyQuests = [
-                          { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, progress: 0, xpReward: 300, isCompleted: false },
-                          { questId: 'win_ranked', title: 'მოიგე 1 რეიტინგული მატჩი', target: 1, progress: 0, xpReward: 500, isCompleted: false },
-                          { questId: 'get_10_diamond', title: 'მოიპოვე 10 აგური მატჩში', target: 1, progress: 0, xpReward: 400, isCompleted: false }
-                      ];
+                      const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
+                      dbUser.dailyQuests = shuffled.slice(0, 3).map(q => ({
+                          questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false
+                      }));
                       dbUser.lastQuestGeneration = now;
                   }
 
                   let earnedXp = 100; let earnedCoins = 10;
                   if (isWinner) { earnedXp += 200; earnedCoins += 40; }
 
+                  // 🟢 2. ვამოწმებთ თითოეული მისიის შესრულებას
                   dbUser.dailyQuests.forEach(q => {
                       if (q.isCompleted) return;
-                      if (q.questId === 'play_ranked') q.progress += 1;
-                      if (q.questId === 'win_ranked' && isWinner) q.progress += 1;
+                      
+                      if (q.questId === 'play_ranked' && room.isRanked) q.progress += 1;
+                      if (q.questId === 'win_ranked' && room.isRanked && isWinner) q.progress += 1;
                       if (q.questId === 'get_10_diamond' && matchAchievements.includes('diamond_10')) q.progress += 1;
+                      if (q.questId === 'get_2_club' && matchAchievements.includes('club_2')) q.progress += 1;
+                      if (q.questId === 'play_5_games') q.progress += 1; 
+                      if (q.questId === 'win_3_games' && isWinner) q.progress += 1;
+                      if (q.questId === 'sweep_table' && matchAchievements.includes('sweeper')) q.progress += 1;
 
+                      // თუ შეასრულა მიზანი:
                       if (q.progress >= q.target) {
-                          q.progress = q.target; q.isCompleted = true;
-                          earnedXp += q.xpReward; earnedCoins += 50; 
+                          q.progress = q.target; 
+                          q.isCompleted = true;
+                          earnedXp += q.xpReward; 
+                          earnedCoins += 50; // +50 მონეტა ბონუსი
                       }
                   });
 
