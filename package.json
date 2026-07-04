@@ -13,6 +13,7 @@
     "express": "^4.19.2",
     "framer-motion": "^12.40.0",
     "mongoose": "^9.6.3",
+    "nodemailer": "^9.0.3",
     "socket.io": "^4.7.5"
   }
 }
