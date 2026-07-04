@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -28,7 +28,7 @@ const SHOP_ITEMS = {
   tables: [
     { id: 'wood', price: 0, name: 'Classic Wood' },
     { id: 'lavender', price: 0, name: 'Soft Lavender' },
-    { id: 'casino', price: 1500, name: 'Dark Casino (Clean)' },
+    { id: 'casino', price: 1500, name: 'Dark Casino' },
     { id: 'midnight', price: 2500, name: 'Midnight Gold' }
   ],
   cards: [
@@ -37,6 +37,22 @@ const SHOP_ITEMS = {
     { id: 'gold', price: 1000, name: 'Solid Gold' },
     { id: 'obsidian', price: 2000, name: 'Obsidian Black' }
   ]
+};
+
+// 🟢 VIP ფუნქციები
+export const checkIsVip = (vipDate) => {
+  return vipDate && new Date(vipDate) > new Date();
+};
+
+export const VipName = ({ name, isVip, className = '' }) => {
+  if (isVip) {
+    return (
+      <span className={`bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-600 bg-clip-text text-transparent font-black drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] animate-pulse ${className}`}>
+        👑 {name}
+      </span>
+    );
+  }
+  return <span className={className}>{name}</span>;
 };
 
 export default function App() {
@@ -64,7 +80,7 @@ export default function App() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   
   const [isShopOpen, setIsShopOpen] = useState(false); 
-  const [shopTab, setShopTab] = useState('avatars');
+  const [shopTab, setShopTab] = useState('vip'); 
   const [inspectProfile, setInspectProfile] = useState(null); 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
@@ -74,11 +90,12 @@ export default function App() {
   const [selectedRoomIdForJoin, setSelectedRoomIdForJoin] = useState('');
   const [joinPasswordInput, setJoinPasswordInput] = useState('');
 
-const [mTargetScore, setMTargetScore] = useState(11);
+  // 🟢 ნაგულისხმევად არჩეულია რეიტინგული რეჟიმი და გამორთულია ბოტები
+  const [mTargetScore, setMTargetScore] = useState(11);
   const [mMaxPlayers, setMMaxPlayers] = useState(4);
-  const [mAllowBots, setMAllowBots] = useState(false); // 🟢 ბოტები ნაგულისხმევად გამორთულია
+  const [mAllowBots, setMAllowBots] = useState(false);
   const [mRoomPassword, setMRoomPassword] = useState('');
-  const [mIsRanked, setMIsRanked] = useState(true);    // 🟢 რეიტინგული ნაგულისხმევად ჩართულია
+  const [mIsRanked, setMIsRanked] = useState(true); 
 
   const [socialTab, setSocialTab] = useState('online');
 
@@ -224,6 +241,7 @@ const [mTargetScore, setMTargetScore] = useState(11);
 
   const handleBuyItem = (type, itemId, price) => socket.emit('buyItem', { type, itemId, price });
   const handleEquipItem = (type, itemId) => socket.emit('equipItem', { type, itemId });
+  const handleBuyVip = (days, price) => socket.emit('buyVip', { days, price });
 
   const handleInspectPlayer = (username) => socket.emit('getUserProfile', { username });
 
@@ -251,6 +269,7 @@ const [mTargetScore, setMTargetScore] = useState(11);
   
   const myCoins = profileData?.coins || 0;
   const myAvatar = profileData?.avatar || '😎';
+  const amIVip = checkIsVip(profileData?.vipUntil); 
   
   const unlockedAvatars = profileData?.unlockedAvatars || ['😎'];
   const unlockedTables = profileData?.unlockedTableThemes || ['wood', 'lavender'];
@@ -312,7 +331,9 @@ const [mTargetScore, setMTargetScore] = useState(11);
                  {inspectProfile.avatar || '😎'}
                  <div className={`absolute -bottom-3 w-8 h-8 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{inspectProfile.level || 1}</div>
                </div>
-               <h2 className="text-xl font-black text-stone-100 tracking-wide mt-2">{inspectProfile.username}</h2>
+               <h2 className="text-xl font-black tracking-wide mt-2">
+                 <VipName name={inspectProfile.username} isVip={checkIsVip(inspectProfile.vipUntil)} className="text-stone-100"/>
+               </h2>
                <div className="flex gap-2">
                  {!profileData?.friends?.includes(inspectProfile.username) && inspectProfile.username !== safeUsername && (
                     <button onClick={() => { handleSendFriendReq(inspectProfile.username); setInspectProfile(null); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all flex items-center gap-1.5`}>
@@ -359,6 +380,7 @@ const [mTargetScore, setMTargetScore] = useState(11);
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-5 md:p-6 max-w-xl w-full shadow-2xl font-sans relative flex flex-col max-h-[85vh]`}>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4 mb-4">
               <div className="flex gap-2 bg-stone-950/50 p-1 rounded-xl border border-white/5 overflow-x-auto custom-scrollbar">
+                <button onClick={() => setShopTab('vip')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all flex items-center gap-1 ${shopTab==='vip' ? `bg-yellow-500 text-stone-950 shadow-[0_0_10px_rgba(234,179,8,0.5)]` : 'text-stone-500 hover:bg-stone-900'}`}><Crown size={14}/> VIP</button>
                 <button onClick={() => setShopTab('avatars')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='avatars' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>ავატარები</button>
                 <button onClick={() => setShopTab('tables')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='tables' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>მაგიდები</button>
                 <button onClick={() => setShopTab('cards')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='cards' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>კარტები</button>
@@ -371,6 +393,28 @@ const [mTargetScore, setMTargetScore] = useState(11);
             
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[300px]">
               
+              {shopTab === 'vip' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                  {[
+                    { days: 3, price: 1500, title: '3 დღე' },
+                    { days: 7, price: 3000, title: '7 დღე', best: true },
+                    { days: 30, price: 10000, title: '30 დღე' }
+                  ].map(pkg => (
+                    <div key={pkg.days} className={`p-4 md:p-5 rounded-2xl flex flex-col items-center justify-between gap-4 border transition-all bg-gradient-to-br ${pkg.best ? 'from-yellow-900/60 to-stone-950 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'from-yellow-900/20 to-stone-950 border-yellow-500/30'}`}>
+                      {pkg.best && <span className="absolute -top-3 bg-yellow-500 text-stone-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">საუკეთესო ფასი</span>}
+                      <span className="text-4xl md:text-5xl drop-shadow-lg">👑</span>
+                      <div className="text-center">
+                        <p className="text-sm md:text-base font-black text-yellow-500 tracking-wide">{pkg.title}</p>
+                        <p className="text-[9px] md:text-[10px] font-bold text-stone-400 mt-1">მანათობელი სახელი და ექსკლუზიური ემოჯები</p>
+                      </div>
+                      <button onClick={() => handleBuyVip(pkg.days, pkg.price)} className="w-full py-2.5 rounded-xl text-[10px] md:text-xs font-black bg-stone-900 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-stone-950 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md">
+                        <Coins size={12} /> {pkg.price}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {shopTab === 'avatars' && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                   {SHOP_ITEMS.avatars.map(item => {
@@ -487,10 +531,13 @@ const [mTargetScore, setMTargetScore] = useState(11);
                         <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
                       </div>
                       <div className="flex flex-col gap-0.5">
-                        <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5">{safeUsername} <Eye size={12} className="text-stone-500"/></h2>
+                        <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5">
+                          <VipName name={safeUsername} isVip={amIVip} /> <Eye size={12} className="text-stone-500"/>
+                        </h2>
                         <div className="flex items-center gap-1.5 text-stone-400">
                            <Coins size={12} className="text-yellow-500"/> 
                            <span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span>
+                           {amIVip && <span className="ml-2 text-[8px] font-black bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/30 tracking-wider">VIP ACTIVE</span>}
                         </div>
                       </div>
                     </div>
@@ -679,7 +726,7 @@ const [mTargetScore, setMTargetScore] = useState(11);
                           <div className="flex items-center gap-2 md:gap-3 truncate cursor-pointer" onClick={() => handleInspectPlayer(player.username)}>
                             <span className={`w-5 h-5 md:w-6 md:h-6 flex items-center justify-center font-mono font-black text-[9px] md:text-[11px] rounded-md ${idx === 0 ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30' : idx === 1 ? 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/30' : idx === 2 ? 'bg-amber-700/10 text-amber-500 border border-amber-700/30' : 'bg-stone-800/80 text-stone-500 border border-white/5'}`}>{idx + 1}</span>
                             <div className="flex flex-col truncate hover:underline">
-                               <span className={`font-bold truncate tracking-wide ${player.username === safeUsername ? activeTheme.accent : 'text-stone-200'}`}>{player.username}</span>
+                               <span className="font-bold truncate tracking-wide"><VipName name={player.username} isVip={checkIsVip(player.vipUntil)} className={player.username === safeUsername ? activeTheme.accent : 'text-stone-200'} /></span>
                                <span className="text-[8px] font-black text-stone-500">LVL {player.level || 1}</span>
                             </div>
                           </div>
@@ -704,7 +751,9 @@ const [mTargetScore, setMTargetScore] = useState(11);
                           <div key={room.id} className="p-2.5 md:p-3 rounded-xl bg-stone-950/40 border border-white/5 flex justify-between items-center shadow-md">
                             <div className="flex flex-col gap-1">
                                <div className={`flex items-center gap-1.5 text-[10px] md:text-xs font-black ${activeTheme.accent} font-mono`}>
-                                 <span className="text-xs">{room.hostAvatar || '😎'}</span> #{room.id} {room.isPrivate && <Lock size={10} className="text-stone-500" />}
+                                 <span className="text-xs">{room.hostAvatar || '😎'}</span> 
+                                 <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> 
+                                 {room.isPrivate && <Lock size={10} className="text-stone-500" />}
                                </div>
                                <div className="flex gap-1.5 items-center">
                                  {room.isRanked ? <span className={`text-[8px] font-bold ${activeTheme.accentBg} bg-opacity-10 border-opacity-20 border-current px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}
@@ -739,7 +788,7 @@ const [mTargetScore, setMTargetScore] = useState(11);
                             <div key={idx} className="flex items-center justify-between rounded-xl bg-stone-950/60 p-2.5 md:p-3.5 border border-white/5 shadow-inner">
                               <div className="flex items-center gap-2 cursor-pointer hover:opacity-80" onClick={() => handleInspectPlayer(p.name)}>
                                 <span className="text-xl">{p.avatar || '😎'}</span>
-                                <span className="font-bold text-[10px] md:text-xs text-stone-200">{p.name} {p.id === socket.id && '(შენ)'}</span>
+                                <span className="font-bold text-[10px] md:text-xs text-stone-200"><VipName name={p.name} isVip={checkIsVip(p.vipUntil)} className={p.id === socket.id ? activeTheme.accent : 'text-stone-200'} /></span>
                               </div>
                               <span className={`text-[8px] md:text-[10px] font-black px-2 md:px-2.5 py-0.5 md:py-1 rounded-md border ${idx === 0 ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current ${activeTheme.accent}` : 'bg-stone-900 text-stone-500 border-white/5'}`}>{idx === 0 ? 'HOST' : 'READY'}</span>
                             </div>
@@ -782,7 +831,7 @@ const [mTargetScore, setMTargetScore] = useState(11);
                       </div>
                     </div>
                   ) : (
-                    <GameBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} />
+                    <GameBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} checkIsVip={checkIsVip} VipName={VipName} />
                   )}
                 </>
               )}
@@ -791,7 +840,7 @@ const [mTargetScore, setMTargetScore] = useState(11);
         </main>
       </div>
 
-      {/* 🟢 მაგიდის შექმნის მოდალი */}
+      {/* მაგიდის შექმნის მოდალი */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-2xl font-sans relative`}>
@@ -841,7 +890,6 @@ const [mTargetScore, setMTargetScore] = useState(11);
         </div>
       )}
 
-      {/* 🟢 პაროლიანი ოთახის მოდალი */}
       {isPasswordModalOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-5 max-w-xs w-full space-y-3 md:space-y-4 shadow-2xl font-sans`}>
