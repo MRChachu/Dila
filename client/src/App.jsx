@@ -74,11 +74,11 @@ export default function App() {
   const [selectedRoomIdForJoin, setSelectedRoomIdForJoin] = useState('');
   const [joinPasswordInput, setJoinPasswordInput] = useState('');
 
-  const [mTargetScore, setMTargetScore] = useState(11);
+const [mTargetScore, setMTargetScore] = useState(11);
   const [mMaxPlayers, setMMaxPlayers] = useState(4);
-  const [mAllowBots, setMAllowBots] = useState(true);
+  const [mAllowBots, setMAllowBots] = useState(false); // 🟢 ბოტები ნაგულისხმევად გამორთულია
   const [mRoomPassword, setMRoomPassword] = useState('');
-  const [mIsRanked, setMIsRanked] = useState(false); 
+  const [mIsRanked, setMIsRanked] = useState(true);    // 🟢 რეიტინგული ნაგულისხმევად ჩართულია
 
   const [socialTab, setSocialTab] = useState('online');
 
