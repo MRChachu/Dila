@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// 🎯 ყოველდღიური მისიების ბაზა
 const ALL_DAILY_QUESTS = [
   { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 300 },
   { questId: 'win_ranked', title: 'მოიგე 2 რეიტინგული მატჩი', target: 2, xpReward: 500 },
@@ -13,11 +12,17 @@ const ALL_DAILY_QUESTS = [
   { questId: 'sweep_table', title: 'გაასუფთავე მაგიდა (ვალეტით)', target: 1, xpReward: 300 }
 ];
 
-// 🟢 1. რეგისტრაცია
+// 🟢 რეგისტრაცია პაროლის შემოწმებით (Backend Validation)
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
     
+    // ვამოწმებთ სერვერის მხარესაც
+    const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
+    if (!regex.test(password)) {
+      return res.status(400).json({ message: 'პაროლი არ არის საკმარისად ძლიერი!' });
+    }
+
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ message: 'ეს სახელი უკვე დაკავებულია!' });
@@ -29,34 +34,49 @@ router.post('/register', async (req, res) => {
     const { password: _, ...userData } = newUser._doc;
     res.status(201).json({ user: userData, message: 'წარმატებით დარეგისტრირდით!' });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'სერვერის შეცდომა რეგისტრაციისას' });
   }
 });
 
-// 🟢 2. ავტორიზაცია (Login)
+// 🟢 ავტორიზაცია
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    
     const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(400).json({ message: 'მოთამაშე არ მოიძებნა!' });
-    }
-
-    if (user.password !== password) { 
-      return res.status(400).json({ message: 'პაროლი არასწორია!' });
+    
+    if (!user || user.password !== password) {
+      return res.status(400).json({ message: 'მომხმარებელი ან პაროლი არასწორია!' });
     }
 
     const { password: _, ...userData } = user._doc;
     res.status(200).json({ user: userData, message: 'წარმატებული ავტორიზაცია!' });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'სერვერის შეცდომა ლოგინისას' });
   }
 });
 
-// 🟢 3. მოთამაშის პროფილის და სტატისტიკის გამოთხოვა
+// 🟢 პაროლის აღდგენა
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'მომხმარებელი ამ ელ-ფოსტით ვერ მოიძებნა!' });
+    }
+
+    // დროებითი სიმულაცია: პაროლს ვუცვლით "Phurti123"-ით
+    // მომავალში აქ უნდა ჩაიდგას Email-ის გაგზავნის ლოგიკა
+    user.password = 'Phurti123';
+    await user.save();
+
+    res.status(200).json({ message: 'შენი ახალი დროებითი პაროლია: Phurti123 (გთხოვთ შეიცვალოთ შესვლის შემდეგ)' });
+  } catch (err) {
+    res.status(500).json({ message: 'შეცდომა პაროლის აღდგენისას' });
+  }
+});
+
+// 🟢 პროფილის ჩატვირთვა 
 router.get('/profile/:username', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username });
@@ -64,36 +84,31 @@ router.get('/profile/:username', async (req, res) => {
     
     const now = new Date();
     
-    // 🎯 თუ მისიები არ აქვს, ან 24 საათი გავიდა -> ვუგენერირებთ 3 ახალს ლოგინისას!
     if (!user.dailyQuests || user.dailyQuests.length === 0 || (user.lastQuestGeneration && (now - new Date(user.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
         const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
         user.dailyQuests = shuffled.slice(0, 3).map(q => ({
             questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false
         }));
         user.lastQuestGeneration = now;
-        await user.save(); // ვინახავთ ახალ მისიებს ბაზაში
+        await user.save(); 
     }
 
-    // ვიზუალს ვუგზავნით განახლებულ მონაცემებს
     const { password, ...userData } = user._doc;
     res.json(userData);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'სერვერის შეცდომა პროფილის ჩატვირთვისას' });
   }
 });
 
-// 🟢 4. გლობალური ლიდერბორდის (TOP 10) გაგზავნა
+// 🟢 ლიდერბორდი
 router.get('/leaderboard', async (req, res) => {
   try {
     const topUsers = await User.find()
       .sort({ 'stats.gamesWon': -1, xp: -1 })
       .limit(10)
       .select('-password');
-      
     res.json(topUsers);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'სერვერის შეცდომა ლიდერბორდის ჩატვირთვისას' });
   }
 });
