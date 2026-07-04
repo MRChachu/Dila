@@ -220,12 +220,13 @@ export default function App() {
     setIsCreateModalOpen(false); setMRoomPassword('');
   };
 
-  const handleSendInvite = (targetSocketId) => {
+const handleSendInvite = (targetSocketId) => {
     if (inRoom && roomData) {
       socket.emit('sendInvite', { targetSocketId, roomId: roomData.id, password: roomData.password, fromName: safeUsername });
     } else {
       const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
-      socket.emit('joinRoom', { roomId: generatedId, playerName: safeUsername, roomPassword: null, maxPlayers: 4, targetScore: 11, allowBots: true, isRanked: false });
+      // 🟢 ზუსტად აქ შევცვალეთ: allowBots: false (რობოტების გარეშე) და isRanked: true (რეიტინგული)
+      socket.emit('joinRoom', { roomId: generatedId, playerName: safeUsername, roomPassword: null, maxPlayers: 4, targetScore: 11, allowBots: false, isRanked: true });
       setInRoom(true);
       localStorage.setItem('phurti_roomId', generatedId); 
       localStorage.setItem('phurti_inRoom', 'true');
