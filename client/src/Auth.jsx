@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Mail, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords } from 'lucide-react';
+import { Shield, Mail, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown } from 'lucide-react';
 
 export default function Auth({ onAuthSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -51,8 +51,9 @@ export default function Auth({ onAuthSuccess }) {
             </div>
             <span className="text-lg md:text-xl font-black tracking-widest text-stone-100">PHURTI ARENA</span>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-xs font-bold tracking-widest text-stone-400 uppercase">
+          <div className="hidden md:flex items-center gap-6 text-[11px] font-black tracking-widest text-stone-400 uppercase">
             <a href="#rules" className="hover:text-yellow-500 transition-colors">წესები</a>
+            <a href="#shop" className="hover:text-yellow-500 transition-colors">მაღაზია</a>
             <a href="#achievements" className="hover:text-yellow-500 transition-colors">მიღწევები</a>
             <a href="#invite" className="hover:text-yellow-500 transition-colors">მოწვევა</a>
             <a href="#about" className="hover:text-yellow-500 transition-colors">ჩვენს შესახებ</a>
@@ -146,7 +147,6 @@ export default function Auth({ onAuthSuccess }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { icon: Target, title: 'მიზანი', desc: 'მოთამაშეების მიზანია დააგროვონ 11 ან 21 ქულა დადგენილი წესებით.' },
-              // 🟢 ზუსტად აქ გასწორდა ქულების სისტემა
               { icon: BookOpen, title: 'ქულების სისტემა', desc: 'ბევრი კარტი (2 ქულა), მეტი ჯვარი (1 ქულა), 10 აგური (1 ქულა), 2 ჯვარი (1 ქულა).' },
               { icon: Shield, title: 'მოჭრა და გასუფთავება', desc: 'ვალეტი (J) ჭრის ნებისმიერ კარტს. მაგიდის სრულად გასუფთავება უპირატესობას გაძლევს.' }
             ].map((rule, i) => (
@@ -158,6 +158,54 @@ export default function Auth({ onAuthSuccess }) {
                 <p className="text-xs text-stone-400 leading-relaxed font-medium">{rule.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 🟢 მისიები და მაღაზია (ᲐᲮᲐᲚᲘ ᲡᲔᲥᲪᲘᲐ) */}
+      <section id="shop" className="py-20 md:py-32 relative bg-[#050505] border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="flex flex-col md:flex-row-reverse gap-12 items-center">
+            <div className="flex-1 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-900/80 border border-yellow-500/20 text-yellow-500 text-[10px] md:text-xs font-black uppercase tracking-widest">
+                <Coins size={14} /> ეკონომიკა და პერსონალიზაცია
+              </div>
+              <h2 className="text-3xl md:text-5xl font-black text-stone-100 uppercase tracking-tight">შეასრულე მისიები,<br/>გამოირჩიე სხვებისგან</h2>
+              <p className="text-sm text-stone-400 leading-relaxed max-w-lg font-medium">
+                თამაში არ მთავრდება მხოლოდ მაგიდასთან. ყოველდღიურად დაგხვდება 3 ახალი მისია. მათი შესრულებით შენ გამოიმუშავებ გამოცდილებას (XP) და ოქროს მონეტებს. გადაცვალე დაგროვებული მონეტები უნიკალურ დიზაინებსა და პრემიუმ სტატუსში!
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                {[
+                  { icon: Target, title: 'დღიური მისიები', desc: 'განახლებადი გამოწვევები ყოველ 24 საათში.' },
+                  { icon: Store, title: 'პრემიუმ მაღაზია', desc: 'გადაცვალე მონეტები ექსკლუზიურ ნივთებში.' },
+                  { icon: Palette, title: 'დიზაინის შეცვლა', desc: 'შეიძინე მაგიდის თემები და კარტის ბექები.' },
+                  { icon: Crown, title: 'VIP სტატუსი', desc: 'გახდი VIP, მიიღე მანათობელი სახელი და ემოჯები.' }
+                ].map((feat, i) => (
+                  <div key={i} className="flex flex-col gap-2 p-4 rounded-2xl bg-stone-900/50 border border-white/5 hover:border-yellow-500/20 transition-all">
+                    <feat.icon size={24} className="text-yellow-500" />
+                    <h4 className="text-xs font-black text-stone-200 uppercase tracking-wide mt-2">{feat.title}</h4>
+                    <p className="text-[10px] text-stone-500 font-medium">{feat.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex-1 relative w-full h-[450px]">
+               {/* 🟢 მაღაზიის და მონეტების ვიზუალური ილუსტრაცია */}
+               <div className="absolute inset-0 bg-stone-900 rounded-3xl border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden">
+                 <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-900/20 via-[#0a0a0a] to-[#0a0a0a]"></div>
+                 <div className="relative z-10 flex flex-col items-center gap-6">
+                   <div className="flex items-center gap-3 bg-stone-950/80 px-6 py-3 rounded-2xl border border-yellow-500/30 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
+                     <Coins size={32} className="text-yellow-500" />
+                     <span className="text-2xl font-mono font-black text-stone-100">1,250</span>
+                   </div>
+                   <div className="flex gap-4">
+                     <div className="w-16 h-16 bg-stone-800 rounded-2xl border border-white/10 flex items-center justify-center text-3xl shadow-lg">🥷</div>
+                     <div className="w-16 h-16 bg-stone-800 rounded-2xl border border-yellow-500/50 flex items-center justify-center text-3xl shadow-[0_0_15px_rgba(234,179,8,0.3)]">👑</div>
+                     <div className="w-16 h-16 bg-blue-900 rounded-2xl border border-white/10 flex items-center justify-center text-white shadow-lg"><Shield size={24}/></div>
+                   </div>
+                 </div>
+               </div>
+            </div>
           </div>
         </div>
       </section>
@@ -235,6 +283,7 @@ export default function Auth({ onAuthSuccess }) {
               <h4 className="text-xs font-black text-stone-200 uppercase tracking-widest">ნავიგაცია</h4>
               <ul className="space-y-2 text-xs font-medium text-stone-500">
                 <li><a href="#rules" className="hover:text-yellow-500 transition-colors">წესები</a></li>
+                <li><a href="#shop" className="hover:text-yellow-500 transition-colors">მაღაზია</a></li>
                 <li><a href="#achievements" className="hover:text-yellow-500 transition-colors">მიღწევები</a></li>
                 <li><a href="#invite" className="hover:text-yellow-500 transition-colors">მოწვევა</a></li>
               </ul>
