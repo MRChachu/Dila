@@ -710,10 +710,12 @@ const handleSendFriendReq = async (targetName) => {
               <Trophy size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">ტოპ 10</span>
             </button>
             
-            {/* 🛡️ ადმინ პანელი */}
-            <button onClick={() => setIsAdminOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
-              <ShieldAlert size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">ადმინ</span>
-            </button>
+            {/* 🛡️ ადმინ პანელი - გამოჩნდება მხოლოდ Chachu-სთვის */}
+            {safeUsername.toLowerCase() === 'chachu' && (
+              <button onClick={() => setIsAdminOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
+                <ShieldAlert size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">ადმინ</span>
+              </button>
+            )}
 
             {/* 🛒 მაღაზია */}
             <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
