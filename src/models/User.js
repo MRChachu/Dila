@@ -2,11 +2,13 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
-  dateOfBirth: { type: String, required: true },
-  secretWord: { type: String, required: true },
+  
+  // 🟢 ამოვიღეთ required: true, რათა ძველი ექაუნთების შენახვაც უპრობლემოდ მოხდეს
+  dateOfBirth: { type: String },
+  secretWord: { type: String },
+  
   password: { type: String, required: true },
   
-  // 🟢 დაემატა დაბლოკვის სტატუსი ადმინ პანელისთვის
   isBanned: { type: Boolean, default: false },
   
   stats: {
