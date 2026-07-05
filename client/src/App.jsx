@@ -99,7 +99,6 @@ export default function App() {
 
   const [socialTab, setSocialTab] = useState('online');
 
-  // 🟢 ლიდერბორდის და ადმინის სტეიტები
   const [leaderboard, setLeaderboard] = useState([]); 
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   
@@ -205,12 +204,13 @@ export default function App() {
     }
   }, [toastMsg]);
 
-  // 🟢 წოდებების (Ranks) ლოგიკა XP-ის მიხედვით
-  const getRankInfo = (xp) => {
-    if (xp >= 15000) return { title: 'ლეგენდა', icon: '👑', color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/50' };
-    if (xp >= 5000) return { title: 'ოქრო', icon: '🥇', color: 'text-yellow-500', bg: 'bg-yellow-500/10 border-yellow-500/50' };
-    if (xp >= 1000) return { title: 'ვერცხლი', icon: '🥈', color: 'text-stone-300', bg: 'bg-stone-300/10 border-stone-300/50' };
-    return { title: 'ბრინჯაო', icon: '🥉', color: 'text-amber-600', bg: 'bg-amber-600/10 border-amber-600/50' };
+  // 🟢 ერთიანი და გაუმჯობესებული ლიგების გამომთვლელი (Ranks)
+  const getLeague = (xp = 0) => {
+    if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
+    if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
+    if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' };
+    if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' };
+    return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
   };
 
   const loadLeaderboard = async () => {
@@ -299,7 +299,7 @@ const handleSendFriendReq = async (targetName) => {
       });
       const data = await res.json();
       setToastMsg(data.message);
-      fetchDashboardData(safeUsername); // ეკრანის განახლება
+      fetchDashboardData(safeUsername); 
     } catch(err) { console.error(err); }
   };
 
@@ -311,7 +311,7 @@ const handleSendFriendReq = async (targetName) => {
       });
       const data = await res.json();
       setToastMsg(data.message);
-      fetchDashboardData(safeUsername); // ეკრანის განახლება
+      fetchDashboardData(safeUsername); 
     } catch(err) { console.error(err); }
   };
 
@@ -323,7 +323,7 @@ const handleSendFriendReq = async (targetName) => {
       });
       const data = await res.json();
       setToastMsg(data.message);
-      fetchDashboardData(safeUsername); // ეკრანის განახლება
+      fetchDashboardData(safeUsername); 
     } catch(err) { console.error(err); }
   };
 
@@ -358,6 +358,7 @@ const handleSendFriendReq = async (targetName) => {
   const myCoins = profileData?.coins || 0;
   const myAvatar = profileData?.avatar || '😎';
   const amIVip = checkIsVip(profileData?.vipUntil); 
+  const myLeague = getLeague(currentXp); 
   
   const unlockedAvatars = profileData?.unlockedAvatars || ['😎'];
   const unlockedTables = profileData?.unlockedTableThemes || ['wood', 'lavender'];
@@ -417,6 +418,7 @@ const handleSendFriendReq = async (targetName) => {
         </div>
       )}
 
+      {/* 🟢 სხვისი პროფილის დათვალიერება (დაემატა ლიგა) */}
       {inspectProfile && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={(e) => { if(e.target === e.currentTarget) setInspectProfile(null); }}>
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl font-sans relative animate-in zoom-in-95 duration-200`}>
@@ -425,9 +427,17 @@ const handleSendFriendReq = async (targetName) => {
                  {inspectProfile.avatar || '😎'}
                  <div className={`absolute -bottom-3 w-8 h-8 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{inspectProfile.level || 1}</div>
                </div>
+               
                <h2 className="text-xl font-black tracking-wide mt-2">
                  <VipName name={inspectProfile.username} isVip={checkIsVip(inspectProfile.vipUntil)} className="text-stone-100"/>
                </h2>
+
+               {/* 🟢 დამატებული ლიგის ბეჯი Inspect მოდალში */}
+               <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${getLeague(inspectProfile.xp || 0).bg} ${getLeague(inspectProfile.xp || 0).border} shadow-sm mb-2`}>
+                  <span className="text-[12px] drop-shadow-md">{getLeague(inspectProfile.xp || 0).icon}</span>
+                  <span className={`text-[10px] font-black uppercase tracking-wider ${getLeague(inspectProfile.xp || 0).color}`}>{getLeague(inspectProfile.xp || 0).name}</span>
+               </div>
+
                <div className="flex gap-2">
                  {!profileData?.friends?.includes(inspectProfile.username) && inspectProfile.username !== safeUsername && (
                     <button onClick={() => { handleSendFriendReq(inspectProfile.username); setInspectProfile(null); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all flex items-center gap-1.5`}>
@@ -469,6 +479,7 @@ const handleSendFriendReq = async (targetName) => {
         </div>
       )}
 
+      {/* ... [მაღაზია და პარამეტრები უცვლელია] ... */}
       {isShopOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-5 md:p-6 max-w-xl w-full shadow-2xl font-sans relative flex flex-col max-h-[85vh]`}>
@@ -573,7 +584,6 @@ const handleSendFriendReq = async (targetName) => {
         </div>
       )}
 
-      {/* ⚙️ პარამეტრები და პაროლის შეცვლა */}
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-6 shadow-2xl font-sans relative`}>
@@ -614,14 +624,14 @@ const handleSendFriendReq = async (targetName) => {
         </div>
       )}
 
-      {/* 🏆 ლიდერბორდის მოდალი (Leaderboard) */}
+      {/* 🏆 ლიდერბორდის მოდალი (დაემატა ლიგა) */}
       {isLeaderboardOpen && (
         <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="bg-stone-900 border border-yellow-500/30 rounded-[2rem] p-6 max-w-md w-full shadow-[0_0_50px_rgba(234,179,8,0.1)] relative max-h-[80vh] overflow-y-auto custom-scrollbar">
             <h2 className="text-xl font-black text-stone-100 uppercase mb-6 flex items-center gap-3 justify-center"><Trophy className="text-yellow-500"/> ტოპ მოთამაშეები</h2>
             <div className="space-y-3">
               {leaderboard.map((u, i) => {
-                const rank = getRankInfo(u.xp);
+                const rank = getLeague(u.xp); // 🟢 აქაც ვიყენებთ getLeague-ს
                 return (
                   <div key={i} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-500/20 border-yellow-500 text-stone-100 scale-105 shadow-lg' : 'bg-stone-950/50 border-white/5 text-stone-300'}`}>
                     <div className="flex items-center gap-3">
@@ -631,7 +641,8 @@ const handleSendFriendReq = async (targetName) => {
                         <div className="text-xs font-black uppercase tracking-wider flex items-center gap-2">
                            {u.username} {u.vipUntil && new Date(u.vipUntil) > new Date() && <span className="text-[10px] bg-yellow-500 text-stone-900 px-1.5 rounded uppercase font-black">VIP</span>}
                         </div>
-                        <div className={`text-[10px] font-bold mt-0.5 ${rank.color} flex items-center gap-1`}>{rank.icon} {rank.title} • {u.xp} XP</div>
+                        {/* 🟢 აქაც ჩანს ლიგა XP-ის მაგივრად უბრალო დიზაინით */}
+                        <div className={`text-[10px] font-bold mt-0.5 flex items-center gap-1 ${rank.color}`}>{rank.icon} {rank.name} • {u.xp} XP</div>
                       </div>
                     </div>
                     <div className="text-right">
@@ -647,7 +658,6 @@ const handleSendFriendReq = async (targetName) => {
         </div>
       )}
 
-      {/* 🛡️ ადმინ პანელის მოდალი (Admin Dashboard) */}
       {isAdminOpen && (
         <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
           <div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto">
@@ -705,34 +715,28 @@ const handleSendFriendReq = async (targetName) => {
           </div>
           
           <div className="flex items-center gap-2 md:gap-3">
-            {/* 🏆 ლიდერბორდი */}
             <button onClick={loadLeaderboard} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
               <Trophy size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">ტოპ 10</span>
             </button>
             
-            {/* 🛡️ ადმინ პანელი - გამოჩნდება მხოლოდ Chachu-სთვის */}
             {safeUsername.toLowerCase() === 'chachu' && (
               <button onClick={() => setIsAdminOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
                 <ShieldAlert size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">ადმინ</span>
               </button>
             )}
 
-            {/* 🛒 მაღაზია */}
             <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
               <ShoppingCart size={15} /> <span className="hidden md:block text-[10px] font-black uppercase">მაღაზია</span>
             </button>
             
-            {/* ⚙️ პარამეტრები */}
             <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-stone-200 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
               <Settings size={15} className="md:w-4 md:h-4" />
             </button>
 
-            {/* 🎵 მუსიკა */}
             <button onClick={() => setIsMusicPlaying(!isMusicPlaying)} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md ${isMusicPlaying ? activeTheme.accent : 'text-stone-500'}`}>
               <Music size={15} className="md:w-4 md:h-4" />
             </button>
             
-            {/* 🚪 გამოსვლა */}
             <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-rose-500 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}>
               <LogOut size={15} className="md:w-4 md:h-4" />
             </button>
@@ -746,6 +750,7 @@ const handleSendFriendReq = async (targetName) => {
               
               <div className="space-y-4 md:space-y-5">
                 
+                {/* 🟢 პროფილის ბარათი (დაემატა ლიგა) */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4">
                     <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all" onClick={() => handleInspectPlayer(safeUsername)}>
@@ -753,16 +758,25 @@ const handleSendFriendReq = async (targetName) => {
                         {myAvatar}
                         <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
                       </div>
+                      
                       <div className="flex flex-col gap-0.5">
                         <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5">
                           <VipName name={safeUsername} isVip={amIVip} /> <Eye size={12} className="text-stone-500"/>
                         </h2>
-                        <div className="flex items-center gap-1.5 text-stone-400">
+                        
+                        <div className="flex items-center gap-1.5 text-stone-400 mt-1">
+                           {/* 🟢 დამატებული ლიგის ბეჯი პროფილზე */}
+                           <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${myLeague.bg} ${myLeague.border} shadow-sm mr-1`}>
+                             <span className="text-[9px] drop-shadow-md">{myLeague.icon}</span>
+                             <span className={`text-[8px] font-black uppercase tracking-wider ${myLeague.color}`}>{myLeague.name}</span>
+                           </div>
+
                            <Coins size={12} className="text-yellow-500"/> 
                            <span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span>
-                           {amIVip && <span className="ml-2 text-[8px] font-black bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/30 tracking-wider">VIP ACTIVE</span>}
+                           {amIVip && <span className="ml-1 text-[8px] font-black bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/30 tracking-wider">VIP ACTIVE</span>}
                         </div>
                       </div>
+
                     </div>
                   </div>
 
@@ -939,6 +953,7 @@ const handleSendFriendReq = async (targetName) => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* 🏆 ტოპ 10 სია (დაემატა ლიგა) */}
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
                     <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
                       <Medal size={14} className={activeTheme.accent} /> ტოპ 10
@@ -948,9 +963,13 @@ const handleSendFriendReq = async (targetName) => {
                         <div key={player._id} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl border transition-all ${player.username === safeUsername ? 'bg-stone-800 border-stone-500 shadow-md' : 'bg-stone-950/40 border-white/5 hover:border-white/10'} text-[10px] md:text-xs`}>
                           <div className="flex items-center gap-2 md:gap-3 truncate cursor-pointer" onClick={() => handleInspectPlayer(player.username)}>
                             <span className={`w-5 h-5 md:w-6 md:h-6 flex items-center justify-center font-mono font-black text-[9px] md:text-[11px] rounded-md ${idx === 0 ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30' : idx === 1 ? 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/30' : idx === 2 ? 'bg-amber-700/10 text-amber-500 border border-amber-700/30' : 'bg-stone-800/80 text-stone-500 border border-white/5'}`}>{idx + 1}</span>
-                            <div className="flex flex-col truncate hover:underline">
+                            
+                            <div className="flex flex-col truncate hover:underline mt-0.5">
                                <span className="font-bold truncate tracking-wide"><VipName name={player.username} isVip={checkIsVip(player.vipUntil)} className={player.username === safeUsername ? activeTheme.accent : 'text-stone-200'} /></span>
-                               <span className="text-[8px] font-black text-stone-500">LVL {player.level || 1}</span>
+                               {/* 🟢 აქ გამოჩნდება ლიგა უბრალო დიზაინით */}
+                               <div className={`text-[8px] font-black flex items-center gap-1 ${getLeague(player.xp || 0).color}`}>
+                                  {getLeague(player.xp || 0).icon} {getLeague(player.xp || 0).name}
+                               </div>
                             </div>
                           </div>
                           <div className="text-stone-400 font-bold font-mono text-[9px] md:text-[11px] bg-stone-950/60 px-1.5 md:px-2 py-0.5 rounded-md border border-white/5 shrink-0">{player.stats?.gamesWon || 0} მოგება</div>
