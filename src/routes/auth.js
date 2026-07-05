@@ -76,11 +76,12 @@ router.post('/change-password', async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
 });
 
-// 🟢 ლიდერბორდი (აჩვენებს მხოლოდ დაუბლოკავ მოთამაშეებს)
+// 🟢 ლიდერბორდი (შესწორებული ლოგიკა ძველი ექაუნთებისთვის)
 router.get('/leaderboard', async (req, res) => {
   try {
-    const topUsers = await User.find({ isBanned: false })
-      .sort({ xp: -1, 'stats.gamesWon': -1 }) // ჯერ XP-ით სორტირდება
+    // $ne: true ნიშნავს - მოძებნოს ყველა, ვისაც პირდაპირ არ უწერია ბანი
+    const topUsers = await User.find({ isBanned: { $ne: true } })
+      .sort({ xp: -1, 'stats.gamesWon': -1 }) 
       .limit(10)
       .select('-password -secretWord -dateOfBirth');
     res.json(topUsers);
@@ -88,9 +89,55 @@ router.get('/leaderboard', async (req, res) => {
 });
 
 // ============================================
+// 🤝 მეგობრების სისტემის API
+// ============================================
+router.post('/friend/request', async (req, res) => {
+    try {
+        const { sender, target } = req.body;
+        const targetUser = await User.findOne({ username: target });
+        if (!targetUser) return res.status(404).json({message: 'მომხმარებელი ვერ მოიძებნა'});
+        
+        if (targetUser.friendRequests.includes(sender) || targetUser.friends.includes(sender)) {
+            return res.status(400).json({message: 'თხოვნა უკვე გაგზავნილია ან უკვე მეგობრები ხართ!'});
+        }
+        
+        targetUser.friendRequests.push(sender);
+        await targetUser.save();
+        res.json({message: 'მეგობრობის თხოვნა გაიგზავნა!'});
+    } catch(e) { res.status(500).json({message: 'შეცდომა სერვერზე'}); }
+});
+
+router.post('/friend/accept', async (req, res) => {
+    try {
+        const { me, sender } = req.body;
+        const myUser = await User.findOne({ username: me });
+        const senderUser = await User.findOne({ username: sender });
+        
+        myUser.friendRequests = myUser.friendRequests.filter(u => u !== sender);
+        if (!myUser.friends.includes(sender)) myUser.friends.push(sender);
+        if (senderUser && !senderUser.friends.includes(me)) {
+            senderUser.friends.push(me);
+            await senderUser.save();
+        }
+        await myUser.save();
+        res.json({message: 'მეგობარი წარმატებით დაემატა!'});
+    } catch(e) { res.status(500).json({message: 'შეცდომა სერვერზე'}); }
+});
+
+router.post('/friend/reject', async (req, res) => {
+    try {
+        const { me, sender } = req.body;
+        const myUser = await User.findOne({ username: me });
+        myUser.friendRequests = myUser.friendRequests.filter(u => u !== sender);
+        await myUser.save();
+        res.json({message: 'თხოვნა უარყოფილია!'});
+    } catch(e) { res.status(500).json({message: 'შეცდომა სერვერზე'}); }
+});
+
+// ============================================
 // 🛡️ ადმინ პანელის მარშრუტები 🛡️
 // ============================================
-const ADMIN_PASS = 'PhurtiAdmin2026'; // შენი საიდუმლო პაროლი ადმინ პანელისთვის
+const ADMIN_PASS = 'PhurtiAdmin2026';
 
 router.post('/admin/users', async (req, res) => {
   try {
@@ -118,18 +165,10 @@ router.post('/admin/update', async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
 });
 
-// 🟢 პროფილის ჩატვირთვა 
 router.get('/profile/:username', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username });
     if (!user) return res.status(404).json({ message: 'მოთამაშე ვერ მოიძებნა' });
-    const now = new Date();
-    if (!user.dailyQuests || user.dailyQuests.length === 0 || (user.lastQuestGeneration && (now - new Date(user.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
-        const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
-        user.dailyQuests = shuffled.slice(0, 3).map(q => ({ questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false }));
-        user.lastQuestGeneration = now;
-        await user.save(); 
-    }
     const { password, ...userData } = user._doc;
     res.json(userData);
   } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }

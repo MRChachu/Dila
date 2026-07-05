@@ -291,9 +291,41 @@ export default function App() {
     }
   };
 
-  const handleSendFriendReq = (targetName) => socket.emit('sendFriendRequest', { targetUsername: targetName });
-  const handleAcceptFriend = (senderName) => socket.emit('acceptFriendRequest', { senderUsername: senderName });
-  const handleRejectFriend = (senderName) => socket.emit('rejectFriendRequest', { senderUsername: senderName });
+const handleSendFriendReq = async (targetName) => {
+    try {
+      const res = await fetch('https://purti.onrender.com/api/auth/friend/request', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender: safeUsername, target: targetName })
+      });
+      const data = await res.json();
+      setToastMsg(data.message);
+      fetchDashboardData(safeUsername); // ეკრანის განახლება
+    } catch(err) { console.error(err); }
+  };
+
+  const handleAcceptFriend = async (senderName) => {
+    try {
+      const res = await fetch('https://purti.onrender.com/api/auth/friend/accept', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ me: safeUsername, sender: senderName })
+      });
+      const data = await res.json();
+      setToastMsg(data.message);
+      fetchDashboardData(safeUsername); // ეკრანის განახლება
+    } catch(err) { console.error(err); }
+  };
+
+  const handleRejectFriend = async (senderName) => {
+    try {
+      const res = await fetch('https://purti.onrender.com/api/auth/friend/reject', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ me: safeUsername, sender: senderName })
+      });
+      const data = await res.json();
+      setToastMsg(data.message);
+      fetchDashboardData(safeUsername); // ეკრანის განახლება
+    } catch(err) { console.error(err); }
+  };
 
   const handleBuyItem = (type, itemId, price) => socket.emit('buyItem', { type, itemId, price });
   const handleEquipItem = (type, itemId) => socket.emit('equipItem', { type, itemId });
