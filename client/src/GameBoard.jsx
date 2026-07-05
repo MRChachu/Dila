@@ -115,11 +115,19 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     };
   }, [socket, mobileModal]);
 
-  // 🟢 ვამოწმებთ, აქვს თუ არა ჩემს თავს უკვე გაშვებული ემოჯი ეკრანზე
+  // 🟢 დაბრუნებული handlePlayCard ფუნქცია!
+  const handlePlayCard = () => {
+    if (!isMyTurn || !selectedCardFromHand) return;
+    playSoftSound(selectedCardsFromTable.length > 0);
+    socket.emit('playCard', { roomId: room.id, cardFromHand: selectedCardFromHand, cardsFromTable: selectedCardsFromTable });
+    setSelectedCardFromHand(null);
+    setSelectedCardsFromTable([]);
+  };
+
   const hasActiveEmote = activeEmotes.some(e => e.playerId === socket.id);
 
   const handleSendEmote = (emote) => {
-    if (hasActiveEmote) return; // 🟢 Anti-Spam დაცვა ლოგიკის დონეზეც
+    if (hasActiveEmote) return;
     socket.emit('sendEmote', { roomId: room.id, emote });
     const id = Date.now() + Math.random();
     setActiveEmotes(prev => [...prev, { id, playerId: socket.id, emote }]);
@@ -416,7 +424,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             
             <div className="flex flex-col md:flex-row justify-between items-center bg-stone-950/60 p-1.5 md:p-2 rounded-2xl md:rounded-full border border-white/5 backdrop-blur-md shadow-lg z-10 w-full max-w-[95vw] md:max-w-max mx-auto overflow-hidden gap-2 md:gap-0">
               <div className="flex overflow-x-auto custom-scrollbar gap-2 md:gap-3 px-2 py-1 items-center flex-1 w-full md:w-auto md:max-w-max">
-                {/* 🟢 აქ დამატებულია Spam Protection სტანდარტულ ემოჯებზე */}
                 {standardEmotes.map(emo => (
                   <button 
                     key={emo} 
@@ -430,7 +437,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 
                 <div className="w-px h-6 bg-white/10 shrink-0 mx-1 hidden md:block"></div>
                 
-                {/* 🟢 აქ დამატებულია Spam Protection VIP ემოჯებზე */}
                 {vipEmotes.map(emo => (
                   <button 
                     key={emo} 
