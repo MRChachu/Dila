@@ -115,15 +115,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     };
   }, [socket, mobileModal]);
 
-  const handlePlayCard = () => {
-    if (!isMyTurn || !selectedCardFromHand) return;
-    playSoftSound(selectedCardsFromTable.length > 0);
-    socket.emit('playCard', { roomId: room.id, cardFromHand: selectedCardFromHand, cardsFromTable: selectedCardsFromTable });
-    setSelectedCardFromHand(null);
-    setSelectedCardsFromTable([]);
-  };
+  // 🟢 ვამოწმებთ, აქვს თუ არა ჩემს თავს უკვე გაშვებული ემოჯი ეკრანზე
+  const hasActiveEmote = activeEmotes.some(e => e.playerId === socket.id);
 
   const handleSendEmote = (emote) => {
+    if (hasActiveEmote) return; // 🟢 Anti-Spam დაცვა ლოგიკის დონეზეც
     socket.emit('sendEmote', { roomId: room.id, emote });
     const id = Date.now() + Math.random();
     setActiveEmotes(prev => [...prev, { id, playerId: socket.id, emote }]);
@@ -295,7 +291,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
       <div className={`flex-1 bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden order-1 lg:order-2 ${mobileModal ? 'hidden lg:flex' : 'flex'}`}>
         
-        {/* 🟢 ემოჯები ახლა სათამაშო მაგიდის მარჯვენა, სრულიად ცარიელ მხარეს გამოჩნდება! */}
         {activeEmotes.length > 0 && (
           <div className="absolute right-4 md:right-8 top-[20%] md:top-[25%] z-[150] pointer-events-none flex flex-col gap-4 items-end">
             {activeEmotes.map(e => {
@@ -421,12 +416,28 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             
             <div className="flex flex-col md:flex-row justify-between items-center bg-stone-950/60 p-1.5 md:p-2 rounded-2xl md:rounded-full border border-white/5 backdrop-blur-md shadow-lg z-10 w-full max-w-[95vw] md:max-w-max mx-auto overflow-hidden gap-2 md:gap-0">
               <div className="flex overflow-x-auto custom-scrollbar gap-2 md:gap-3 px-2 py-1 items-center flex-1 w-full md:w-auto md:max-w-max">
+                {/* 🟢 აქ დამატებულია Spam Protection სტანდარტულ ემოჯებზე */}
                 {standardEmotes.map(emo => (
-                  <button key={emo} onClick={() => handleSendEmote(emo)} className="text-lg md:text-xl hover:scale-125 hover:-translate-y-1 transition-all active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 flex-shrink-0">{emo}</button>
+                  <button 
+                    key={emo} 
+                    onClick={() => !hasActiveEmote && handleSendEmote(emo)} 
+                    disabled={hasActiveEmote}
+                    className={`text-lg md:text-xl transition-all flex-shrink-0 ${hasActiveEmote ? 'opacity-20 cursor-not-allowed grayscale' : 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100'}`}
+                  >
+                    {emo}
+                  </button>
                 ))}
+                
                 <div className="w-px h-6 bg-white/10 shrink-0 mx-1 hidden md:block"></div>
+                
+                {/* 🟢 აქ დამატებულია Spam Protection VIP ემოჯებზე */}
                 {vipEmotes.map(emo => (
-                  <button key={emo} onClick={() => amIVip && handleSendEmote(emo)} className={`relative text-lg md:text-xl transition-all shrink-0 flex-shrink-0 ${amIVip ? 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' : 'opacity-20 cursor-not-allowed grayscale'}`}>
+                  <button 
+                    key={emo} 
+                    onClick={() => amIVip && !hasActiveEmote && handleSendEmote(emo)} 
+                    disabled={!amIVip || hasActiveEmote}
+                    className={`relative text-lg md:text-xl transition-all shrink-0 flex-shrink-0 ${amIVip && !hasActiveEmote ? 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' : 'opacity-20 cursor-not-allowed grayscale'}`}
+                  >
                     {emo} {!amIVip && <Lock size={10} className="absolute -bottom-1 -right-1 text-yellow-500/50"/>}
                   </button>
                 ))}
@@ -473,7 +484,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   {room.roundSummary.matchWinner ? 'მატჩი დასრულდა' : 'რაუნდი დასრულდა'}
                 </h2>
                 
-                {/* 🟢 განახლებული, კონტრასტული და მკაფიო გამარჯვებულის ფანჯარა */}
                 {room.roundSummary.matchWinner && (
                   <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 md:mb-6 shadow-inner ring-1 ring-white/5">
                     <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">გამარჯვებული</p>
@@ -483,7 +493,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   </div>
                 )}
 
-                {/* 🟢 რაუნდის შეჯამების ტექსტებიც უკეთესი კონტრასტით */}
                 {!room.roundSummary.matchWinner && (
                   <div className="space-y-2 md:space-y-3 bg-stone-950/80 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/5 text-[10px] md:text-sm font-medium text-stone-300 mb-4 md:mb-6 text-left shadow-inner">
                     <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">ბევრი კარტი:</span> <span className="font-black text-stone-100">{room.roundSummary.cardsWinner}</span></div>
