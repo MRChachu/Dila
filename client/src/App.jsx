@@ -487,20 +487,45 @@ const handleSendInvite = (targetSocketId) => {
       )}
 
       {isSettingsOpen && (
-        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-xs w-full space-y-6 shadow-2xl font-sans relative`}>
-            <h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> პარამეტრები</h3>
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> ფონური მუსიკა</label>
-              <div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5">
-                <button onClick={() => setIsMusicPlaying(true)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${isMusicPlaying ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500'}`}>ჩართული</button>
-                <button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>გამორთული</button>
-              </div>
-            </div>
-            <button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">დახურვა</button>
-          </div>
+  <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-6 shadow-2xl font-sans relative`}>
+      <h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> პარამეტრები</h3>
+      
+      <div className="space-y-3 border-b border-white/10 pb-4">
+        <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> ფონური მუსიკა</label>
+        <div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5">
+          <button onClick={() => setIsMusicPlaying(true)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${isMusicPlaying ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500'}`}>ჩართული</button>
+          <button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>გამორთული</button>
         </div>
-      )}
+      </div>
+
+      {/* 🟢 პაროლის შეცვლის ფორმა */}
+      <form onSubmit={async (e) => {
+          e.preventDefault();
+          const curPass = e.target.currentPass.value;
+          const newPass = e.target.newPass.value;
+          try {
+             const res = await fetch(`https://purti.onrender.com/api/auth/change-password`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: safeUsername, currentPassword: curPass, newPassword: newPass })
+             });
+             const data = await res.json();
+             if(res.ok) {
+                 setToastMsg('პაროლი წარმატებით შეიცვალა!');
+                 e.target.reset();
+             } else { setError(data.message); }
+          } catch(err) { setError('შეცდომა სერვერთან კავშირისას'); }
+      }} className="space-y-3">
+        <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Lock size={14}/> პაროლის შეცვლა</label>
+        <input name="currentPass" type="password" placeholder="ძველი / დროებითი პაროლი" className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required />
+        <input name="newPass" type="password" placeholder="ახალი პაროლი" className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required />
+        <button type="submit" className={`w-full py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md`}>შეცვლა</button>
+      </form>
+
+      <button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">დახურვა</button>
+    </div>
+  </div>
+)}
 
       <div className="relative z-10 flex flex-col flex-1 w-full h-full text-stone-100">
         <header className={`${activeTheme.card} flex items-center justify-between border-b border-white/5 backdrop-blur-xl px-4 md:px-8 py-3 md:py-4 sticky top-0 z-40 shadow-lg transition-colors duration-700`}>

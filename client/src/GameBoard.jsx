@@ -303,22 +303,30 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
             <div className="w-full md:w-[85%] max-w-2xl min-h-[11rem] md:min-h-[14rem] py-6 md:py-8 bg-stone-950/30 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 shadow-inner flex items-center justify-center px-2 md:px-4 z-10 relative">
               <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-                {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
-                  const isSelected = selectedCardsFromTable.some(tc => tc.rank === c.rank && tc.suit === c.suit);
-                  return (
-                    <div 
-                      key={i} 
-                      onClick={() => isMyTurn && toggleTableCard(c)}
-                      className={`w-14 h-20 md:w-20 md:h-28 bg-stone-100 rounded-lg md:rounded-xl shadow-xl flex flex-col justify-between p-1.5 md:p-2 select-none animate-in zoom-in duration-300 transition-all cursor-pointer ${isSelected ? `ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')} -translate-y-2 md:-translate-y-3 shadow-2xl` : 'hover:-translate-y-1 hover:shadow-2xl'}`}
-                    >
-                      <span className={`text-xs md:text-base font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
-                      <span className={`text-xl md:text-3xl self-center ${getSuitColor(c.suit)} drop-shadow-md`}>{c.suit}</span>
-                      <span className={`text-xs md:text-base font-black ${getSuitColor(c.suit)} self-end rotate-180 leading-none`}>{c.rank}</span>
-                    </div>
-                  );
-                }) : (
-                  <span className="text-stone-700/50 font-black text-xs md:text-xl uppercase tracking-widest select-none">მაგიდა ცარიელია</span>
-                )}
+                {/* მაგიდის კარტები გაუმჯობესებული ანიმაციით */}
+{room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
+  const isSelected = selectedCardsFromTable.some(tc => tc.rank === c.rank && tc.suit === c.suit);
+  
+  // 🟢 ვამოწმებთ, ეს კარტი ახლახანს ხომ არ მოჭრეს
+  const isBeingCaptured = room.lastAction?.type === 'CAPTURE' && room.lastAction.cardsFromTable.some(cap => cap.rank === c.rank && cap.suit === c.suit);
+
+  return (
+    <div 
+      key={i} 
+      onClick={() => isMyTurn && toggleTableCard(c)}
+      className={`w-14 h-20 md:w-20 md:h-28 bg-stone-100 rounded-lg md:rounded-xl shadow-xl flex flex-col justify-between p-1.5 md:p-2 select-none cursor-pointer transition-all duration-300 
+        ${isSelected ? `ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')} -translate-y-2 md:-translate-y-3 shadow-2xl` : 'hover:-translate-y-1 hover:shadow-2xl'}
+        ${isBeingCaptured ? 'animate-fly-out z-50 pointer-events-none' : 'animate-in zoom-in'}
+      `}
+    >
+      <span className={`text-xs md:text-base font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
+      <span className={`text-xl md:text-3xl self-center ${getSuitColor(c.suit)} drop-shadow-md`}>{c.suit}</span>
+      <span className={`text-xs md:text-base font-black ${getSuitColor(c.suit)} self-end rotate-180 leading-none`}>{c.rank}</span>
+    </div>
+  );
+}) : (
+  <span className="text-stone-700/50 font-black text-xs md:text-xl uppercase tracking-widest select-none">მაგიდა ცარიელია</span>
+)}
               </div>
             </div>
           </div>
