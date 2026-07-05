@@ -10,7 +10,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const [isMuted, setIsMuted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(100);
   
-  // 🟢 მობილურის სტეიტები 
   const [mobileModal, setMobileModal] = useState(null); 
   const [unreadChat, setUnreadChat] = useState(false);
 
@@ -89,10 +88,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   useEffect(() => {
     const handleReceiveMessage = (msg) => {
       setMessages(prev => [...prev, msg]);
-      
-      if (window.innerWidth < 1024 && mobileModal !== 'chat') {
-        setUnreadChat(true);
-      }
+      if (window.innerWidth < 1024 && mobileModal !== 'chat') setUnreadChat(true);
       setTimeout(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, 100);
     };
     
@@ -176,18 +172,21 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           )}
 
-          {/* 👥 მოთამაშეების სია (შესწორებული Layout) */}
+          {/* 👥 მოთამაშეების სია */}
           <div className={`${mobileModal === 'chat' ? 'hidden lg:flex' : 'flex'} flex-col w-full shrink-0 ${mobileModal ? 'h-full overflow-hidden' : ''}`}>
-            <div className={`${mobileModal ? 'bg-transparent shadow-none border-none p-0 h-full' : `${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl p-4 shadow-2xl relative`} flex flex-col gap-3 overflow-hidden transition-colors`}>
+            
+            {/* 🟢 აქ მოშორდა overflow-hidden, რათა ემოჯი არ მოიჭრას */}
+            <div className={`${mobileModal ? 'bg-transparent shadow-none border-none p-0 h-full' : `${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl p-4 md:p-5 shadow-2xl relative`} flex flex-col gap-3 transition-colors`}>
               
-              {!mobileModal && <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-50 ${activeTheme.accent}`}></div>}
+              {!mobileModal && <div className={`absolute top-0 left-0 w-full h-1 rounded-t-3xl bg-gradient-to-r from-transparent via-current to-transparent opacity-50 ${activeTheme.accent}`}></div>}
+              
               {!mobileModal && (
                 <h3 className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 mb-1 ${activeTheme.accent}`}>
                   <Users size={14} /> მოთამაშეები
                 </h3>
               )}
               
-              <div className={`flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 pr-1`}>
+              <div className={`flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 pr-2`}>
                 {room?.players?.map((p, i) => {
                   const isCurrentTurn = room.currentTurn === i;
                   const emote = activeEmotes.find(e => e.playerId === p.id);
@@ -201,7 +200,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                       {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-[0.03] rounded-2xl`} />}
                       {isCurrentTurn && <div className={`absolute -left-[1px] top-1/2 -translate-y-1/2 w-1.5 h-8 ${activeTheme.accentBg} rounded-r-md shadow-[0_0_12px_currentColor] animate-pulse z-20`} />}
                       
-                      <div className="flex items-start gap-2.5 z-10">
+                      <div className="flex items-start gap-2.5 z-10 relative">
                         <span className="text-2xl drop-shadow-md mt-0.5">{p.avatar || '😎'}</span>
                         <div className="flex flex-col">
                           <span className="font-bold text-xs md:text-sm truncate max-w-[120px]">
@@ -230,9 +229,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                         </div>
                       </div>
 
+                      {/* 🟢 დაცული ემოჯი დესკტოპზე: განთავსებულია შიდა სივრცეში, ცენტრში */}
                       {emote && (
-                        <div className="hidden lg:block absolute -right-2 -top-4 text-2xl md:text-3xl animate-bounce drop-shadow-xl z-20">
-                          {emote.emote}
+                        <div className="hidden lg:flex absolute right-[4.5rem] inset-y-0 items-center z-50 pointer-events-none">
+                          <span className="text-4xl animate-bounce drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">{emote.emote}</span>
                         </div>
                       )}
                     </div>
@@ -242,7 +242,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          {/* 💬 Quick Chat (ლაივ ჩატის ნაცვლად) */}
+          {/* 💬 Quick Chat */}
           <div className={`${mobileModal === 'players' ? 'hidden lg:flex' : 'flex'} flex-col w-full ${mobileModal ? 'h-full flex-1 min-h-0' : 'flex-1'} overflow-hidden`}>
             <div className={`${mobileModal ? 'bg-transparent shadow-none border-none p-0' : `${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl shadow-2xl transition-colors`} flex flex-col h-full overflow-hidden`}>
               
