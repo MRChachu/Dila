@@ -99,6 +99,10 @@ router.post('/friend/request', async (req, res) => {
         const targetUser = await User.findOne({ username: target });
         if (!targetUser) return res.status(404).json({message: 'მომხმარებელი ვერ მოიძებნა'});
         
+        // 🟢 დაცვა: თუ ძველი ექაუნთია, ვუქმნით ცარიელ მასივებს
+        if (!targetUser.friendRequests) targetUser.friendRequests = [];
+        if (!targetUser.friends) targetUser.friends = [];
+        
         if (targetUser.friendRequests.includes(sender) || targetUser.friends.includes(sender)) {
             return res.status(400).json({message: 'თხოვნა უკვე გაგზავნილია ან უკვე მეგობრები ხართ!'});
         }
@@ -106,7 +110,10 @@ router.post('/friend/request', async (req, res) => {
         targetUser.friendRequests.push(sender);
         await targetUser.save();
         res.json({message: 'მეგობრობის თხოვნა გაიგზავნა!'});
-    } catch(e) { res.status(500).json({message: 'შეცდომა სერვერზე'}); }
+    } catch(e) { 
+        console.error("Friend Request Error:", e);
+        res.status(500).json({message: 'შეცდომა სერვერზე'}); 
+    }
 });
 
 router.post('/friend/accept', async (req, res) => {
@@ -114,6 +121,11 @@ router.post('/friend/accept', async (req, res) => {
         const { me, sender } = req.body;
         const myUser = await User.findOne({ username: me });
         const senderUser = await User.findOne({ username: sender });
+        
+        // 🟢 დაცვა
+        if (!myUser.friendRequests) myUser.friendRequests = [];
+        if (!myUser.friends) myUser.friends = [];
+        if (senderUser && !senderUser.friends) senderUser.friends = [];
         
         myUser.friendRequests = myUser.friendRequests.filter(u => u !== sender);
         if (!myUser.friends.includes(sender)) myUser.friends.push(sender);
@@ -123,7 +135,27 @@ router.post('/friend/accept', async (req, res) => {
         }
         await myUser.save();
         res.json({message: 'მეგობარი წარმატებით დაემატა!'});
-    } catch(e) { res.status(500).json({message: 'შეცდომა სერვერზე'}); }
+    } catch(e) { 
+        console.error("Friend Accept Error:", e);
+        res.status(500).json({message: 'შეცდომა სერვერზე'}); 
+    }
+});
+
+router.post('/friend/reject', async (req, res) => {
+    try {
+        const { me, sender } = req.body;
+        const myUser = await User.findOne({ username: me });
+        
+        // 🟢 დაცვა
+        if (!myUser.friendRequests) myUser.friendRequests = [];
+        
+        myUser.friendRequests = myUser.friendRequests.filter(u => u !== sender);
+        await myUser.save();
+        res.json({message: 'თხოვნა უარყოფილია!'});
+    } catch(e) { 
+        console.error("Friend Reject Error:", e);
+        res.status(500).json({message: 'შეცდომა სერვერზე'}); 
+    }
 });
 
 router.post('/friend/reject', async (req, res) => {
