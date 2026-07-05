@@ -25,6 +25,8 @@ const SHOP_ITEMS = {
     { id: '🦅', price: 1500, name: 'არწივი' },
     { id: '🎱', price: 1500, name: 'რვიანი' },
     { id: '🍋‍🟩', price: 1500, name: 'ლაიმი' },
+    { id: '🍌', price: 1500, name: 'ბანანი' },
+    { id: '🍉', price: 1500, name: 'საზამთრო' },
     { id: '🐉', price: 2500, name: 'დრაკონი' }
   ],
   tables: [
