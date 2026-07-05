@@ -33,7 +33,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     "კარგი თამაში იყო 🤝"
   ];
 
-  // 🟢 ლიგების გამომთვლელი ფუნქცია XP-ის მიხედვით
   const getLeague = (xp = 0) => {
     if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
     if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
@@ -197,8 +196,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   const capturedClubs = p.captured?.filter(c => c.suit === '♣' || c.suit === '♣️').length || 0;
                   const has10Diamond = p.captured?.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
                   const has2Club = p.captured?.some(c => c.rank === '2' && (c.suit === '♣' || c.suit === '♣️'));
-                  
-                  // 🟢 ვიღებთ მოთამაშის ლიგას
                   const league = getLeague(p.xp);
 
                   return (
@@ -212,7 +209,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                             <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
                           </span>
                           
-                          {/* 🟢 ლიგის და სტატისტიკის პანელი */}
                           <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mt-1">
                             <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${league.bg} ${league.border} shadow-sm`}>
                                <span className="text-[9px] drop-shadow-md">{league.icon}</span>
@@ -299,14 +295,15 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
       <div className={`flex-1 bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden order-1 lg:order-2 ${mobileModal ? 'hidden lg:flex' : 'flex'}`}>
         
+        {/* 🟢 ემოჯები ახლა სათამაშო მაგიდის მარჯვენა, სრულიად ცარიელ მხარეს გამოჩნდება! */}
         {activeEmotes.length > 0 && (
-          <div className="absolute top-[20%] lg:top-[30%] left-1/2 -translate-x-1/2 z-[150] pointer-events-none flex flex-wrap justify-center gap-6 w-full">
+          <div className="absolute right-4 md:right-8 top-[20%] md:top-[25%] z-[150] pointer-events-none flex flex-col gap-4 items-end">
             {activeEmotes.map(e => {
               const player = room?.players?.find(p => p.id === e.playerId);
               return (
-                <div key={e.id} className="flex flex-col items-center animate-in zoom-in slide-in-from-bottom-10 duration-300">
-                  <span className="text-6xl md:text-7xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] animate-bounce">{e.emote}</span>
-                  <span className={`text-[10px] md:text-xs font-black bg-stone-900/90 px-3 md:px-4 py-1 md:py-1.5 rounded-full ${activeTheme.accent} mt-2 backdrop-blur-md border border-white/10 uppercase tracking-wider shadow-xl`}>{player?.name || 'მოთამაშე'}</span>
+                <div key={e.id} className="flex flex-col items-center animate-in slide-in-from-right-10 fade-in zoom-in duration-300">
+                  <span className="text-5xl md:text-6xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] animate-bounce">{e.emote}</span>
+                  <span className={`text-[9px] md:text-[10px] font-black bg-stone-900/90 px-3 py-1.5 rounded-full ${activeTheme.accent} mt-1 backdrop-blur-md border border-white/10 uppercase tracking-wider shadow-xl`}>{player?.name || 'მოთამაშე'}</span>
                 </div>
               )
             })}
@@ -476,21 +473,23 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   {room.roundSummary.matchWinner ? 'მატჩი დასრულდა' : 'რაუნდი დასრულდა'}
                 </h2>
                 
+                {/* 🟢 განახლებული, კონტრასტული და მკაფიო გამარჯვებულის ფანჯარა */}
                 {room.roundSummary.matchWinner && (
-                  <div className={`${activeTheme.accentBg} bg-opacity-10 border border-opacity-30 border-current rounded-xl p-3 md:p-4 mb-4 md:mb-6`}>
-                    <p className="text-[10px] md:text-sm font-bold uppercase opacity-80">გამარჯვებული</p>
-                    <p className="text-xl md:text-2xl font-black mt-1">
+                  <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 md:mb-6 shadow-inner ring-1 ring-white/5">
+                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">გამარჯვებული</p>
+                    <div className="text-2xl md:text-3xl font-black text-white drop-shadow-md">
                       <VipName name={room.roundSummary.matchWinner} isVip={checkIsVip(room.players.find(p=>p.name===room.roundSummary.matchWinner)?.vipUntil)} /> 🎉
-                    </p>
+                    </div>
                   </div>
                 )}
 
+                {/* 🟢 რაუნდის შეჯამების ტექსტებიც უკეთესი კონტრასტით */}
                 {!room.roundSummary.matchWinner && (
-                  <div className="space-y-2 md:space-y-3 bg-stone-950/50 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/5 text-[10px] md:text-sm font-medium text-stone-300 mb-4 md:mb-6 text-left">
-                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span>ბევრი კარტი:</span> <span className="font-black">{room.roundSummary.cardsWinner}</span></div>
-                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span>ბევრი ჯვარი:</span> <span className="font-black">{room.roundSummary.clubsWinner}</span></div>
-                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span>აგურის 10:</span> <span className="font-black">{room.roundSummary.diamond10Winner}</span></div>
-                    <div className="flex justify-between"><span>ჯვრის 2:</span> <span className="font-black">{room.roundSummary.club2Winner}</span></div>
+                  <div className="space-y-2 md:space-y-3 bg-stone-950/80 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/5 text-[10px] md:text-sm font-medium text-stone-300 mb-4 md:mb-6 text-left shadow-inner">
+                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">ბევრი კარტი:</span> <span className="font-black text-stone-100">{room.roundSummary.cardsWinner}</span></div>
+                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">ბევრი ჯვარი:</span> <span className="font-black text-stone-100">{room.roundSummary.clubsWinner}</span></div>
+                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">აგურის 10:</span> <span className="font-black text-stone-100">{room.roundSummary.diamond10Winner}</span></div>
+                    <div className="flex justify-between"><span className="text-stone-400">ჯვრის 2:</span> <span className="font-black text-stone-100">{room.roundSummary.club2Winner}</span></div>
                   </div>
                 )}
 
