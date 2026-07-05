@@ -148,116 +148,133 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     <div className="w-full flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto min-h-[85vh] h-auto pb-10 lg:pb-0 relative">
       
       {/* =========================================
-          🟢 მარცხენა პანელი (მობილურზე Overlay) 
+          🟢 მარცხენა პანელი / მობილურის Bottom Sheet
       ========================================== */}
       <div className={`
-        ${mobileModal ? 'fixed inset-0 z-[100] bg-stone-950/95 backdrop-blur-md p-4 flex flex-col gap-4 animate-in fade-in duration-200' : 'hidden lg:flex lg:w-80 lg:flex-col lg:gap-4 order-2 lg:order-1'}
+        ${mobileModal ? 'fixed inset-0 z-[100] bg-stone-950/60 backdrop-blur-sm flex flex-col justify-end p-0' : 'hidden lg:flex lg:w-80 lg:flex-col lg:gap-4 order-2 lg:order-1'}
       `}>
         
-        {mobileModal && (
-          <div className="flex justify-between items-center mb-2 lg:hidden">
-            <span className={`text-sm font-black uppercase tracking-widest ${activeTheme.accent}`}>
-              {mobileModal === 'players' ? '👥 მოთამაშეები' : '💬 Live Chat'}
-            </span>
-            <button onClick={() => setMobileModal(null)} className="p-2 bg-stone-800 text-stone-400 hover:text-white rounded-xl transition-all border border-white/10 shadow-md">
-              <X size={18} />
-            </button>
-          </div>
-        )}
+        {/* ფონზე დაკლიკებით დახურვა */}
+        {mobileModal && <div className="absolute inset-0 z-0" onClick={() => setMobileModal(null)}></div>}
 
-        {/* მოთამაშეების სია */}
-        <div className={`${mobileModal === 'chat' ? 'hidden lg:flex' : 'flex'} flex-col w-full shrink-0`}>
-          <div className={`${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl p-4 md:p-5 shadow-2xl flex flex-col gap-3 relative overflow-hidden transition-colors`}>
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-50 ${activeTheme.accent}`}></div>
-            <h3 className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 mb-1 md:mb-2 ${activeTheme.accent} ${mobileModal === 'players' ? 'hidden lg:flex' : 'flex'}`}>
-              <Users size={14} /> მოთამაშეები
-            </h3>
-            {room?.players?.map((p, i) => {
-              const isCurrentTurn = room.currentTurn === i;
-              const emote = activeEmotes.find(e => e.playerId === p.id);
+        {/* კონტეინერი */}
+        <div className={`
+          ${mobileModal ? 'bg-stone-900 w-full h-[65dvh] rounded-t-[2rem] p-4 md:p-5 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] relative z-10 animate-in slide-in-from-bottom-full duration-300' : 'flex flex-col gap-4 w-full h-full'}
+        `}>
+          
+          {mobileModal && (
+            <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10 lg:hidden shrink-0">
+              <span className={`text-sm font-black uppercase tracking-widest ${activeTheme.accent}`}>
+                {mobileModal === 'players' ? '👥 მოთამაშეები' : '💬 Live Chat'}
+              </span>
+              <button onClick={() => setMobileModal(null)} className="p-2 bg-stone-800 text-stone-400 hover:text-white rounded-xl transition-all active:scale-95 border border-white/5 shadow-md">
+                <X size={18} />
+              </button>
+            </div>
+          )}
+
+          {/* 👥 მოთამაშეების სია */}
+          <div className={`${mobileModal === 'chat' ? 'hidden lg:flex' : 'flex'} flex-col w-full shrink-0 h-full overflow-hidden`}>
+            <div className={`${mobileModal ? 'bg-transparent shadow-none border-none p-0' : `${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl p-5 shadow-2xl relative transition-colors`} flex flex-col gap-3 overflow-hidden h-full`}>
               
-              const capturedCards = p.captured?.length || 0;
-              const capturedClubs = p.captured?.filter(c => c.suit === '♣' || c.suit === '♣️').length || 0;
-              const has10Diamond = p.captured?.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
-              const has2Club = p.captured?.some(c => c.rank === '2' && (c.suit === '♣' || c.suit === '♣️'));
+              {!mobileModal && <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-50 ${activeTheme.accent}`}></div>}
+              {!mobileModal && (
+                <h3 className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 mb-2 ${activeTheme.accent}`}>
+                  <Users size={14} /> მოთამაშეები
+                </h3>
+              )}
+              
+              <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 pr-1">
+                {room?.players?.map((p, i) => {
+                  const isCurrentTurn = room.currentTurn === i;
+                  const emote = activeEmotes.find(e => e.playerId === p.id);
+                  const capturedCards = p.captured?.length || 0;
+                  const capturedClubs = p.captured?.filter(c => c.suit === '♣' || c.suit === '♣️').length || 0;
+                  const has10Diamond = p.captured?.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
+                  const has2Club = p.captured?.some(c => c.rank === '2' && (c.suit === '♣' || c.suit === '♣️'));
 
-              return (
-                <div key={p.id} className={`relative flex items-center justify-between p-2.5 md:p-3 rounded-2xl border transition-all duration-500 ${isCurrentTurn ? `bg-stone-900 border-white/10 shadow-2xl scale-[1.03] z-10 ${activeTheme.accent.replace('text-', 'ring-1 ring-')}` : 'bg-stone-950/40 border-white/5'}`}>
-                  
-                  {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-[0.03] rounded-2xl`} />}
-                  {isCurrentTurn && <div className={`absolute -left-[1px] top-1/2 -translate-y-1/2 w-1.5 h-8 ${activeTheme.accentBg} rounded-r-md shadow-[0_0_12px_currentColor] animate-pulse z-20`} />}
-                  
-                  <div className="flex items-start gap-2.5 z-10">
-                    <span className="text-2xl drop-shadow-md mt-0.5">{p.avatar || '😎'}</span>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-xs md:text-sm truncate max-w-[120px]">
-                        <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
-                      </span>
+                  return (
+                    <div key={p.id} className={`relative flex items-center justify-between p-2.5 md:p-3 rounded-2xl border transition-all duration-500 ${isCurrentTurn ? `bg-stone-900 border-white/10 shadow-2xl scale-[1.02] z-10 ${activeTheme.accent.replace('text-', 'ring-1 ring-')}` : 'bg-stone-950/40 border-white/5'}`}>
+                      {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-[0.03] rounded-2xl`} />}
+                      {isCurrentTurn && <div className={`absolute -left-[1px] top-1/2 -translate-y-1/2 w-1.5 h-8 ${activeTheme.accentBg} rounded-r-md shadow-[0_0_12px_currentColor] animate-pulse z-20`} />}
                       
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <span className="text-[9px] md:text-[10px] text-stone-500 font-bold tracking-wider">ქულა: <span className="text-stone-200">{p.totalScore}</span></span>
-                        <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-stone-950/60 rounded border border-white/5">
-                          <span className="text-[9px] font-mono font-black text-stone-300" title="წაღებული კარტები">🃏 {capturedCards}</span>
-                          <span className="text-stone-700 text-[8px]">|</span>
-                          <span className="text-[9px] font-mono font-black text-stone-300" title="წაღებული ჯვრები">♣️ {capturedClubs}</span>
-                        </div>
-                        <div className="flex gap-1">
-                          {has10Diamond && <span className="text-[11px] drop-shadow-md" title="10 აგური">💎</span>}
-                          {has2Club && <span className="text-[11px] drop-shadow-md" title="2 ჯვარი">♣️</span>}
+                      <div className="flex items-start gap-2.5 z-10">
+                        <span className="text-2xl drop-shadow-md mt-0.5">{p.avatar || '😎'}</span>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-xs md:text-sm truncate max-w-[120px]">
+                            <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
+                          </span>
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <span className="text-[9px] md:text-[10px] text-stone-500 font-bold tracking-wider">ქულა: <span className="text-stone-200">{p.totalScore}</span></span>
+                            <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-stone-950/60 rounded border border-white/5">
+                              <span className="text-[9px] font-mono font-black text-stone-300">🃏 {capturedCards}</span>
+                              <span className="text-stone-700 text-[8px]">|</span>
+                              <span className="text-[9px] font-mono font-black text-stone-300">♣️ {capturedClubs}</span>
+                            </div>
+                            <div className="flex gap-1">
+                              {has10Diamond && <span className="text-[11px] drop-shadow-md" title="10 აგური">💎</span>}
+                              {has2Club && <span className="text-[11px] drop-shadow-md" title="2 ჯვარი">♣️</span>}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-end z-10">
-                     <div className="flex items-center -space-x-1.5">
-                       {Array.from({length: p.cards?.length || 0}).map((_, idx) => (
-                          <div key={idx} className={`w-3.5 h-5 md:w-4 md:h-6 rounded-sm border shadow-md ${activeCardBack}`}></div>
-                       ))}
-                     </div>
-                  </div>
+                      
+                      <div className="flex flex-col items-end z-10">
+                        <div className="flex items-center -space-x-1.5">
+                          {Array.from({length: p.cards?.length || 0}).map((_, idx) => (
+                              <div key={idx} className={`w-3.5 h-5 md:w-4 md:h-6 rounded-sm border shadow-md ${activeCardBack}`}></div>
+                          ))}
+                        </div>
+                      </div>
 
-                  {emote && (
-                    <div className="absolute -right-2 -top-4 text-2xl md:text-3xl animate-bounce drop-shadow-xl z-20">
-                      {emote.emote}
+                      {/* ემოჯი დესკტოპზე (მობილურზე დამალულია, რადგან ცენტრში ვხატავთ) */}
+                      {emote && (
+                        <div className="hidden lg:block absolute -right-2 -top-4 text-2xl md:text-3xl animate-bounce drop-shadow-xl z-20">
+                          {emote.emote}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* 💬 ლაივ ჩატი */}
+          <div className={`${mobileModal === 'players' ? 'hidden lg:flex' : 'flex'} flex-col w-full flex-1 h-full min-h-0 overflow-hidden`}>
+            <div className={`${mobileModal ? 'bg-transparent shadow-none border-none p-0' : `${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl shadow-2xl transition-colors`} flex flex-col h-full overflow-hidden`}>
+              
+              {!mobileModal && (
+                <div className={`p-4 border-b border-white/5 flex items-center gap-2`}>
+                  <MessageSquare size={14} className={activeTheme.accent} />
+                  <h3 className="text-[10px] md:text-xs font-black text-stone-400 uppercase tracking-widest">Live Chat</h3>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ლაივ ჩატი */}
-        <div className={`${mobileModal === 'players' ? 'hidden lg:flex' : 'flex'} flex-col w-full flex-1 md:min-h-[250px]`}>
-          <div className={`${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl flex flex-col shadow-2xl overflow-hidden h-full transition-colors`}>
-            <div className={`p-3 md:p-4 border-b border-white/5 flex items-center gap-2 ${mobileModal === 'chat' ? 'hidden lg:flex' : 'flex'}`}>
-              <MessageSquare size={14} className={activeTheme.accent} />
-              <h3 className="text-[10px] md:text-xs font-black text-stone-400 uppercase tracking-widest">Live Chat</h3>
-            </div>
-            <div ref={chatRef} className="flex-1 p-3 md:p-4 overflow-y-auto custom-scrollbar flex flex-col gap-3 min-h-[150px]">
-              {messages.length === 0 ? (
-                <div className="m-auto text-[10px] font-bold text-stone-600 uppercase tracking-widest text-center">მესიჯები არ არის</div>
-              ) : (
-                messages.map((m, i) => (
-                  <div key={i} className={`flex flex-col max-w-[85%] ${m.senderId === socket.id ? 'self-end items-end' : 'self-start items-start'}`}>
-                    <span className="text-[8px] md:text-[9px] text-stone-500 font-bold mb-1 ml-1">
-                       <VipName name={m.sender} isVip={checkIsVip(m.isVip)} /> • {m.timestamp}
-                    </span>
-                    <div className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-2xl text-[10px] md:text-xs font-medium shadow-md ${m.senderId === socket.id ? `${activeTheme.accentBg} text-stone-950 rounded-tr-sm` : 'bg-stone-800 text-stone-200 rounded-tl-sm border border-white/5'}`}>
-                      {m.text}
-                    </div>
-                  </div>
-                ))
               )}
+              
+              <div ref={chatRef} className="flex-1 p-2 md:p-4 overflow-y-auto custom-scrollbar flex flex-col gap-3 min-h-0">
+                {messages.length === 0 ? (
+                  <div className="m-auto text-[10px] font-bold text-stone-600 uppercase tracking-widest text-center">მესიჯები არ არის</div>
+                ) : (
+                  messages.map((m, i) => (
+                    <div key={i} className={`flex flex-col max-w-[85%] ${m.senderId === socket.id ? 'self-end items-end' : 'self-start items-start'}`}>
+                      <span className="text-[8px] md:text-[9px] text-stone-500 font-bold mb-1 ml-1">
+                         <VipName name={m.sender} isVip={checkIsVip(m.isVip)} /> • {m.timestamp}
+                      </span>
+                      <div className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-2xl text-[10px] md:text-xs font-medium shadow-md ${m.senderId === socket.id ? `${activeTheme.accentBg} text-stone-950 rounded-tr-sm` : 'bg-stone-800 text-stone-200 rounded-tl-sm border border-white/5'}`}>
+                        {m.text}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <form onSubmit={handleSendMessage} className={`p-2.5 md:p-3 ${mobileModal ? 'bg-stone-950/60 rounded-2xl mt-2' : 'bg-stone-950/60 border-t border-white/5'} flex gap-2 shrink-0`}>
+                <input type="text" value={chatMessage} onChange={e => setChatMessage(e.target.value)} placeholder="დაწერე..." className={`flex-1 bg-stone-900 border border-white/10 rounded-xl px-3 py-2 text-[10px] md:text-xs text-stone-200 focus:outline-none transition-all placeholder-stone-600 focus:border-opacity-50 focus:border-current ${activeTheme.accent}`} />
+                <button type="submit" className={`${activeTheme.accentBg} hover:opacity-80 text-stone-950 p-2 rounded-xl transition-all shadow-md active:scale-95`}><Send size={14} /></button>
+              </form>
             </div>
-            <form onSubmit={handleSendMessage} className="p-2.5 md:p-3 bg-stone-950/60 border-t border-white/5 flex gap-2 shrink-0">
-              <input type="text" value={chatMessage} onChange={e => setChatMessage(e.target.value)} placeholder="დაწერე..." className={`flex-1 bg-stone-900 border border-white/10 rounded-xl px-3 py-2 text-[10px] md:text-xs text-stone-200 focus:outline-none transition-all placeholder-stone-600 focus:border-opacity-50 focus:border-current ${activeTheme.accent}`} />
-              <button type="submit" className={`${activeTheme.accentBg} hover:opacity-80 text-stone-950 p-2 rounded-xl transition-all shadow-md active:scale-95`}><Send size={14} /></button>
-            </form>
           </div>
-        </div>
 
+        </div>
       </div>
 
       {/* =========================================
@@ -265,7 +282,22 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       ========================================== */}
       <div className={`flex-1 bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-visible order-1 lg:order-2 ${mobileModal ? 'hidden lg:flex' : 'flex'}`}>
         
-        {/* მაგიდის Header (მობილურის ახალი ღილაკებით) */}
+        {/* 🟢 მობილურის ემოჯები (ცენტრში ეკრანზე, მხოლოდ lg:hidden) */}
+        {activeEmotes.length > 0 && (
+          <div className="lg:hidden absolute top-[25%] left-1/2 -translate-x-1/2 z-[80] pointer-events-none flex flex-wrap justify-center gap-4 w-full">
+            {activeEmotes.map(e => {
+              const player = room?.players?.find(p => p.id === e.playerId);
+              return (
+                <div key={e.id} className="flex flex-col items-center animate-in zoom-in slide-in-from-bottom-10 duration-300">
+                  <span className="text-6xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] animate-bounce">{e.emote}</span>
+                  <span className={`text-[10px] font-black bg-stone-900/90 px-3 py-1 rounded-full ${activeTheme.accent} mt-2 backdrop-blur-md border border-white/10 uppercase tracking-wider shadow-xl`}>{player?.name || 'მოთამაშე'}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* მაგიდის Header */}
         <div className="flex items-center justify-between p-2.5 md:p-4 border-b border-white/5 bg-stone-950/40 rounded-t-3xl">
           
           <div className="flex items-center gap-2">
@@ -276,7 +308,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            {/* 🟢 მობილურის ოვერლეი ღილაკები (ჩანს მხოლოდ მობილურზე) */}
+            {/* 🟢 მობილურის ოვერლეი ღილაკები */}
             <div className="flex lg:hidden items-center gap-2 mr-2 border-r border-white/10 pr-2">
                <button onClick={() => setMobileModal('players')} className="p-1.5 bg-stone-900 border border-white/5 rounded-lg text-stone-300 active:scale-95 shadow-sm">
                  <Users size={14} className={activeTheme.accent} />
@@ -304,7 +336,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
         <div className="flex-1 flex flex-col justify-between p-3 md:p-6 relative">
           
-          <div className="text-center h-8 md:h-10 relative">
+          <div className="text-center h-8 md:h-10 relative z-10">
             {isMyTurn ? (
               <div className={`inline-flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-stone-900 border border-white/10 rounded-full ${activeTheme.accent} text-[10px] md:text-xs font-black shadow-[0_0_15px_currentColor] animate-pulse`}>
                 <Sparkles size={14} className="md:w-[16px] md:h-[16px]" /> შენი სვლაა!
@@ -316,7 +348,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             )}
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center relative mt-2 w-full">
+          <div className="flex-1 flex flex-col items-center justify-center relative mt-2 w-full z-10">
             
             <div className="h-10 md:h-14 mb-2 flex items-center justify-center w-full z-20">
               {room.lastAction && (
@@ -374,14 +406,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-3 md:gap-5 mt-4">
+          <div className="flex flex-col items-center gap-3 md:gap-5 mt-4 z-20">
             
-            {/* =========================================
-                🟢 ემოჯები და მოჭრის ღილაკი (ახალი დიზაინი) 
-            ========================================== */}
             <div className="flex flex-col md:flex-row justify-between items-center bg-stone-950/60 p-1.5 md:p-2 rounded-2xl md:rounded-full border border-white/5 backdrop-blur-md shadow-lg z-10 w-full max-w-[95vw] md:max-w-max mx-auto overflow-hidden gap-2 md:gap-0">
-              
-              {/* ჰორიზონტალურად სქროლვადი ემოჯების ზოლი */}
               <div className="flex overflow-x-auto custom-scrollbar gap-2 md:gap-3 px-2 py-1 items-center flex-1 w-full md:w-auto md:max-w-max">
                 {standardEmotes.map(emo => (
                   <button key={emo} onClick={() => handleSendEmote(emo)} className="text-lg md:text-xl hover:scale-125 hover:-translate-y-1 transition-all active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 flex-shrink-0">{emo}</button>
