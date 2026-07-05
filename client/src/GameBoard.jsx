@@ -126,7 +126,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const hasActiveEmote = activeEmotes.some(e => e.playerId === socket.id);
 
   const handleSendEmote = (emote) => {
-    if (hasActiveEmote) return;
+    if (hasActiveEmote) return; 
     socket.emit('sendEmote', { roomId: room.id, emote });
     const id = Date.now() + Math.random();
     setActiveEmotes(prev => [...prev, { id, playerId: socket.id, emote }]);
@@ -210,7 +210,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                         <span className="text-2xl drop-shadow-md mt-0.5">{p.avatar || '😎'}</span>
                         <div className="flex flex-col">
                           
-                          {/* 🟢 აქ ჩანს "D" ვიზუალი თუ მოთამაშე დილერია */}
                           <div className="flex items-center gap-1.5">
                             <span className="font-bold text-xs md:text-sm truncate max-w-[120px]">
                               <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
@@ -228,7 +227,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
                             <span className="text-[9px] text-stone-500 font-bold">ქულა: <span className="text-stone-200">{p.totalScore}</span></span>
                             
-                            <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-stone-950/60 rounded border border-white/5 hidden xl:flex">
+                            {/* 🟢 აქ მოშორდა hidden კლასი, ახლა მობილურზეც გამოჩნდება წაღებული კარტები! */}
+                            <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-stone-950/60 rounded border border-white/5 shrink-0">
                               <span className="text-[9px] font-mono font-black text-stone-300">🃏 {capturedCards}</span>
                               <span className="text-stone-700 text-[8px]">|</span>
                               <span className="text-[9px] font-mono font-black text-stone-300">♣️ {capturedClubs}</span>
@@ -405,7 +405,21 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
 
             <div className="w-full md:w-[85%] max-w-2xl min-h-[11rem] md:min-h-[14rem] py-6 md:py-8 bg-stone-950/30 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 shadow-inner flex items-center justify-center px-2 md:px-4 z-10 relative">
-              <div className="flex flex-wrap justify-center gap-2 md:gap-3">
+              
+              {/* 🟢 დარჩენილი ბანქოს დასტა (Deck) */}
+              {room.deck?.length > 0 && (
+                <div className="absolute top-3 left-3 md:top-5 md:left-5 flex flex-col items-center z-0" title="დარჩენილი ბანქო">
+                  <div className={`relative w-10 h-14 md:w-12 md:h-16 rounded-md border shadow-lg flex items-center justify-center ${activeCardBack}`}>
+                    <div className={`absolute inset-0 rounded-md border ${activeCardBack} translate-x-[2px] -translate-y-[2px] -z-10 shadow-sm`}></div>
+                    <div className={`absolute inset-0 rounded-md border ${activeCardBack} translate-x-[4px] -translate-y-[4px] -z-20 shadow-sm`}></div>
+                    <div className="bg-stone-950/80 px-1.5 py-0.5 rounded text-white text-[10px] md:text-xs font-black shadow-inner border border-white/10">
+                      {room.deck.length}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap justify-center gap-2 md:gap-3 z-10">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
                   const isSelected = selectedCardsFromTable.some(tc => tc.rank === c.rank && tc.suit === c.suit);
                   const isBeingCaptured = room.lastAction?.type === 'CAPTURE' && room.lastAction.cardsFromTable.some(cap => cap.rank === c.rank && cap.suit === c.suit);
@@ -426,7 +440,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                     </div>
                   );
                 }) : (
-                  <span className="text-stone-700/50 font-black text-xs md:text-xl uppercase tracking-widest select-none">მაგიდა ცარიელია</span>
+                  <span className="text-stone-700/50 font-black text-xs md:text-xl uppercase tracking-widest select-none z-10">მაგიდა ცარიელია</span>
                 )}
               </div>
             </div>
