@@ -76,16 +76,18 @@ router.post('/change-password', async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
 });
 
-// 🟢 ლიდერბორდი (შესწორებული ლოგიკა ძველი ექაუნთებისთვის)
+// 🟢 ლიდერბორდი (შესწორებული სორტირება: ჯერ მოგება, მერე XP)
 router.get('/leaderboard', async (req, res) => {
   try {
-    // $ne: true ნიშნავს - მოძებნოს ყველა, ვისაც პირდაპირ არ უწერია ბანი
     const topUsers = await User.find({ isBanned: { $ne: true } })
-      .sort({ xp: -1, 'stats.gamesWon': -1 }) 
+      // 👈 აქ შეიცვალა ლოგიკა: ჯერ gamesWon, შემდეგ xp
+      .sort({ 'stats.gamesWon': -1, xp: -1 }) 
       .limit(10)
       .select('-password -secretWord -dateOfBirth');
     res.json(topUsers);
-  } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
+  } catch (err) { 
+    res.status(500).json({ message: 'შეცდომა' }); 
+  }
 });
 
 // ============================================
