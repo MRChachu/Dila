@@ -126,7 +126,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const hasActiveEmote = activeEmotes.some(e => e.playerId === socket.id);
 
   const handleSendEmote = (emote) => {
-    if (hasActiveEmote) return; 
+    if (hasActiveEmote) return;
     socket.emit('sendEmote', { roomId: room.id, emote });
     const id = Date.now() + Math.random();
     setActiveEmotes(prev => [...prev, { id, playerId: socket.id, emote }]);
@@ -195,6 +195,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               <div className={`flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 pr-2 min-h-0`}>
                 {room?.players?.map((p, i) => {
                   const isCurrentTurn = room.currentTurn === i;
+                  const isDealer = room.dealerIndex === i; 
                   const capturedCards = p.captured?.length || 0;
                   const capturedClubs = p.captured?.filter(c => c.suit === '♣' || c.suit === '♣️').length || 0;
                   const has10Diamond = p.captured?.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
@@ -208,9 +209,16 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                       <div className="flex items-start gap-2.5 z-10 relative">
                         <span className="text-2xl drop-shadow-md mt-0.5">{p.avatar || '😎'}</span>
                         <div className="flex flex-col">
-                          <span className="font-bold text-xs md:text-sm truncate max-w-[120px]">
-                            <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
-                          </span>
+                          
+                          {/* 🟢 აქ ჩანს "D" ვიზუალი თუ მოთამაშე დილერია */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-xs md:text-sm truncate max-w-[120px]">
+                              <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
+                            </span>
+                            {isDealer && (
+                              <span className="bg-stone-800 text-stone-400 text-[8px] px-1.5 py-0.5 rounded border border-white/10 uppercase font-black" title="ამჟამინდელი დილერი">D</span>
+                            )}
+                          </div>
                           
                           <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mt-1">
                             <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${league.bg} ${league.border} shadow-sm`}>

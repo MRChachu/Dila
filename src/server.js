@@ -55,6 +55,16 @@ const onlineUsersMap = {};
 io.on('connection', (socket) => {
   console.log(`🔌 ახალი კავშირი: ${socket.id}`);
 
+  const broadcastActiveRooms = () => {
+    const activeLobbies = Object.values(rooms).filter(r => !r.gameStarted).map(r => ({
+      id: r.id, hostName: r.players[0]?.name || 'უცნობი', hostAvatar: r.players[0]?.avatar || '😎',
+      hostVip: r.players[0]?.vipUntil,
+      currentPlayers: r.players.length, maxPlayers: r.maxPlayers, targetScore: r.targetScore,
+      allowBots: r.allowBots, isPrivate: r.isPrivate, isRanked: r.isRanked
+    }));
+    io.emit('activeRoomsList', activeLobbies); 
+  };
+
   const broadcastOnlineUsers = () => {
     const usersList = Object.entries(onlineUsersMap).map(([id, name]) => ({ socketId: id, username: name }));
     io.emit('updateOnlineUsers', usersList);
@@ -197,16 +207,7 @@ io.on('connection', (socket) => {
     io.to(targetSocketId).emit('receiveInvite', { roomId, password, fromName });
   });
 
-  const broadcastActiveRooms = () => {
-    const activeLobbies = Object.values(rooms).filter(r => !r.gameStarted).map(r => ({
-      id: r.id, hostName: r.players[0]?.name || 'უცნობი', hostAvatar: r.players[0]?.avatar || '😎',
-      hostVip: r.players[0]?.vipUntil,
-      currentPlayers: r.players.length, maxPlayers: r.maxPlayers, targetScore: r.targetScore,
-      allowBots: r.allowBots, isPrivate: r.isPrivate, isRanked: r.isRanked
-    }));
-    io.emit('activeRoomsList', activeLobbies); 
-  };
-
+  // 🔴 UPDATED handlePlayerLeave WITH XP PENALTY
   const handlePlayerLeave = (socketId) => {
     Object.keys(rooms).forEach(roomId => {
       const room = rooms[roomId];
@@ -224,34 +225,21 @@ io.on('connection', (socket) => {
           const originalName = p.name; 
           const isMatchOver = room.roundSummary && room.roundSummary.matchWinner;
           
-          // 🔴 Anti-Cheat: რეიტინგულიდან გაქცევისას ირთვება ჯარიმა
           if (!p.isBot && room.isRanked && !isMatchOver) {
             User.findOne({ username: originalName }).then(dbUser => {
               if (dbUser) {
                 dbUser.stats.gamesPlayed += 1;
-                
-                // ვაკლებთ 150 XP-ს ჯარიმის სახით, მაგრამ ვუფრთხილდებით რომ 0-ს ქვემოთ არ ჩავიდეს
                 dbUser.xp = Math.max(0, dbUser.xp - 150); 
                 dbUser.stats.totalPointsScored -= room.targetScore;
-                
                 dbUser.gameHistory.unshift({ 
-                  roomId: room.id, 
-                  targetScore: room.targetScore, 
-                  myFinalScore: -room.targetScore, 
-                  isWinner: false, 
-                  playedAt: new Date() 
+                  roomId: room.id, targetScore: room.targetScore, myFinalScore: -room.targetScore, isWinner: false, playedAt: new Date() 
                 });
-                
                 dbUser.save();
               }
             }).catch(err => console.error(err));
           }
 
-          // 🤖 რობოტი იკავებს მოთამაშის ადგილს
-          p.isBot = true; 
-          p.name = `${originalName} (გავიდა 🤖)`; 
-          p.id = `bot_${Math.random().toString(36).substr(2, 5)}`; 
-          
+          p.isBot = true; p.name = `${originalName} (გავიდა 🤖)`; p.id = `bot_${Math.random().toString(36).substr(2, 5)}`; 
           const realPlayers = room.players.filter(pl => !pl.isBot);
           
           if (realPlayers.length === 0) {
@@ -287,6 +275,7 @@ io.on('connection', (socket) => {
     } else { socket.emit('roomNotFound'); }
   });
 
+  // 🔴 UPDATED joinRoom WITH userXp
   socket.on('joinRoom', async ({ roomId, playerName, roomPassword, maxPlayers, targetScore, allowBots, isRanked }) => {
     if (!roomId || !playerName) return socket.emit('error', 'მონაცემები არასრულია');
     socket.join(roomId);
@@ -295,7 +284,7 @@ io.on('connection', (socket) => {
     let hostTheme = 'wood';
     let hostCardBack = 'classic';
     let userVip = null;
-    let userXp = 0; // 🟢 დამატებულია XP ლიგებისთვის
+    let userXp = 0;
     
     try {
         const dbUser = await User.findOne({ username: playerName });
@@ -304,7 +293,7 @@ io.on('connection', (socket) => {
           hostTheme = dbUser.tableTheme || 'wood';
           hostCardBack = dbUser.cardBack || 'classic';
           userVip = dbUser.vipUntil; 
-          userXp = dbUser.xp || 0; // 🟢 ვიღებთ მოთამაშის XP-ს ბაზიდან
+          userXp = dbUser.xp || 0;
         }
     } catch(e) {}
 
@@ -335,6 +324,7 @@ io.on('connection', (socket) => {
       playerExists.id = socket.id; 
       playerExists.avatar = userAvatar;
       playerExists.vipUntil = userVip; 
+      playerExists.xp = userXp;
       if (room.gameStarted) socket.emit('gameStarted', room);
       else socket.emit('roomUpdated', room);
       broadcastActiveRooms();
@@ -345,7 +335,6 @@ io.on('connection', (socket) => {
       return socket.emit('error', 'ოთახი უკვე სავსეა!');
     }
 
-    // 🟢 აქ დაემატა xp: userXp
     room.players.push({ id: socket.id, name: playerName, avatar: userAvatar, vipUntil: userVip, xp: userXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
     io.to(roomId).emit('roomUpdated', room);
     broadcastActiveRooms();
@@ -381,6 +370,7 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('receiveEmote', { playerId: socket.id, emote });
   });
 
+  // 🔴 UPDATED startGame WITH DEALER & BOT RANDOM XP
   socket.on('startGame', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room || room.gameStarted) return;
@@ -390,19 +380,21 @@ io.on('connection', (socket) => {
     if (room.allowBots) {
       const currentRealCount = room.players.length;
       for (let i = currentRealCount; i < room.maxPlayers; i++) {
-        // 🟢 ბოტებს ვანიჭებთ შემთხვევით XP-ს (0-დან 5000-მდე), რომ სხვადასხვა ლიგაში იყვნენ
         const randomXp = Math.floor(Math.random() * 5000); 
         room.players.push({ id: `bot_${Math.random().toString(36).substr(2, 5)}`, name: `რობოტი ${i}`, avatar: '🤖', vipUntil: null, xp: randomXp, cards: [], captured: [], totalScore: 0, isBot: true, achievementsEarned: [] });
       }
     }
-    
     room.deck = createDeck(); room.tableCards = [];
     while (room.tableCards.length < 4) {
       let card = room.deck.shift();
       if (card.rank === 'J') { room.deck.push(card); } else { room.tableCards.push(card); }
     }
     room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; p.achievementsEarned = []; });
-    room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.lastCapturerId = null; 
+    
+    room.dealerIndex = 0; 
+    room.currentTurn = room.dealerIndex; 
+
+    room.lastAction = null; room.roundSummary = null; room.lastCapturerId = null; 
     startTurnTimer(room, roomId);
     io.to(roomId).emit('gameStarted', room);
     broadcastActiveRooms(); 
@@ -419,7 +411,6 @@ io.on('connection', (socket) => {
       if (!isValidCapture(cardFromHand, cardsFromTable)) return socket.emit('error', 'არასწორი მოჭრა!');
       if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
       
-      // 🟢 მიმდინარე მატჩში ვინიშნავთ, რომ "მესუფთავის" პირობა შეასრულა
       if (room.isRanked && cardFromHand.rank === 'J' && cardsFromTable.length >= 4) {
         if (!player.achievementsEarned.includes('sweeper')) {
             player.achievementsEarned.push('sweeper');
@@ -441,6 +432,7 @@ io.on('connection', (socket) => {
     handleTurnTransition(room, roomId);
   });
 
+  // 🔴 UPDATED nextRoundReady WITH DEALER ROTATION
   socket.on('nextRoundReady', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room || !room.roundSummary) return;
@@ -454,6 +446,7 @@ io.on('connection', (socket) => {
     if (allRealReady) {
       if (room.roundSummary.matchWinner) {
         room.gameStarted = false; room.deck = []; room.tableCards = []; room.roundSummary = null; room.lastAction = null; room.readyForNextRound = []; room.lastCapturerId = null;
+        room.dealerIndex = 0; 
         room.players = room.players.filter(p => !p.isBot);
         room.players.forEach(p => { p.cards = []; p.captured = []; p.totalScore = 0; p.achievementsEarned = []; });
         io.to(roomId).emit('roomUpdated', room);
@@ -465,7 +458,12 @@ io.on('connection', (socket) => {
           if (card.rank === 'J') { room.deck.push(card); } else { room.tableCards.push(card); }
         }
         room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; });
-        room.currentTurn = 0; room.lastAction = null; room.roundSummary = null; room.readyForNextRound = []; room.lastCapturerId = null; 
+        
+        if (room.dealerIndex === undefined) room.dealerIndex = 0;
+        room.dealerIndex = (room.dealerIndex + 1) % room.players.length;
+        room.currentTurn = room.dealerIndex; 
+
+        room.lastAction = null; room.roundSummary = null; room.readyForNextRound = []; room.lastCapturerId = null; 
         startTurnTimer(room, roomId);
         io.to(roomId).emit('gameStarted', room);
         checkAndTriggerBotTurn(room, roomId);
@@ -483,6 +481,7 @@ io.on('connection', (socket) => {
   });
 });
 
+// 🔴 UPDATED handleTurnTransition WITH DEALER KEEPING TURN WHEN DEALING 4 NEW CARDS
 function handleTurnTransition(room, roomId) {
   if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
   const allHandsEmpty = room.players.every(p => p.cards.length === 0);
@@ -490,7 +489,10 @@ function handleTurnTransition(room, roomId) {
   if (allHandsEmpty) {
     if (room.deck.length > 0) {
       room.players.forEach(p => { p.cards = room.deck.splice(0, 4); });
-      room.currentTurn = (room.currentTurn + 1) % room.players.length;
+      
+      if (room.dealerIndex === undefined) room.dealerIndex = 0;
+      room.currentTurn = room.dealerIndex; 
+      
       startTurnTimer(room, roomId);
       io.to(roomId).emit('gameUpdated', room);
       checkAndTriggerBotTurn(room, roomId);
@@ -502,7 +504,6 @@ function handleTurnTransition(room, roomId) {
 
       calculateRoundScores(room);
       
-      // 🟢 მიმდინარე მატჩში ვინიშნავთ, რომ "10 აგურის" პირობა შეასრულა
       if (room.isRanked && room.roundSummary.diamond10Winner !== "-") {
          const d10Player = room.players.find(p => p.name === room.roundSummary.diamond10Winner);
          if (d10Player && !d10Player.isBot) {
@@ -512,7 +513,6 @@ function handleTurnTransition(room, roomId) {
          }
       }
       
-      // 🟢 მიმდინარე მატჩში ვინიშნავთ, რომ "2 ჯვარის" პირობა შეასრულა
       if (room.isRanked && room.roundSummary.club2Winner !== "-") {
          const c2Player = room.players.find(p => p.name === room.roundSummary.club2Winner);
          if (c2Player && !c2Player.isBot) {
@@ -582,38 +582,31 @@ function handleTurnTransition(room, roomId) {
 
                   dbUser.stats.gamesPlayed += 1;
                   
-                  // 🟢 ბაზაში პროგრესის ობიექტის შექმნა (თუ ძველ იუზერს არ აქვს)
                   if (!dbUser.achievementProgress) {
                       dbUser.achievementProgress = { diamond_10: 0, club_2: 0, sweeper: 0 };
                   }
 
-                  // 🟢 მიღწევების ლოგიკა: ეთვლებათ მხოლოდ მატჩის მოგების შემთხვევაში!
                   if (isWinner) {
                       dbUser.stats.gamesWon += 1;
                       
-                      // პირველი მოგება
                       if (!dbUser.achievements.includes('first_win')) {
                           dbUser.achievements.push('first_win');
                       }
                       
-                      // ვეტერანი - 100 მოგება
                       if (dbUser.stats.gamesWon >= 100 && !dbUser.achievements.includes('veteran')) {
                           dbUser.achievements.push('veteran');
                       }
 
-                      // 10 აგურის წაღება 50-ჯერ მოგებულ მატჩში
                       if (matchAchievements.includes('diamond_10') && !dbUser.achievements.includes('diamond_10')) {
                           dbUser.achievementProgress.diamond_10 = (dbUser.achievementProgress.diamond_10 || 0) + 1;
                           if (dbUser.achievementProgress.diamond_10 >= 50) dbUser.achievements.push('diamond_10');
                       }
 
-                      // 2 ჯვარის წაღება 50-ჯერ მოგებულ მატჩში
                       if (matchAchievements.includes('club_2') && !dbUser.achievements.includes('club_2')) {
                           dbUser.achievementProgress.club_2 = (dbUser.achievementProgress.club_2 || 0) + 1;
                           if (dbUser.achievementProgress.club_2 >= 50) dbUser.achievements.push('club_2');
                       }
 
-                      // ვალეტით გასუფთავება 50-ჯერ მოგებულ მატჩში
                       if (matchAchievements.includes('sweeper') && !dbUser.achievements.includes('sweeper')) {
                           dbUser.achievementProgress.sweeper = (dbUser.achievementProgress.sweeper || 0) + 1;
                           if (dbUser.achievementProgress.sweeper >= 50) dbUser.achievements.push('sweeper');
