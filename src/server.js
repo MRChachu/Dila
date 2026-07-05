@@ -224,14 +224,34 @@ io.on('connection', (socket) => {
           const originalName = p.name; 
           const isMatchOver = room.roundSummary && room.roundSummary.matchWinner;
           
+          // 🔴 Anti-Cheat: რეიტინგულიდან გაქცევისას ირთვება ჯარიმა
           if (!p.isBot && room.isRanked && !isMatchOver) {
-            User.findOneAndUpdate({ username: originalName },
-              { $inc: { 'stats.gamesPlayed': 1, 'stats.totalPointsScored': -room.targetScore }, 
-                $push: { gameHistory: { $each: [{ roomId: room.id, targetScore: room.targetScore, myFinalScore: -room.targetScore, isWinner: false, playedAt: new Date() }], $position: 0 } }
-              }).catch(err => console.error(err));
+            User.findOne({ username: originalName }).then(dbUser => {
+              if (dbUser) {
+                dbUser.stats.gamesPlayed += 1;
+                
+                // ვაკლებთ 150 XP-ს ჯარიმის სახით, მაგრამ ვუფრთხილდებით რომ 0-ს ქვემოთ არ ჩავიდეს
+                dbUser.xp = Math.max(0, dbUser.xp - 150); 
+                dbUser.stats.totalPointsScored -= room.targetScore;
+                
+                dbUser.gameHistory.unshift({ 
+                  roomId: room.id, 
+                  targetScore: room.targetScore, 
+                  myFinalScore: -room.targetScore, 
+                  isWinner: false, 
+                  playedAt: new Date() 
+                });
+                
+                dbUser.save();
+              }
+            }).catch(err => console.error(err));
           }
 
-          p.isBot = true; p.name = `${originalName} (გავიდა 🤖)`; p.id = `bot_${Math.random().toString(36).substr(2, 5)}`; 
+          // 🤖 რობოტი იკავებს მოთამაშის ადგილს
+          p.isBot = true; 
+          p.name = `${originalName} (გავიდა 🤖)`; 
+          p.id = `bot_${Math.random().toString(36).substr(2, 5)}`; 
+          
           const realPlayers = room.players.filter(pl => !pl.isBot);
           
           if (realPlayers.length === 0) {
