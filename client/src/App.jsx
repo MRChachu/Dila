@@ -24,9 +24,7 @@ const SHOP_ITEMS = {
     { id: '🦁', price: 1200, name: 'ლომი' },
     { id: '🦅', price: 1500, name: 'არწივი' },
     { id: '🎱', price: 1500, name: 'რვიანი' },
-    { id: '🍋‍🟩', price: 1500, name: 'ლაიმი' },
-    { id: '🍌', price: 1500, name: 'ბანანი' },
-    { id: '🍉', price: 1500, name: 'საზამთრო' },
+    { id: '🇬🇪', price: 1500, name: 'საქართველო' },
     { id: '🐉', price: 2500, name: 'დრაკონი' }
   ],
   tables: [
@@ -70,6 +68,7 @@ export default function App() {
   const [roomId, setRoomId] = useState(() => localStorage.getItem('phurti_roomId') || '');
   const [inRoom, setInRoom] = useState(() => localStorage.getItem('phurti_inRoom') === 'true');
   const [roomData, setRoomData] = useState(null);
+  const roomDataRef = useRef(roomData); 
   const [profileData, setProfileData] = useState(null);
   const [liveRooms, setLiveRooms] = useState([]);
   
@@ -110,6 +109,10 @@ export default function App() {
   const [adminMessage, setAdminMessage] = useState('');
 
   useEffect(() => {
+    roomDataRef.current = roomData;
+  }, [roomData]);
+
+  useEffect(() => {
     if (audioRef.current) {
       audioRef.current.loop = true;
       audioRef.current.volume = 0.15; 
@@ -140,6 +143,17 @@ export default function App() {
     socket.on('activeRoomsList', (rooms) => setLiveRooms(rooms));
     socket.on('updateOnlineUsers', (users) => setOnlineUser(users));
     socket.on('receiveInvite', (data) => setInviteAlert(data));
+
+    // 🟢 როცა მეგობარი მოწვევას უარყოფს
+    socket.on('inviteRejected', (rejecterName) => {
+      setToastMsg(`${rejecterName}-მ უარყო შენი მოწვევა ❌`);
+      // თუ ოთახში მარტო ვარ, 2 წამში ავტომატურად ვტოვებ
+      if (roomDataRef.current && roomDataRef.current.players.length === 1) {
+        setTimeout(() => {
+          handleResetToLobby();
+        }, 2500);
+      }
+    });
 
     socket.on('successMessage', (msg) => setToastMsg(msg));
     socket.on('friendRequestReceived', (sender) => {
@@ -179,7 +193,7 @@ export default function App() {
 
     return () => {
       socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('activeRoomsList'); 
-      socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound');
+      socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound');
       socket.off('connect', handleOnConnect);
     };
   }, []);
@@ -206,7 +220,6 @@ export default function App() {
     }
   }, [toastMsg]);
 
-  // 🟢 ერთიანი და გაუმჯობესებული ლიგების გამომთვლელი (Ranks)
   const getLeague = (xp = 0) => {
     if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
     if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
@@ -413,14 +426,17 @@ const handleSendFriendReq = async (targetName) => {
               <span className="font-black">{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})
             </p>
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
-              <button onClick={() => setInviteAlert(null)} className="py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md">უარყოფა</button>
+              <button onClick={() => { 
+                socket.emit('rejectInvite', { senderSocketId: inviteAlert.senderSocketId, rejecterName: safeUsername });
+                setInviteAlert(null); 
+              }} className="py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md">უარყოფა</button>
+              
               <button onClick={() => { handleJoinSpecificRoom(inviteAlert.roomId, inviteAlert.password); setInviteAlert(null); }} className={`py-3 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg`}>შესვლა 🎮</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 🟢 სხვისი პროფილის დათვალიერება (დაემატა ლიგა) */}
       {inspectProfile && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={(e) => { if(e.target === e.currentTarget) setInspectProfile(null); }}>
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl font-sans relative animate-in zoom-in-95 duration-200`}>
@@ -434,7 +450,6 @@ const handleSendFriendReq = async (targetName) => {
                  <VipName name={inspectProfile.username} isVip={checkIsVip(inspectProfile.vipUntil)} className="text-stone-100"/>
                </h2>
 
-               {/* 🟢 დამატებული ლიგის ბეჯი Inspect მოდალში */}
                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${getLeague(inspectProfile.xp || 0).bg} ${getLeague(inspectProfile.xp || 0).border} shadow-sm mb-2`}>
                   <span className="text-[12px] drop-shadow-md">{getLeague(inspectProfile.xp || 0).icon}</span>
                   <span className={`text-[10px] font-black uppercase tracking-wider ${getLeague(inspectProfile.xp || 0).color}`}>{getLeague(inspectProfile.xp || 0).name}</span>
@@ -481,7 +496,6 @@ const handleSendFriendReq = async (targetName) => {
         </div>
       )}
 
-      {/* ... [მაღაზია და პარამეტრები უცვლელია] ... */}
       {isShopOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-5 md:p-6 max-w-xl w-full shadow-2xl font-sans relative flex flex-col max-h-[85vh]`}>
@@ -626,14 +640,13 @@ const handleSendFriendReq = async (targetName) => {
         </div>
       )}
 
-      {/* 🏆 ლიდერბორდის მოდალი (დაემატა ლიგა) */}
       {isLeaderboardOpen && (
         <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="bg-stone-900 border border-yellow-500/30 rounded-[2rem] p-6 max-w-md w-full shadow-[0_0_50px_rgba(234,179,8,0.1)] relative max-h-[80vh] overflow-y-auto custom-scrollbar">
             <h2 className="text-xl font-black text-stone-100 uppercase mb-6 flex items-center gap-3 justify-center"><Trophy className="text-yellow-500"/> ტოპ მოთამაშეები</h2>
             <div className="space-y-3">
               {leaderboard.map((u, i) => {
-                const rank = getLeague(u.xp); // 🟢 აქაც ვიყენებთ getLeague-ს
+                const rank = getLeague(u.xp); 
                 return (
                   <div key={i} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-500/20 border-yellow-500 text-stone-100 scale-105 shadow-lg' : 'bg-stone-950/50 border-white/5 text-stone-300'}`}>
                     <div className="flex items-center gap-3">
@@ -643,7 +656,6 @@ const handleSendFriendReq = async (targetName) => {
                         <div className="text-xs font-black uppercase tracking-wider flex items-center gap-2">
                            {u.username} {u.vipUntil && new Date(u.vipUntil) > new Date() && <span className="text-[10px] bg-yellow-500 text-stone-900 px-1.5 rounded uppercase font-black">VIP</span>}
                         </div>
-                        {/* 🟢 აქაც ჩანს ლიგა XP-ის მაგივრად უბრალო დიზაინით */}
                         <div className={`text-[10px] font-bold mt-0.5 flex items-center gap-1 ${rank.color}`}>{rank.icon} {rank.name} • {u.xp} XP</div>
                       </div>
                     </div>
@@ -752,7 +764,6 @@ const handleSendFriendReq = async (targetName) => {
               
               <div className="space-y-4 md:space-y-5">
                 
-                {/* 🟢 პროფილის ბარათი (დაემატა ლიგა) */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4">
                     <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all" onClick={() => handleInspectPlayer(safeUsername)}>
@@ -767,7 +778,6 @@ const handleSendFriendReq = async (targetName) => {
                         </h2>
                         
                         <div className="flex items-center gap-1.5 text-stone-400 mt-1">
-                           {/* 🟢 დამატებული ლიგის ბეჯი პროფილზე */}
                            <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${myLeague.bg} ${myLeague.border} shadow-sm mr-1`}>
                              <span className="text-[9px] drop-shadow-md">{myLeague.icon}</span>
                              <span className={`text-[8px] font-black uppercase tracking-wider ${myLeague.color}`}>{myLeague.name}</span>
@@ -955,7 +965,6 @@ const handleSendFriendReq = async (targetName) => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* 🏆 ტოპ 10 სია (დაემატა ლიგა) */}
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
                     <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
                       <Medal size={14} className={activeTheme.accent} /> ტოპ 10
@@ -968,7 +977,6 @@ const handleSendFriendReq = async (targetName) => {
                             
                             <div className="flex flex-col truncate hover:underline mt-0.5">
                                <span className="font-bold truncate tracking-wide"><VipName name={player.username} isVip={checkIsVip(player.vipUntil)} className={player.username === safeUsername ? activeTheme.accent : 'text-stone-200'} /></span>
-                               {/* 🟢 აქ გამოჩნდება ლიგა უბრალო დიზაინით */}
                                <div className={`text-[8px] font-black flex items-center gap-1 ${getLeague(player.xp || 0).color}`}>
                                   {getLeague(player.xp || 0).icon} {getLeague(player.xp || 0).name}
                                </div>
@@ -1049,10 +1057,12 @@ const handleSendFriendReq = async (targetName) => {
                       <div className={`${activeTheme.card} backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-6 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
                         <h4 className="text-[10px] md:text-xs font-bold text-stone-400 border-b border-white/10 pb-3 md:pb-4 flex items-center gap-2 uppercase tracking-widest"><Target size={14} className={activeTheme.accent} /> მაგიდის წესები</h4>
                         
+                        {/* 🟢 განახლებული სტატუსი: ახლა მასპინძელს შეუძლია შეცვალოს რეიტინგული/გასართობი */}
                         <div className="space-y-2 md:space-y-2.5">
-                          <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">სტატუსი</label>
-                          <div className="w-full bg-stone-950 border border-white/5 rounded-xl py-2 md:py-2.5 text-center text-[10px] md:text-xs font-black">
-                            {roomData.isRanked ? <span className={activeTheme.accent}>🏆 რეიტინგული</span> : <span className="text-stone-400">🎮 გასართობი (ბოტები)</span>}
+                          <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">სტატუსი (ტიპი)</label>
+                          <div className="grid grid-cols-2 gap-2 md:gap-2.5">
+                            <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: true })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.isRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🏆 რეიტინგული</button>
+                            <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: false })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!roomData.isRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🎮 გასართობი</button>
                           </div>
                         </div>
 
@@ -1060,15 +1070,16 @@ const handleSendFriendReq = async (targetName) => {
                           <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">მიზნობრივი ქულა</label>
                           <div className="grid grid-cols-2 gap-2 md:gap-2.5">
                             {[11, 21].map((score) => (
-                              <button key={score} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: score, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.targetScore === score ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{score} ქულამდე</button>
+                              <button key={score} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: score, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.targetScore === score ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{score} ქულამდე</button>
                             ))}
                           </div>
                         </div>
+                        
                         <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
                           <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">მოთამაშეთა ლიმიტი</label>
                           <div className="grid grid-cols-3 gap-2 md:gap-2.5">
                             {[2, 3, 4].map((num) => (
-                              <button key={num} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: num, allowBots: roomData.allowBots })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.maxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{num} კაცი</button>
+                              <button key={num} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: num, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.maxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{num} კაცი</button>
                             ))}
                           </div>
                         </div>

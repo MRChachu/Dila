@@ -203,11 +203,16 @@ io.on('connection', (socket) => {
     } catch(err) { console.error(err); }
   });
 
+  // 🟢 მოწვევის გაგზავნისას თან ვატანთ გამგზავნის სოკეტს, რათა პასუხი დავუბრუნოთ
   socket.on('sendInvite', ({ targetSocketId, roomId, password, fromName }) => {
-    io.to(targetSocketId).emit('receiveInvite', { roomId, password, fromName });
+    io.to(targetSocketId).emit('receiveInvite', { roomId, password, fromName, senderSocketId: socket.id });
   });
 
-  // 🔴 UPDATED handlePlayerLeave WITH XP PENALTY
+  // 🟢 თუ მოწვევა უარყვეს, ვუბრუნებთ შეტყობინებას გამგზავნს
+  socket.on('rejectInvite', ({ senderSocketId, rejecterName }) => {
+    io.to(senderSocketId).emit('inviteRejected', rejecterName);
+  });
+
   const handlePlayerLeave = (socketId) => {
     Object.keys(rooms).forEach(roomId => {
       const room = rooms[roomId];
@@ -275,7 +280,6 @@ io.on('connection', (socket) => {
     } else { socket.emit('roomNotFound'); }
   });
 
-  // 🔴 UPDATED joinRoom WITH userXp
   socket.on('joinRoom', async ({ roomId, playerName, roomPassword, maxPlayers, targetScore, allowBots, isRanked }) => {
     if (!roomId || !playerName) return socket.emit('error', 'მონაცემები არასრულია');
     socket.join(roomId);
@@ -342,12 +346,19 @@ io.on('connection', (socket) => {
 
   socket.on('getLiveRooms', () => broadcastActiveRooms());
 
-  socket.on('updateConfig', ({ roomId, targetScore, maxPlayers, allowBots }) => {
+  // 🟢 განახლებული updateConfig, რომელიც იღებს და ცვლის isRanked სტატუსს
+  socket.on('updateConfig', ({ roomId, targetScore, maxPlayers, allowBots, isRanked }) => {
     const room = rooms[roomId];
     if (!room || room.gameStarted) return;
     if (room.players[0] && room.players[0].id !== socket.id) return;
-    room.targetScore = targetScore; room.maxPlayers = maxPlayers; room.allowBots = allowBots;
-    if (allowBots) room.isRanked = false;
+    
+    room.targetScore = targetScore; 
+    room.maxPlayers = maxPlayers; 
+    room.allowBots = allowBots;
+    
+    if (isRanked !== undefined) room.isRanked = isRanked;
+    if (allowBots) room.isRanked = false; // ბოტებით თამაში ყოველთვის გასართობია
+    
     if (room.players.length > maxPlayers) room.players = room.players.slice(0, maxPlayers);
     io.to(roomId).emit('roomUpdated', room);
     broadcastActiveRooms();
@@ -370,7 +381,6 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('receiveEmote', { playerId: socket.id, emote });
   });
 
-  // 🔴 UPDATED startGame WITH DEALER & BOT RANDOM XP
   socket.on('startGame', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room || room.gameStarted) return;
@@ -432,7 +442,6 @@ io.on('connection', (socket) => {
     handleTurnTransition(room, roomId);
   });
 
-  // 🔴 UPDATED nextRoundReady WITH DEALER ROTATION
   socket.on('nextRoundReady', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room || !room.roundSummary) return;
@@ -481,7 +490,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// 🔴 UPDATED handleTurnTransition WITH DEALER KEEPING TURN WHEN DEALING 4 NEW CARDS
 function handleTurnTransition(room, roomId) {
   if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
   const allHandsEmpty = room.players.every(p => p.cards.length === 0);
