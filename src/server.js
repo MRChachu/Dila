@@ -124,6 +124,11 @@ io.on('connection', (socket) => {
           else if (type === 'table') user.tableTheme = itemId;
           else if (type === 'card') user.cardBack = itemId;
           
+          // 🟢 კოლექციონერის ლოგიკა
+          if (user.unlockedAvatars.length > 20 && !user.achievements.includes('collector')) {
+             user.achievements.push('collector');
+          }
+          
           await user.save();
           socket.emit('successMessage', 'წარმატებით შეიძინე!');
           socket.emit('friendListUpdated'); 
@@ -203,12 +208,10 @@ io.on('connection', (socket) => {
     } catch(err) { console.error(err); }
   });
 
-  // 🟢 მოწვევის გაგზავნისას თან ვატანთ გამგზავნის სოკეტს, რათა პასუხი დავუბრუნოთ
   socket.on('sendInvite', ({ targetSocketId, roomId, password, fromName }) => {
     io.to(targetSocketId).emit('receiveInvite', { roomId, password, fromName, senderSocketId: socket.id });
   });
 
-  // 🟢 თუ მოწვევა უარყვეს, ვუბრუნებთ შეტყობინებას გამგზავნს
   socket.on('rejectInvite', ({ senderSocketId, rejecterName }) => {
     io.to(senderSocketId).emit('inviteRejected', rejecterName);
   });
@@ -236,6 +239,7 @@ io.on('connection', (socket) => {
                 dbUser.stats.gamesPlayed += 1;
                 dbUser.xp = Math.max(0, dbUser.xp - 150); 
                 dbUser.stats.totalPointsScored -= room.targetScore;
+                dbUser.stats.winStreak = 0; // 🟢 გაქცევისას Win Streak ნულდება
                 dbUser.gameHistory.unshift({ 
                   roomId: room.id, targetScore: room.targetScore, myFinalScore: -room.targetScore, isWinner: false, playedAt: new Date() 
                 });
@@ -346,7 +350,6 @@ io.on('connection', (socket) => {
 
   socket.on('getLiveRooms', () => broadcastActiveRooms());
 
-  // 🟢 განახლებული updateConfig, რომელიც იღებს და ცვლის isRanked სტატუსს
   socket.on('updateConfig', ({ roomId, targetScore, maxPlayers, allowBots, isRanked }) => {
     const room = rooms[roomId];
     if (!room || room.gameStarted) return;
@@ -357,7 +360,7 @@ io.on('connection', (socket) => {
     room.allowBots = allowBots;
     
     if (isRanked !== undefined) room.isRanked = isRanked;
-    if (allowBots) room.isRanked = false; // ბოტებით თამაში ყოველთვის გასართობია
+    if (allowBots) room.isRanked = false; 
     
     if (room.players.length > maxPlayers) room.players = room.players.slice(0, maxPlayers);
     io.to(roomId).emit('roomUpdated', room);
@@ -559,7 +562,47 @@ function handleTurnTransition(room, roomId) {
                   }
 
                   let earnedXp = 100; let earnedCoins = 10;
-                  if (isWinner) { earnedXp += 200; earnedCoins += 40; }
+                  if (isWinner) { 
+                      earnedXp += 200; 
+                      earnedCoins += 40; 
+                      dbUser.stats.gamesWon += 1;
+                      
+                      // 🟢 ვუმატებთ სთრიქს
+                      dbUser.stats.winStreak = (dbUser.stats.winStreak || 0) + 1; 
+                      
+                      // 🟢 ლეგიონერის მიღწევა
+                      if (dbUser.stats.winStreak >= 10 && !dbUser.achievements.includes('legionnaire')) {
+                          dbUser.achievements.push('legionnaire');
+                      }
+
+                      if (!dbUser.achievements.includes('first_win')) {
+                          dbUser.achievements.push('first_win');
+                      }
+                      
+                      if (dbUser.stats.gamesWon >= 100 && !dbUser.achievements.includes('veteran')) {
+                          dbUser.achievements.push('veteran');
+                      }
+
+                      if (!dbUser.achievementProgress) dbUser.achievementProgress = { diamond_10: 0, club_2: 0, sweeper: 0 };
+
+                      if (matchAchievements.includes('diamond_10') && !dbUser.achievements.includes('diamond_10')) {
+                          dbUser.achievementProgress.diamond_10 = (dbUser.achievementProgress.diamond_10 || 0) + 1;
+                          if (dbUser.achievementProgress.diamond_10 >= 50) dbUser.achievements.push('diamond_10');
+                      }
+
+                      if (matchAchievements.includes('club_2') && !dbUser.achievements.includes('club_2')) {
+                          dbUser.achievementProgress.club_2 = (dbUser.achievementProgress.club_2 || 0) + 1;
+                          if (dbUser.achievementProgress.club_2 >= 50) dbUser.achievements.push('club_2');
+                      }
+
+                      if (matchAchievements.includes('sweeper') && !dbUser.achievements.includes('sweeper')) {
+                          dbUser.achievementProgress.sweeper = (dbUser.achievementProgress.sweeper || 0) + 1;
+                          if (dbUser.achievementProgress.sweeper >= 50) dbUser.achievements.push('sweeper');
+                      }
+                  } else {
+                      // 🟢 წაგებისას სთრიქი ნულდება
+                      dbUser.stats.winStreak = 0; 
+                  }
 
                   dbUser.dailyQuests.forEach(q => {
                       if (q.isCompleted) return;
@@ -589,38 +632,6 @@ function handleTurnTransition(room, roomId) {
                   }
 
                   dbUser.stats.gamesPlayed += 1;
-                  
-                  if (!dbUser.achievementProgress) {
-                      dbUser.achievementProgress = { diamond_10: 0, club_2: 0, sweeper: 0 };
-                  }
-
-                  if (isWinner) {
-                      dbUser.stats.gamesWon += 1;
-                      
-                      if (!dbUser.achievements.includes('first_win')) {
-                          dbUser.achievements.push('first_win');
-                      }
-                      
-                      if (dbUser.stats.gamesWon >= 100 && !dbUser.achievements.includes('veteran')) {
-                          dbUser.achievements.push('veteran');
-                      }
-
-                      if (matchAchievements.includes('diamond_10') && !dbUser.achievements.includes('diamond_10')) {
-                          dbUser.achievementProgress.diamond_10 = (dbUser.achievementProgress.diamond_10 || 0) + 1;
-                          if (dbUser.achievementProgress.diamond_10 >= 50) dbUser.achievements.push('diamond_10');
-                      }
-
-                      if (matchAchievements.includes('club_2') && !dbUser.achievements.includes('club_2')) {
-                          dbUser.achievementProgress.club_2 = (dbUser.achievementProgress.club_2 || 0) + 1;
-                          if (dbUser.achievementProgress.club_2 >= 50) dbUser.achievements.push('club_2');
-                      }
-
-                      if (matchAchievements.includes('sweeper') && !dbUser.achievements.includes('sweeper')) {
-                          dbUser.achievementProgress.sweeper = (dbUser.achievementProgress.sweeper || 0) + 1;
-                          if (dbUser.achievementProgress.sweeper >= 50) dbUser.achievements.push('sweeper');
-                      }
-                  }
-
                   dbUser.stats.totalPointsScored += p.totalScore;
                   dbUser.gameHistory.unshift({ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() });
                   

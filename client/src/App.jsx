@@ -6,12 +6,15 @@ import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, 
 
 const socket = io('https://purti.onrender.com');
 
+// 🟢 აქ დაემატა 2 ახალი მიღწევა
 const AVAILABLE_BADGES = [
   { id: 'first_win', icon: '🥇', name: 'პირველი მოგება' },
   { id: 'diamond_10', icon: '💎', name: '10 აგური' },
   { id: 'club_2', icon: '♣️', name: '2 ჯვარი' },
   { id: 'veteran', icon: '🛡️', name: 'ვეტერანი (10 მატჩი)' },
-  { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' }
+  { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' },
+  { id: 'collector', icon: '🛍️', name: 'კოლექციონერი (20+ ემოჯი)' },
+  { id: 'legionnaire', icon: '🔥', name: 'ლეგიონერი (10 Win Streak)' }
 ];
 
 const SHOP_ITEMS = {
@@ -144,10 +147,8 @@ export default function App() {
     socket.on('updateOnlineUsers', (users) => setOnlineUser(users));
     socket.on('receiveInvite', (data) => setInviteAlert(data));
 
-    // 🟢 როცა მეგობარი მოწვევას უარყოფს
     socket.on('inviteRejected', (rejecterName) => {
       setToastMsg(`${rejecterName}-მ უარყო შენი მოწვევა ❌`);
-      // თუ ოთახში მარტო ვარ, 2 წამში ავტომატურად ვტოვებ
       if (roomDataRef.current && roomDataRef.current.players.length === 1) {
         setTimeout(() => {
           handleResetToLobby();
@@ -1057,7 +1058,6 @@ const handleSendFriendReq = async (targetName) => {
                       <div className={`${activeTheme.card} backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-6 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
                         <h4 className="text-[10px] md:text-xs font-bold text-stone-400 border-b border-white/10 pb-3 md:pb-4 flex items-center gap-2 uppercase tracking-widest"><Target size={14} className={activeTheme.accent} /> მაგიდის წესები</h4>
                         
-                        {/* 🟢 განახლებული სტატუსი: ახლა მასპინძელს შეუძლია შეცვალოს რეიტინგული/გასართობი */}
                         <div className="space-y-2 md:space-y-2.5">
                           <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">სტატუსი (ტიპი)</label>
                           <div className="grid grid-cols-2 gap-2 md:gap-2.5">
