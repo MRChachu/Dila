@@ -115,7 +115,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     };
   }, [socket, mobileModal]);
 
-  // 🟢 დაბრუნებული handlePlayCard ფუნქცია!
   const handlePlayCard = () => {
     if (!isMyTurn || !selectedCardFromHand) return;
     playSoftSound(selectedCardsFromTable.length > 0);
@@ -127,7 +126,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const hasActiveEmote = activeEmotes.some(e => e.playerId === socket.id);
 
   const handleSendEmote = (emote) => {
-    if (hasActiveEmote) return;
+    if (hasActiveEmote) return; 
     socket.emit('sendEmote', { roomId: room.id, emote });
     const id = Date.now() + Math.random();
     setActiveEmotes(prev => [...prev, { id, playerId: socket.id, emote }]);
@@ -239,7 +238,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                       <div className="flex flex-col items-end z-10">
                         <div className="flex items-center -space-x-1.5">
                           {Array.from({length: p.cards?.length || 0}).map((_, idx) => (
-                              <div key={idx} className={`w-3.5 h-5 md:w-4 md:h-6 rounded-sm border shadow-md ${activeCardBack}`}></div>
+                              <div 
+                                key={idx} 
+                                style={{ animationDelay: `${idx * 100}ms`, animationFillMode: 'backwards' }}
+                                className={`w-3.5 h-5 md:w-4 md:h-6 rounded-sm border shadow-md ${activeCardBack} animate-in zoom-in-50 fade-in duration-500`}
+                              ></div>
                           ))}
                         </div>
                       </div>
@@ -401,11 +404,12 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
                   return (
                     <div 
-                      key={i} 
+                      key={`${c.rank}-${c.suit}`} 
                       onClick={() => isMyTurn && toggleTableCard(c)}
+                      style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'backwards' }}
                       className={`w-14 h-20 md:w-20 md:h-28 bg-stone-100 rounded-lg md:rounded-xl shadow-xl flex flex-col justify-between p-1.5 md:p-2 select-none cursor-pointer transition-all duration-300 
                         ${isSelected ? `ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')} -translate-y-2 md:-translate-y-3 shadow-2xl` : 'hover:-translate-y-1 hover:shadow-2xl'}
-                        ${isBeingCaptured ? 'animate-fly-out z-50 pointer-events-none' : 'animate-in zoom-in'}
+                        ${isBeingCaptured ? 'animate-fly-out z-50 pointer-events-none' : 'animate-in zoom-in-50 fade-in duration-500'}
                       `}
                     >
                       <span className={`text-xs md:text-base font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
@@ -465,9 +469,12 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 return (
                   <div 
-                    key={i}
+                    key={`${c.rank}-${c.suit}`}
                     onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
-                    className={`w-14 h-20 md:w-20 md:h-28 bg-stone-100 rounded-lg md:rounded-xl shadow-2xl flex flex-col justify-between p-1.5 md:p-2 select-none transition-all duration-300 ease-out cursor-pointer transform-gpu flex-shrink-0 ${isSelected ? `-translate-y-3 md:-translate-y-6 scale-105 shadow-[0_15px_30px_rgba(0,0,0,0.6)] ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')} z-20` : 'hover:-translate-y-1.5 md:hover:-translate-y-3 hover:shadow-[0_10px_20px_rgba(0,0,0,0.5)] z-10'}`}
+                    style={{ animationDelay: `${(i + 2) * 100}ms`, animationFillMode: 'backwards' }}
+                    className={`w-14 h-20 md:w-20 md:h-28 bg-stone-100 rounded-lg md:rounded-xl shadow-2xl flex flex-col justify-between p-1.5 md:p-2 select-none transition-all duration-500 ease-out cursor-pointer transform-gpu flex-shrink-0 animate-in slide-in-from-top-[10vh] md:slide-in-from-top-[15vh] zoom-in-50 fade-in
+                      ${isSelected ? `-translate-y-3 md:-translate-y-6 scale-105 shadow-[0_15px_30px_rgba(0,0,0,0.6)] ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')} z-20` : 'hover:-translate-y-1.5 md:hover:-translate-y-3 hover:shadow-[0_10px_20px_rgba(0,0,0,0.5)] z-10'}
+                    `}
                   >
                     <span className={`text-[11px] md:text-sm font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
                     <span className={`text-xl md:text-3xl self-center ${getSuitColor(c.suit)} drop-shadow-md`}>{c.suit}</span>
