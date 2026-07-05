@@ -33,6 +33,15 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     "კარგი თამაში იყო 🤝"
   ];
 
+  // 🟢 ლიგების გამომთვლელი ფუნქცია XP-ის მიხედვით
+  const getLeague = (xp = 0) => {
+    if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
+    if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
+    if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' };
+    if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' };
+    return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
+  };
+
   const playSoftSound = (isCapture = false) => {
     if (isMuted) return;
     try {
@@ -144,17 +153,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     obsidian: 'bg-stone-950 border-stone-700'
   };
   const activeCardBack = cardBackStyles[room?.hostCardBack] || cardBackStyles['classic'];
-
-  // ვიღებთ ბორდერის ფერს ლოკალური თემიდან (მაგ: text-amber-500 -> border-amber-500)
   const borderColorClass = activeTheme.accent.replace('text-', 'border-');
 
   return (
-    // 🟢 აქ დაემატა მკაცრი სიმაღლე დესკტოპისთვის (lg:h-[82vh]), რაც ეკრანის უსასრულო გაწელვას აჩერებს
     <div className="w-full flex flex-col lg:flex-row gap-5 md:gap-6 max-w-7xl mx-auto h-auto lg:h-[82vh] min-h-[85vh] lg:min-h-0 relative pb-6 lg:pb-0">
       
-      {/* =========================================
-          🟢 მარცხენა პანელი (მოთამაშეები და ჩატი)
-      ========================================== */}
       <div className={`
         ${mobileModal ? 'fixed inset-0 z-[100] bg-stone-950/60 backdrop-blur-sm flex flex-col justify-end p-0' : 'hidden lg:flex lg:w-80 lg:flex-col lg:gap-5 order-2 lg:order-1 h-full'}
       `}>
@@ -176,7 +179,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           )}
 
-          {/* 👥 მოთამაშეების სია (მაქსიმუმ 50% სიმაღლე დესკტოპზე) */}
           <div className={`${mobileModal === 'chat' ? 'hidden lg:flex' : 'flex'} flex-col w-full shrink-0 ${mobileModal ? 'h-full overflow-hidden' : 'max-h-[50%]'}`}>
             <div className={`${mobileModal ? 'bg-transparent shadow-none border-none p-0 h-full' : `${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl p-4 shadow-2xl relative flex flex-col h-full`} transition-colors`}>
               
@@ -195,9 +197,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   const capturedClubs = p.captured?.filter(c => c.suit === '♣' || c.suit === '♣️').length || 0;
                   const has10Diamond = p.captured?.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
                   const has2Club = p.captured?.some(c => c.rank === '2' && (c.suit === '♣' || c.suit === '♣️'));
+                  
+                  // 🟢 ვიღებთ მოთამაშის ლიგას
+                  const league = getLeague(p.xp);
 
                   return (
-                    // 🟢 აქ გასწორდა ბორდერის დაზიანების პრობლემა (ამოღებულია scale და overflow)
                     <div key={p.id} className={`relative flex items-center justify-between p-2.5 md:p-3 rounded-2xl border-2 transition-all duration-300 ${isCurrentTurn ? `bg-stone-900 ${borderColorClass} shadow-xl z-10` : 'bg-stone-950/40 border-white/5'}`}>
                       {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-[0.03] rounded-2xl`} />}
                       
@@ -207,18 +211,28 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                           <span className="font-bold text-xs md:text-sm truncate max-w-[120px]">
                             <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
                           </span>
-                          <div className="flex flex-wrap items-center gap-2 mt-1">
-                            <span className="text-[9px] md:text-[10px] text-stone-500 font-bold tracking-wider">ქულა: <span className="text-stone-200">{p.totalScore}</span></span>
-                            <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-stone-950/60 rounded border border-white/5">
+                          
+                          {/* 🟢 ლიგის და სტატისტიკის პანელი */}
+                          <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mt-1">
+                            <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${league.bg} ${league.border} shadow-sm`}>
+                               <span className="text-[9px] drop-shadow-md">{league.icon}</span>
+                               <span className={`text-[8px] font-black uppercase tracking-wider ${league.color}`}>{league.name}</span>
+                            </div>
+
+                            <span className="text-[9px] text-stone-500 font-bold">ქულა: <span className="text-stone-200">{p.totalScore}</span></span>
+                            
+                            <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-stone-950/60 rounded border border-white/5 hidden xl:flex">
                               <span className="text-[9px] font-mono font-black text-stone-300">🃏 {capturedCards}</span>
                               <span className="text-stone-700 text-[8px]">|</span>
                               <span className="text-[9px] font-mono font-black text-stone-300">♣️ {capturedClubs}</span>
                             </div>
+                            
                             <div className="flex gap-1">
                               {has10Diamond && <span className="text-[11px] drop-shadow-md" title="10 აგური">💎</span>}
                               {has2Club && <span className="text-[11px] drop-shadow-md" title="2 ჯვარი">♣️</span>}
                             </div>
                           </div>
+
                         </div>
                       </div>
                       
@@ -236,7 +250,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          {/* 💬 Quick Chat (ამოღებულია flex-1 და დამატებულია min-h-0 სქროლისთვის) */}
           <div className={`${mobileModal === 'players' ? 'hidden lg:flex' : 'flex'} flex-col w-full flex-1 min-h-0 overflow-hidden`}>
             <div className={`${mobileModal ? 'bg-transparent shadow-none border-none p-0' : `${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl shadow-2xl transition-colors`} flex flex-col h-full overflow-hidden`}>
               
@@ -284,12 +297,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
         </div>
       </div>
 
-      {/* =========================================
-          🟢 სათამაშო მაგიდა (ცენტრალური პანელი) 
-      ========================================== */}
       <div className={`flex-1 bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden order-1 lg:order-2 ${mobileModal ? 'hidden lg:flex' : 'flex'}`}>
         
-        {/* 🟢 უნივერსალური ემოჯები მაგიდის ცენტრში დესკტოპისთვისაც და მობილურისთვისაც! */}
         {activeEmotes.length > 0 && (
           <div className="absolute top-[20%] lg:top-[30%] left-1/2 -translate-x-1/2 z-[150] pointer-events-none flex flex-wrap justify-center gap-6 w-full">
             {activeEmotes.map(e => {

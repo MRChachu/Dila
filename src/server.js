@@ -295,6 +295,7 @@ io.on('connection', (socket) => {
     let hostTheme = 'wood';
     let hostCardBack = 'classic';
     let userVip = null;
+    let userXp = 0; // 🟢 დამატებულია XP ლიგებისთვის
     
     try {
         const dbUser = await User.findOne({ username: playerName });
@@ -303,6 +304,7 @@ io.on('connection', (socket) => {
           hostTheme = dbUser.tableTheme || 'wood';
           hostCardBack = dbUser.cardBack || 'classic';
           userVip = dbUser.vipUntil; 
+          userXp = dbUser.xp || 0; // 🟢 ვიღებთ მოთამაშის XP-ს ბაზიდან
         }
     } catch(e) {}
 
@@ -343,7 +345,8 @@ io.on('connection', (socket) => {
       return socket.emit('error', 'ოთახი უკვე სავსეა!');
     }
 
-    room.players.push({ id: socket.id, name: playerName, avatar: userAvatar, vipUntil: userVip, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
+    // 🟢 აქ დაემატა xp: userXp
+    room.players.push({ id: socket.id, name: playerName, avatar: userAvatar, vipUntil: userVip, xp: userXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
     io.to(roomId).emit('roomUpdated', room);
     broadcastActiveRooms();
   });
@@ -387,9 +390,12 @@ io.on('connection', (socket) => {
     if (room.allowBots) {
       const currentRealCount = room.players.length;
       for (let i = currentRealCount; i < room.maxPlayers; i++) {
-        room.players.push({ id: `bot_${Math.random().toString(36).substr(2, 5)}`, name: `რობოტი ${i}`, avatar: '🤖', vipUntil: null, cards: [], captured: [], totalScore: 0, isBot: true, achievementsEarned: [] });
+        // 🟢 ბოტებს ვანიჭებთ შემთხვევით XP-ს (0-დან 5000-მდე), რომ სხვადასხვა ლიგაში იყვნენ
+        const randomXp = Math.floor(Math.random() * 5000); 
+        room.players.push({ id: `bot_${Math.random().toString(36).substr(2, 5)}`, name: `რობოტი ${i}`, avatar: '🤖', vipUntil: null, xp: randomXp, cards: [], captured: [], totalScore: 0, isBot: true, achievementsEarned: [] });
       }
     }
+    
     room.deck = createDeck(); room.tableCards = [];
     while (room.tableCards.length < 4) {
       let card = room.deck.shift();
