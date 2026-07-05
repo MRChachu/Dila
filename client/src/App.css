@@ -191,3 +191,26 @@
 .animate-fly-out {
   animation: flyOut 0.8s ease-in-out forwards;
 }
+/* 🟢 ულამაზესი სქროლის დიზაინი Phurti Arena-სთვის */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px; /* ძალიან თხელი და ელეგანტური */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* ტრეკი (ფონი) იქნება გამჭვირვალე */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #292524; /* მუქი, დიზაინთან შეხამებული ფერი */
+  border-radius: 10px; /* მომრგვალებული კუთხეები */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #eab308; /* მაუსის მიტანისას გაყვითლდება (Yellow-500) */
+}
+
+/* 🟢 ვერსია Firefox ბრაუზერებისთვის */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #292524 transparent;
+}
