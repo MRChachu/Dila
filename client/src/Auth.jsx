@@ -1,29 +1,51 @@
 import React, { useState } from 'react';
-import { Shield, Mail, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound } from 'lucide-react';
+import { Shield, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound, CalendarDays, TextCursorInput } from 'lucide-react';
 
 export default function Auth({ onAuthSuccess }) {
-  // 'login', 'register', ან 'forgot'
   const [authMode, setAuthMode] = useState('login'); 
+  const [recoveryStep, setRecoveryStep] = useState(1); // 1 = მონაცემები, 2 = ახალი პაროლი
+
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [dob, setDob] = useState('');
+  const [secretWord, setSecretWord] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // 🟢 პაროლის ვალიდაცია: მინიმუმ 6 სიმბოლო, მინიმუმ 1 ასო და 1 ციფრი
   const validatePassword = (pass) => {
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
     return regex.test(pass);
   };
 
+  const resetState = () => {
+    setError(''); setSuccessMsg('');
+    setUsername(''); setDob(''); setSecretWord(''); setPassword(''); setConfirmPassword('');
+    setRecoveryStep(1);
+  };
+
+  const handleNextStep = (e) => {
+    e.preventDefault();
+    if (!username || !dob || !secretWord) return setError('შეავსეთ ყველა ველი!');
+    setError('');
+    setRecoveryStep(2);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccessMsg('');
+    setError(''); setSuccessMsg('');
 
     if (authMode === 'register' && !validatePassword(password)) {
-      return setError('პაროლი უნდა შეიცავდეს მინიმუმ 6 სიმბოლოს, 1 ასოს და 1 ციფრს!');
+      return setError('პაროლი უნდა შეიცავდეს მინ. 6 სიმბოლოს, 1 ასოს და 1 ციფრს!');
+    }
+
+    if (authMode === 'forgot' && password !== confirmPassword) {
+      return setError('პაროლები არ ემთხვევა!');
+    }
+    if (authMode === 'forgot' && !validatePassword(password)) {
+      return setError('ახალი პაროლი უნდა შეიცავდეს მინ. 6 სიმბოლოს, 1 ასოს და 1 ციფრს!');
     }
 
     setIsLoading(true);
@@ -36,10 +58,10 @@ export default function Auth({ onAuthSuccess }) {
       payload = { username, password };
     } else if (authMode === 'register') {
       endpoint = '/api/auth/register';
-      payload = { username, email, password };
+      payload = { username, dateOfBirth: dob, secretWord, password };
     } else if (authMode === 'forgot') {
-      endpoint = '/api/auth/forgot-password';
-      payload = { email };
+      endpoint = '/api/auth/reset-password';
+      payload = { username, dateOfBirth: dob, secretWord, newPassword: password };
     }
 
     try {
@@ -53,12 +75,13 @@ export default function Auth({ onAuthSuccess }) {
       if (res.ok) {
         if (authMode === 'forgot') {
            setSuccessMsg(data.message);
-           setTimeout(() => setAuthMode('login'), 3000);
+           setTimeout(() => { setAuthMode('login'); resetState(); }, 3000);
         } else {
            onAuthSuccess(data);
         }
       } else {
         setError(data.message || 'შეცდომა კავშირისას');
+        if (authMode === 'forgot') setRecoveryStep(1); // უკან დაბრუნება შეცდომისას
       }
     } catch (err) {
       setError('სერვერთან კავშირი ვერ მოხერხდა');
@@ -115,8 +138,8 @@ export default function Auth({ onAuthSuccess }) {
             
             {authMode !== 'forgot' && (
               <div className="flex gap-2 p-1 bg-stone-950/50 rounded-lg mb-5 border border-white/5">
-                <button onClick={() => {setAuthMode('login'); setError(''); setSuccessMsg('');}} className={`flex-1 py-2 rounded-md text-[11px] font-black transition-all ${authMode === 'login' ? 'bg-stone-800 text-yellow-500 shadow-sm border border-white/5' : 'text-stone-500'}`}>შესვლა</button>
-                <button onClick={() => {setAuthMode('register'); setError(''); setSuccessMsg('');}} className={`flex-1 py-2 rounded-md text-[11px] font-black transition-all ${authMode === 'register' ? 'bg-stone-800 text-yellow-500 shadow-sm border border-white/5' : 'text-stone-500'}`}>რეგისტრაცია</button>
+                <button onClick={() => {setAuthMode('login'); resetState();}} className={`flex-1 py-2 rounded-md text-[11px] font-black transition-all ${authMode === 'login' ? 'bg-stone-800 text-yellow-500 shadow-sm border border-white/5' : 'text-stone-500'}`}>შესვლა</button>
+                <button onClick={() => {setAuthMode('register'); resetState();}} className={`flex-1 py-2 rounded-md text-[11px] font-black transition-all ${authMode === 'register' ? 'bg-stone-800 text-yellow-500 shadow-sm border border-white/5' : 'text-stone-500'}`}>რეგისტრაცია</button>
               </div>
             )}
 
@@ -126,57 +149,73 @@ export default function Auth({ onAuthSuccess }) {
                      <KeyRound size={20} className="text-yellow-500" />
                   </div>
                   <h3 className="text-sm font-black uppercase text-stone-100">პაროლის აღდგენა</h3>
-                  <p className="text-[10px] text-stone-400 mt-1">შეიყვანე შენი ელ-ფოსტა</p>
+                  <p className="text-[10px] text-stone-400 mt-1">{recoveryStep === 1 ? 'შეიყვანეთ თქვენი მონაცემები' : 'შეიყვანეთ ახალი პაროლი'}</p>
                </div>
             )}
 
             {error && <div className="mb-3 p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[10px] font-bold text-rose-400 text-center animate-in fade-in">{error}</div>}
             {successMsg && <div className="mb-3 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-bold text-emerald-400 text-center animate-in fade-in">{successMsg}</div>}
 
-            <form onSubmit={handleSubmit} className="space-y-3">
+            <form onSubmit={authMode === 'forgot' && recoveryStep === 1 ? handleNextStep : handleSubmit} className="space-y-3">
               
-              {authMode !== 'forgot' && (
+              {/* 🟢 STEP 1: Username, DOB, Secret Word (ჩანს Login-ის, Register-ის და Forgot Step 1-ის დროს) */}
+              {(authMode === 'login' || authMode === 'register' || (authMode === 'forgot' && recoveryStep === 1)) && (
                 <div className="relative animate-in fade-in">
                   <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
                   <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder="მომხმარებელი..." required />
                 </div>
               )}
 
-              {(authMode === 'register' || authMode === 'forgot') && (
-                <div className="relative animate-in fade-in">
-                  <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder="ელ-ფოსტა..." required />
+              {(authMode === 'register' || (authMode === 'forgot' && recoveryStep === 1)) && (
+                <>
+                  <div className="relative animate-in slide-in-from-top-2">
+                    <CalendarDays size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                    <input type="date" value={dob} onChange={e => setDob(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-400 outline-none transition-all" required />
+                  </div>
+                  <div className="relative animate-in slide-in-from-top-2">
+                    <TextCursorInput size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                    <input type="text" value={secretWord} onChange={e => setSecretWord(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder="საიდუმლო სიტყვა..." required />
+                  </div>
+                </>
+              )}
+
+              {/* 🟢 STEP 2: პაროლები (ჩანს Login, Register და Forgot Step 2-ის დროს) */}
+              {(authMode === 'login' || authMode === 'register' || (authMode === 'forgot' && recoveryStep === 2)) && (
+                <div className="relative animate-in slide-in-from-right-4">
+                  <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder={authMode === 'login' ? "პაროლი..." : "პაროლი (მინ. 6 სიმბოლო, 1 ციფრი)"} required />
                 </div>
               )}
 
-              {authMode !== 'forgot' && (
-                <div className="relative animate-in fade-in">
+              {authMode === 'forgot' && recoveryStep === 2 && (
+                <div className="relative animate-in slide-in-from-right-4">
                   <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder="პაროლი (მინ. 6 სიმბოლო, 1 ციფრი)" required />
+                  <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder="გაიმეორეთ ახალი პაროლი..." required />
                 </div>
               )}
 
               <button type="submit" disabled={isLoading} className="w-full bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-black text-[11px] uppercase tracking-widest py-3 rounded-lg mt-4 transition-all active:scale-95 flex items-center justify-center gap-2">
-                {isLoading ? 'გთხოვთ დაელოდოთ...' : (authMode === 'login' ? 'სისტემაში შესვლა' : authMode === 'register' ? 'ანგარიშის შექმნა' : 'აღდგენის მოთხოვნა')} 
+                {isLoading ? 'დაელოდეთ...' : (authMode === 'login' ? 'შესვლა' : authMode === 'register' ? 'რეგისტრაცია' : recoveryStep === 1 ? 'გაგრძელება' : 'პაროლის შეცვლა')} 
                 <Play size={12} className={isLoading ? 'hidden' : ''} />
               </button>
             </form>
 
             {authMode === 'login' && (
                <div className="text-center mt-4">
-                 <button onClick={() => {setAuthMode('forgot'); setError('');}} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">დაგავიწყდა პაროლი?</button>
+                 <button onClick={() => {setAuthMode('forgot'); resetState();}} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">დაგავიწყდა პაროლი?</button>
                </div>
             )}
             {authMode === 'forgot' && (
-               <div className="text-center mt-4">
-                 <button onClick={() => {setAuthMode('login'); setError('');}} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">უკან დაბრუნება</button>
+               <div className="text-center mt-4 flex items-center justify-center gap-4">
+                 {recoveryStep === 2 && <button onClick={() => setRecoveryStep(1)} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">უკან</button>}
+                 <button onClick={() => {setAuthMode('login'); resetState();}} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">მთავარზე დაბრუნება</button>
                </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* დანარჩენი სექციები რჩება უცვლელი (Rules, Features, Invite, Footer) */}
+      {/* 🟢 წესები */}
       <section id="rules" className="py-10 border-t border-white/5 bg-stone-950/30">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <h2 className="text-xl font-black text-stone-100 uppercase tracking-wider mb-6 flex items-center gap-2"><Target size={18} className="text-yellow-500"/> როგორ ვითამაშოთ?</h2>
@@ -200,6 +239,7 @@ export default function Auth({ onAuthSuccess }) {
         </div>
       </section>
 
+      {/* 🟢 ეკონომიკა და მიღწევები */}
       <section id="features" className="py-10 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -246,7 +286,7 @@ export default function Auth({ onAuthSuccess }) {
                   { icon: '🛡️', title: 'ვეტერანი', desc: 'მოიგე 100 რეიტინგული მატჩი.' },
                   { icon: '💎', title: '10 აგური', desc: '50-ჯერ წაიღე მოგებულ მატჩში.' },
                   { icon: '♣️', title: '2 ჯვარი', desc: '50-ჯერ წაიღე მოგებულ მატჩში.' },
-                  { icon: '🧹', title: 'მესუფთავე', desc: '50-ჯერ წაიღე 4+ კარტი ვალეტით (მოგებულში).' }
+                  { icon: '🧹', title: 'მესუფთავე', desc: '50-ჯერ წაიღე 4+ კარტი ვალეტით.' }
                 ].map((ach, i) => (
                   <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-stone-950/50 border border-white/5">
                     <span className="text-xl drop-shadow-md bg-stone-900 p-1.5 rounded-lg border border-white/5">{ach.icon}</span>
@@ -258,30 +298,11 @@ export default function Auth({ onAuthSuccess }) {
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
-      <section id="invite" className="py-8">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="bg-gradient-to-r from-stone-900 to-[#0a0a0a] border border-white/5 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4 text-center md:text-left">
-              <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center shrink-0 border border-emerald-500/20 text-emerald-500">
-                <Users size={20} />
-              </div>
-              <div>
-                <h2 className="text-lg font-black text-stone-100 uppercase tracking-tight">ითამაშე მეგობრებთან ერთად</h2>
-                <p className="text-[11px] text-stone-400 font-medium mt-1">შექმენი პრივატული ოთახი პაროლით და დაამტკიცე ვინ არის საუკეთესო.</p>
-              </div>
-            </div>
-            <button onClick={scrollToTop} className="px-6 py-2.5 bg-stone-100 hover:bg-white text-stone-950 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all active:scale-95 shrink-0">
-              დაწყება ახლავე
-            </button>
-          </div>
-        </div>
-      </section>
-
+      {/* 🟢 Footer */}
       <footer id="about" className="bg-[#050505] pt-10 pb-6 border-t border-white/5 mt-4">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
@@ -294,35 +315,11 @@ export default function Auth({ onAuthSuccess }) {
                 ქართული დეველოპერული პროექტი. კლასიკური ბანქოს თამაშის თანამედროვე, სანდო და აზარტული ონლაინ სივრცე.
               </p>
             </div>
-            <div className="flex gap-12">
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-black text-stone-200 uppercase tracking-widest">ნავიგაცია</h4>
-                <ul className="space-y-1.5 text-[10px] font-medium text-stone-500">
-                  <li><a href="#rules" className="hover:text-yellow-500 transition-colors">წესები</a></li>
-                  <li><a href="#features" className="hover:text-yellow-500 transition-colors">სისტემა</a></li>
-                </ul>
-              </div>
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-black text-stone-200 uppercase tracking-widest">კონტაქტი</h4>
-                <ul className="space-y-1.5 text-[10px] font-medium text-stone-500">
-                  <li className="flex items-center gap-1.5"><Mail size={12}/> support@phurti.ge</li>
-                </ul>
-                <div className="flex items-center gap-2 pt-1">
-                  <a href="#" className="p-1.5 bg-stone-900 rounded-md hover:bg-stone-800 text-stone-400 hover:text-stone-200 border border-white/5"><Globe size={12}/></a>
-                  <a href="#" className="p-1.5 bg-stone-900 rounded-md hover:bg-stone-800 text-stone-400 hover:text-stone-200 border border-white/5"><Share2 size={12}/></a>
-                </div>
-              </div>
-            </div>
           </div>
-          
           <div className="pt-4 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-3">
             <p className="text-[9px] text-stone-600 font-bold tracking-widest uppercase">
               &copy; {new Date().getFullYear()} PHURTI ARENA. ყველა უფლება დაცულია.
             </p>
-            <div className="text-[9px] text-stone-600 font-bold flex gap-4 uppercase tracking-widest">
-              <a href="#" className="hover:text-stone-400 transition-colors">კონფიდენციალურობა</a>
-              <a href="#" className="hover:text-stone-400 transition-colors">პირობები</a>
-            </div>
           </div>
         </div>
       </footer>

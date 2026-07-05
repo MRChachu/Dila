@@ -2,7 +2,11 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
-  email: { type: String, required: false, trim: true },
+  
+  // 🟢 დაემატა დაბადების თარიღი და კოდური სიტყვა ელ-ფოსტის ნაცვლად
+  dateOfBirth: { type: String, required: true },
+  secretWord: { type: String, required: true },
+  
   password: { type: String, required: true },
   stats: {
     gamesPlayed: { type: Number, default: 0 },
@@ -18,19 +22,14 @@ const userSchema = new mongoose.Schema({
       playedAt: { type: Date, default: Date.now }
     }
   ],
-  
   achievements: [{ type: String }],
-  
-  // 🟢 აქ დაემატა პროგრესის მთვლელი
   achievementProgress: {
     diamond_10: { type: Number, default: 0 },
     club_2: { type: Number, default: 0 },
     sweeper: { type: Number, default: 0 }
   },
-  
   level: { type: Number, default: 1 },
   xp: { type: Number, default: 0 },
-
   dailyQuests: [
     {
       questId: { type: String },
@@ -42,22 +41,16 @@ const userSchema = new mongoose.Schema({
     }
   ],
   lastQuestGeneration: { type: Date },
-
   friends: [{ type: String }],
   friendRequests: [{ type: String }],
-
   coins: { type: Number, default: 0 },
   avatar: { type: String, default: '😎' },
   unlockedAvatars: { type: [String], default: ['😎'] },
-  
   tableTheme: { type: String, default: 'wood' },
   unlockedTableThemes: { type: [String], default: ['wood', 'lavender'] },
-  
   cardBack: { type: String, default: 'classic' },
   unlockedCardBacks: { type: [String], default: ['classic'] },
-
   vipUntil: { type: Date, default: null }
-
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

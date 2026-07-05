@@ -12,23 +12,20 @@ const ALL_DAILY_QUESTS = [
   { questId: 'sweep_table', title: 'გაასუფთავე მაგიდა (ვალეტით)', target: 1, xpReward: 300 }
 ];
 
-// 🟢 რეგისტრაცია
+// 🟢 რეგისტრაცია (მეილის გარეშე, თარიღით და სიტყვით)
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, dateOfBirth, secretWord, password } = req.body;
     
-    // პაროლის ვალიდაცია: მინიმუმ 6 სიმბოლო, 1 ასო და 1 ციფრი
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
     if (!regex.test(password)) {
       return res.status(400).json({ message: 'პაროლი არ არის საკმარისად ძლიერი!' });
     }
 
     const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({ message: 'ეს სახელი უკვე დაკავებულია!' });
-    }
+    if (existingUser) return res.status(400).json({ message: 'ეს სახელი უკვე დაკავებულია!' });
 
-    const newUser = new User({ username, email, password }); 
+    const newUser = new User({ username, dateOfBirth, secretWord, password }); 
     await newUser.save();
 
     const { password: _, ...userData } = newUser._doc;
@@ -55,32 +52,36 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 🟢 1. პაროლის აღდგენა (Render-ის უფასო სერვერის შეზღუდვის გვერდის ავლა)
-router.post('/forgot-password', async (req, res) => {
+// 🟢 პაროლის აღდგენა (კოდური სიტყვით და თარიღით)
+router.post('/reset-password', async (req, res) => {
   try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'მომხმარებელი ამ ელ-ფოსტით ვერ მოიძებნა!' });
+    const { username, dateOfBirth, secretWord, newPassword } = req.body;
+    const user = await User.findOne({ username });
+    
+    if (!user) return res.status(404).json({ message: 'მომხმარებელი ვერ მოიძებნა!' });
 
-    // ვქმნით რანდომულ ძლიერ პაროლს (მაგ: a7b8c9A1)
-    const tempPassword = Math.random().toString(36).slice(-6) + 'A1';
-    user.password = tempPassword;
+    // ვამოწმებთ ემთხვევა თუ არა საიდუმლო სიტყვა და თარიღი
+    if (user.dateOfBirth !== dateOfBirth || user.secretWord !== secretWord) {
+        return res.status(400).json({ message: 'მონაცემები არასწორია! აღდგენა შეუძლებელია.' });
+    }
+
+    const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
+    if (!regex.test(newPassword)) return res.status(400).json({ message: 'ახალი პაროლი არ არის საკმარისად ძლიერი!' });
+
+    user.password = newPassword;
     await user.save();
 
-    // ეკრანზევე ვუწერთ ახალ პაროლს
-    res.status(200).json({ message: `შენი დროებითი პაროლია: ${tempPassword} (გთხოვთ შეცვალოთ პარამეტრებიდან!)` });
+    res.status(200).json({ message: 'პაროლი წარმატებით შეიცვალა! შეგიძლიათ შეხვიდეთ სისტემაში.' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'შეცდომა პაროლის აღდგენისას.' });
+    res.status(500).json({ message: 'სერვერის შეცდომა პაროლის აღდგენისას.' });
   }
 });
 
-// 🟢 2. პაროლის შეცვლა (პროფილის პარამეტრებიდან)
+// 🟢 პაროლის შეცვლა (პროფილის პარამეტრებიდან)
 router.post('/change-password', async (req, res) => {
   try {
     const { username, currentPassword, newPassword } = req.body;
     const user = await User.findOne({ username });
-    
     if (!user) return res.status(404).json({ message: 'მომხმარებელი ვერ მოიძებნა' });
     if (user.password !== currentPassword) return res.status(400).json({ message: 'მიმდინარე პაროლი არასწორია' });
 
@@ -89,48 +90,31 @@ router.post('/change-password', async (req, res) => {
 
     user.password = newPassword;
     await user.save();
-
     res.status(200).json({ message: 'პაროლი წარმატებით შეიცვალა!' });
-  } catch (err) { 
-    res.status(500).json({ message: 'სერვერის შეცდომა პაროლის შეცვლისას' }); 
-  }
+  } catch (err) { res.status(500).json({ message: 'სერვერის შეცდომა' }); }
 });
 
-// 🟢 პროფილის ჩატვირთვა და მისიების გენერაცია
 router.get('/profile/:username', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username });
     if (!user) return res.status(404).json({ message: 'მოთამაშე ვერ მოიძებნა' });
-    
     const now = new Date();
-    
     if (!user.dailyQuests || user.dailyQuests.length === 0 || (user.lastQuestGeneration && (now - new Date(user.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
         const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
-        user.dailyQuests = shuffled.slice(0, 3).map(q => ({
-            questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false
-        }));
+        user.dailyQuests = shuffled.slice(0, 3).map(q => ({ questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false }));
         user.lastQuestGeneration = now;
         await user.save(); 
     }
-
     const { password, ...userData } = user._doc;
     res.json(userData);
-  } catch (err) {
-    res.status(500).json({ message: 'სერვერის შეცდომა პროფილის ჩატვირთვისას' });
-  }
+  } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
 });
 
-// 🟢 ლიდერბორდი
 router.get('/leaderboard', async (req, res) => {
   try {
-    const topUsers = await User.find()
-      .sort({ 'stats.gamesWon': -1, xp: -1 })
-      .limit(10)
-      .select('-password');
+    const topUsers = await User.find().sort({ 'stats.gamesWon': -1, xp: -1 }).limit(10).select('-password');
     res.json(topUsers);
-  } catch (err) {
-    res.status(500).json({ message: 'სერვერის შეცდომა ლიდერბორდის ჩატვირთვისას' });
-  }
+  } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
 });
 
 module.exports = router;
