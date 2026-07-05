@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Shield, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound, CalendarDays, TextCursorInput } from 'lucide-react';
+import { Shield, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound, Calendar, Key } from 'lucide-react';
 
 export default function Auth({ onAuthSuccess }) {
   const [authMode, setAuthMode] = useState('login'); 
-  const [recoveryStep, setRecoveryStep] = useState(1); // 1 = მონაცემები, 2 = ახალი პაროლი
+  const [recoveryStep, setRecoveryStep] = useState(1); 
 
   const [username, setUsername] = useState('');
   const [dob, setDob] = useState('');
@@ -26,13 +26,35 @@ export default function Auth({ onAuthSuccess }) {
     setRecoveryStep(1);
   };
 
-  const handleNextStep = (e) => {
+  // 🟢 პირველი ეტაპის შემოწმება (პაროლის აღდგენის დროს)
+  const handleNextStep = async (e) => {
     e.preventDefault();
     if (!username || !dob || !secretWord) return setError('შეავსეთ ყველა ველი!');
+    
+    setIsLoading(true);
     setError('');
-    setRecoveryStep(2);
+    
+    try {
+      const res = await fetch(`https://purti.onrender.com/api/auth/verify-recovery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, dateOfBirth: dob, secretWord })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setRecoveryStep(2); // მონაცემები ემთხვევა, ვაჩვენებთ ახალი პაროლის ველებს
+      } else {
+        setError(data.message || 'მონაცემები არასწორია');
+      }
+    } catch (err) {
+      setError('სერვერთან კავშირი ვერ მოხერხდა');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // 🟢 საბოლოო გაგზავნა (რეგისტრაცია, ლოგინი ან პაროლის შეცვლა)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setSuccessMsg('');
@@ -81,7 +103,7 @@ export default function Auth({ onAuthSuccess }) {
         }
       } else {
         setError(data.message || 'შეცდომა კავშირისას');
-        if (authMode === 'forgot') setRecoveryStep(1); // უკან დაბრუნება შეცდომისას
+        if (authMode === 'forgot') setRecoveryStep(1); 
       }
     } catch (err) {
       setError('სერვერთან კავშირი ვერ მოხერხდა');
@@ -158,7 +180,7 @@ export default function Auth({ onAuthSuccess }) {
 
             <form onSubmit={authMode === 'forgot' && recoveryStep === 1 ? handleNextStep : handleSubmit} className="space-y-3">
               
-              {/* 🟢 STEP 1: Username, DOB, Secret Word (ჩანს Login-ის, Register-ის და Forgot Step 1-ის დროს) */}
+              {/* 🟢 STEP 1: Username, DOB, Secret Word */}
               {(authMode === 'login' || authMode === 'register' || (authMode === 'forgot' && recoveryStep === 1)) && (
                 <div className="relative animate-in fade-in">
                   <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
@@ -169,17 +191,17 @@ export default function Auth({ onAuthSuccess }) {
               {(authMode === 'register' || (authMode === 'forgot' && recoveryStep === 1)) && (
                 <>
                   <div className="relative animate-in slide-in-from-top-2">
-                    <CalendarDays size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                    <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
                     <input type="date" value={dob} onChange={e => setDob(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-400 outline-none transition-all" required />
                   </div>
                   <div className="relative animate-in slide-in-from-top-2">
-                    <TextCursorInput size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                    <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
                     <input type="text" value={secretWord} onChange={e => setSecretWord(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder="საიდუმლო სიტყვა..." required />
                   </div>
                 </>
               )}
 
-              {/* 🟢 STEP 2: პაროლები (ჩანს Login, Register და Forgot Step 2-ის დროს) */}
+              {/* 🟢 STEP 2: პაროლები */}
               {(authMode === 'login' || authMode === 'register' || (authMode === 'forgot' && recoveryStep === 2)) && (
                 <div className="relative animate-in slide-in-from-right-4">
                   <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />

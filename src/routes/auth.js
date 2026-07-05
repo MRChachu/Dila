@@ -12,7 +12,7 @@ const ALL_DAILY_QUESTS = [
   { questId: 'sweep_table', title: 'გაასუფთავე მაგიდა (ვალეტით)', target: 1, xpReward: 300 }
 ];
 
-// 🟢 რეგისტრაცია (მეილის გარეშე, თარიღით და სიტყვით)
+// 🟢 რეგისტრაცია
 router.post('/register', async (req, res) => {
   try {
     const { username, dateOfBirth, secretWord, password } = req.body;
@@ -52,7 +52,25 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 🟢 პაროლის აღდგენა (კოდური სიტყვით და თარიღით)
+// 🟢 მონაცემების შემოწმება პაროლის აღდგენის მე-2 ეტაპზე გადასვლამდე
+router.post('/verify-recovery', async (req, res) => {
+  try {
+    const { username, dateOfBirth, secretWord } = req.body;
+    const user = await User.findOne({ username });
+    
+    if (!user) return res.status(404).json({ message: 'მომხმარებელი ვერ მოიძებნა!' });
+    
+    if (user.dateOfBirth !== dateOfBirth || user.secretWord !== secretWord) {
+        return res.status(400).json({ message: 'დაბადების თარიღი ან საიდუმლო სიტყვა არასწორია!' });
+    }
+    
+    res.status(200).json({ message: 'მონაცემები სწორია.' });
+  } catch (err) {
+    res.status(500).json({ message: 'სერვერის შეცდომა.' });
+  }
+});
+
+// 🟢 საბოლოო პაროლის აღდგენა
 router.post('/reset-password', async (req, res) => {
   try {
     const { username, dateOfBirth, secretWord, newPassword } = req.body;
@@ -60,7 +78,6 @@ router.post('/reset-password', async (req, res) => {
     
     if (!user) return res.status(404).json({ message: 'მომხმარებელი ვერ მოიძებნა!' });
 
-    // ვამოწმებთ ემთხვევა თუ არა საიდუმლო სიტყვა და თარიღი
     if (user.dateOfBirth !== dateOfBirth || user.secretWord !== secretWord) {
         return res.status(400).json({ message: 'მონაცემები არასწორია! აღდგენა შეუძლებელია.' });
     }
@@ -82,6 +99,7 @@ router.post('/change-password', async (req, res) => {
   try {
     const { username, currentPassword, newPassword } = req.body;
     const user = await User.findOne({ username });
+    
     if (!user) return res.status(404).json({ message: 'მომხმარებელი ვერ მოიძებნა' });
     if (user.password !== currentPassword) return res.status(400).json({ message: 'მიმდინარე პაროლი არასწორია' });
 
@@ -90,31 +108,48 @@ router.post('/change-password', async (req, res) => {
 
     user.password = newPassword;
     await user.save();
+
     res.status(200).json({ message: 'პაროლი წარმატებით შეიცვალა!' });
-  } catch (err) { res.status(500).json({ message: 'სერვერის შეცდომა' }); }
+  } catch (err) { 
+    res.status(500).json({ message: 'სერვერის შეცდომა პაროლის შეცვლისას' }); 
+  }
 });
 
+// 🟢 პროფილის ჩატვირთვა
 router.get('/profile/:username', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username });
     if (!user) return res.status(404).json({ message: 'მოთამაშე ვერ მოიძებნა' });
+    
     const now = new Date();
+    
     if (!user.dailyQuests || user.dailyQuests.length === 0 || (user.lastQuestGeneration && (now - new Date(user.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
         const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
-        user.dailyQuests = shuffled.slice(0, 3).map(q => ({ questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false }));
+        user.dailyQuests = shuffled.slice(0, 3).map(q => ({
+            questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false
+        }));
         user.lastQuestGeneration = now;
         await user.save(); 
     }
+
     const { password, ...userData } = user._doc;
     res.json(userData);
-  } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
+  } catch (err) {
+    res.status(500).json({ message: 'სერვერის შეცდომა პროფილის ჩატვირთვისას' });
+  }
 });
 
+// 🟢 ლიდერბორდი
 router.get('/leaderboard', async (req, res) => {
   try {
-    const topUsers = await User.find().sort({ 'stats.gamesWon': -1, xp: -1 }).limit(10).select('-password');
+    const topUsers = await User.find()
+      .sort({ 'stats.gamesWon': -1, xp: -1 })
+      .limit(10)
+      .select('-password');
     res.json(topUsers);
-  } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
+  } catch (err) {
+    res.status(500).json({ message: 'სერვერის შეცდომა ლიდერბორდის ჩატვირთვისას' });
+  }
 });
 
 module.exports = router;
