@@ -2,26 +2,25 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
-  
-  // 🟢 დაემატა დაბადების თარიღი და კოდური სიტყვა ელ-ფოსტის ნაცვლად
   dateOfBirth: { type: String, required: true },
   secretWord: { type: String, required: true },
-  
   password: { type: String, required: true },
+  
+  // 🟢 დაემატა დაბლოკვის სტატუსი ადმინ პანელისთვის
+  isBanned: { type: Boolean, default: false },
+  
   stats: {
     gamesPlayed: { type: Number, default: 0 },
     gamesWon: { type: Number, default: 0 },
     totalPointsScored: { type: Number, default: 0 }
   },
-  gameHistory: [
-    {
+  gameHistory: [{
       roomId: { type: String },
       targetScore: { type: Number },
       myFinalScore: { type: Number },
       isWinner: { type: Boolean },
       playedAt: { type: Date, default: Date.now }
-    }
-  ],
+  }],
   achievements: [{ type: String }],
   achievementProgress: {
     diamond_10: { type: Number, default: 0 },
@@ -30,16 +29,10 @@ const userSchema = new mongoose.Schema({
   },
   level: { type: Number, default: 1 },
   xp: { type: Number, default: 0 },
-  dailyQuests: [
-    {
-      questId: { type: String },
-      title: { type: String },
-      progress: { type: Number, default: 0 },
-      target: { type: Number },
-      xpReward: { type: Number },
-      isCompleted: { type: Boolean, default: false }
-    }
-  ],
+  dailyQuests: [{
+      questId: { type: String }, title: { type: String }, progress: { type: Number, default: 0 },
+      target: { type: Number }, xpReward: { type: Number }, isCompleted: { type: Boolean, default: false }
+  }],
   lastQuestGeneration: { type: Date },
   friends: [{ type: String }],
   friendRequests: [{ type: String }],

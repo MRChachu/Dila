@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -70,7 +70,7 @@ export default function App() {
   const [roomData, setRoomData] = useState(null);
   const [profileData, setProfileData] = useState(null);
   const [liveRooms, setLiveRooms] = useState([]);
-  const [leaderboard, setLeaderboard] = useState([]); 
+  
   const [error, setError] = useState('');
   const [toastMsg, setToastMsg] = useState('');
 
@@ -98,6 +98,15 @@ export default function App() {
   const [mIsRanked, setMIsRanked] = useState(true); 
 
   const [socialTab, setSocialTab] = useState('online');
+
+  // 🟢 ლიდერბორდის და ადმინის სტეიტები
+  const [leaderboard, setLeaderboard] = useState([]); 
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [adminPass, setAdminPass] = useState('');
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminMessage, setAdminMessage] = useState('');
 
   useEffect(() => {
     if (audioRef.current) {
@@ -196,6 +205,53 @@ export default function App() {
     }
   }, [toastMsg]);
 
+  // 🟢 წოდებების (Ranks) ლოგიკა XP-ის მიხედვით
+  const getRankInfo = (xp) => {
+    if (xp >= 15000) return { title: 'ლეგენდა', icon: '👑', color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/50' };
+    if (xp >= 5000) return { title: 'ოქრო', icon: '🥇', color: 'text-yellow-500', bg: 'bg-yellow-500/10 border-yellow-500/50' };
+    if (xp >= 1000) return { title: 'ვერცხლი', icon: '🥈', color: 'text-stone-300', bg: 'bg-stone-300/10 border-stone-300/50' };
+    return { title: 'ბრინჯაო', icon: '🥉', color: 'text-amber-600', bg: 'bg-amber-600/10 border-amber-600/50' };
+  };
+
+  const loadLeaderboard = async () => {
+    try {
+      const res = await fetch('https://purti.onrender.com/api/auth/leaderboard');
+      const data = await res.json();
+      setLeaderboard(data);
+      setIsLeaderboardOpen(true);
+    } catch(err) { console.error(err); }
+  };
+
+  const loginAdmin = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('https://purti.onrender.com/api/auth/admin/users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminPass })
+      });
+      const data = await res.json();
+      if (res.ok) setAdminUsers(data);
+      else setAdminMessage(data.message);
+    } catch (err) { setAdminMessage('შეცდომა სერვერთან კავშირისას!'); }
+  };
+
+  const adminAction = async (targetUser, action, amount = 0) => {
+    try {
+      const res = await fetch('https://purti.onrender.com/api/auth/admin/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminPass, targetUser, action, amount })
+      });
+      if (res.ok) {
+         setAdminMessage(`მოთამაშე ${targetUser} წარმატებით განახლდა!`);
+         const usersRes = await fetch('https://purti.onrender.com/api/auth/admin/users', { 
+           method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+           body: JSON.stringify({ adminPass }) 
+         });
+         setAdminUsers(await usersRes.json());
+      }
+    } catch (err) { console.error(err); }
+  };
+
   const handleAuthSuccess = (userData) => {
     setUserState(userData);
     localStorage.setItem('phurti_user', JSON.stringify(userData));
@@ -222,12 +278,11 @@ export default function App() {
     setIsCreateModalOpen(false); setMRoomPassword('');
   };
 
-const handleSendInvite = (targetSocketId) => {
+  const handleSendInvite = (targetSocketId) => {
     if (inRoom && roomData) {
       socket.emit('sendInvite', { targetSocketId, roomId: roomData.id, password: roomData.password, fromName: safeUsername });
     } else {
       const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
-      // 🟢 ზუსტად აქ შევცვალეთ: allowBots: false (რობოტების გარეშე) და isRanked: true (რეიტინგული)
       socket.emit('joinRoom', { roomId: generatedId, playerName: safeUsername, roomPassword: null, maxPlayers: 4, targetScore: 11, allowBots: false, isRanked: true });
       setInRoom(true);
       localStorage.setItem('phurti_roomId', generatedId); 
@@ -486,46 +541,127 @@ const handleSendInvite = (targetSocketId) => {
         </div>
       )}
 
+      {/* ⚙️ პარამეტრები და პაროლის შეცვლა */}
       {isSettingsOpen && (
-  <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-    <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-6 shadow-2xl font-sans relative`}>
-      <h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> პარამეტრები</h3>
-      
-      <div className="space-y-3 border-b border-white/10 pb-4">
-        <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> ფონური მუსიკა</label>
-        <div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5">
-          <button onClick={() => setIsMusicPlaying(true)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${isMusicPlaying ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500'}`}>ჩართული</button>
-          <button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>გამორთული</button>
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-6 shadow-2xl font-sans relative`}>
+            <h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> პარამეტრები</h3>
+            
+            <div className="space-y-3 border-b border-white/10 pb-4">
+              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> ფონური მუსიკა</label>
+              <div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5">
+                <button onClick={() => setIsMusicPlaying(true)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${isMusicPlaying ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500'}`}>ჩართული</button>
+                <button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>გამორთული</button>
+              </div>
+            </div>
+
+            <form onSubmit={async (e) => {
+                e.preventDefault();
+                const curPass = e.target.currentPass.value;
+                const newPass = e.target.newPass.value;
+                try {
+                   const res = await fetch(`https://purti.onrender.com/api/auth/change-password`, {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ username: safeUsername, currentPassword: curPass, newPassword: newPass })
+                   });
+                   const data = await res.json();
+                   if(res.ok) {
+                       setToastMsg('პაროლი წარმატებით შეიცვალა!');
+                       e.target.reset();
+                   } else { setError(data.message); }
+                } catch(err) { setError('შეცდომა სერვერთან კავშირისას'); }
+            }} className="space-y-3">
+              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Lock size={14}/> პაროლის შეცვლა</label>
+              <input name="currentPass" type="password" placeholder="ძველი / დროებითი პაროლი" className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required />
+              <input name="newPass" type="password" placeholder="ახალი პაროლი" className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required />
+              <button type="submit" className={`w-full py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md`}>შეცვლა</button>
+            </form>
+
+            <button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">დახურვა</button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* 🟢 პაროლის შეცვლის ფორმა */}
-      <form onSubmit={async (e) => {
-          e.preventDefault();
-          const curPass = e.target.currentPass.value;
-          const newPass = e.target.newPass.value;
-          try {
-             const res = await fetch(`https://purti.onrender.com/api/auth/change-password`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: safeUsername, currentPassword: curPass, newPassword: newPass })
-             });
-             const data = await res.json();
-             if(res.ok) {
-                 setToastMsg('პაროლი წარმატებით შეიცვალა!');
-                 e.target.reset();
-             } else { setError(data.message); }
-          } catch(err) { setError('შეცდომა სერვერთან კავშირისას'); }
-      }} className="space-y-3">
-        <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Lock size={14}/> პაროლის შეცვლა</label>
-        <input name="currentPass" type="password" placeholder="ძველი / დროებითი პაროლი" className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required />
-        <input name="newPass" type="password" placeholder="ახალი პაროლი" className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required />
-        <button type="submit" className={`w-full py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md`}>შეცვლა</button>
-      </form>
+      {/* 🏆 ლიდერბორდის მოდალი (Leaderboard) */}
+      {isLeaderboardOpen && (
+        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-stone-900 border border-yellow-500/30 rounded-[2rem] p-6 max-w-md w-full shadow-[0_0_50px_rgba(234,179,8,0.1)] relative max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <h2 className="text-xl font-black text-stone-100 uppercase mb-6 flex items-center gap-3 justify-center"><Trophy className="text-yellow-500"/> ტოპ მოთამაშეები</h2>
+            <div className="space-y-3">
+              {leaderboard.map((u, i) => {
+                const rank = getRankInfo(u.xp);
+                return (
+                  <div key={i} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-500/20 border-yellow-500 text-stone-100 scale-105 shadow-lg' : 'bg-stone-950/50 border-white/5 text-stone-300'}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-black w-4 text-stone-500">{i + 1}.</span>
+                      <div className="text-2xl drop-shadow-md">{u.avatar}</div>
+                      <div>
+                        <div className="text-xs font-black uppercase tracking-wider flex items-center gap-2">
+                           {u.username} {u.vipUntil && new Date(u.vipUntil) > new Date() && <span className="text-[10px] bg-yellow-500 text-stone-900 px-1.5 rounded uppercase font-black">VIP</span>}
+                        </div>
+                        <div className={`text-[10px] font-bold mt-0.5 ${rank.color} flex items-center gap-1`}>{rank.icon} {rank.title} • {u.xp} XP</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-black text-stone-400">მოგება</div>
+                      <div className="text-sm font-black text-yellow-500">{u.stats.gamesWon}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={() => setIsLeaderboardOpen(false)} className="w-full mt-6 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all">დახურვა</button>
+          </div>
+        </div>
+      )}
 
-      <button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">დახურვა</button>
-    </div>
-  </div>
-)}
+      {/* 🛡️ ადმინ პანელის მოდალი (Admin Dashboard) */}
+      {isAdminOpen && (
+        <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
+          <div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+              <h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Control Panel</h2>
+              <button onClick={() => {setIsAdminOpen(false); setAdminUsers([]); setAdminPass(''); setAdminMessage('');}} className="text-stone-500 hover:text-stone-300">დახურვა</button>
+            </div>
+
+            {adminUsers.length === 0 ? (
+              <form onSubmit={loginAdmin} className="space-y-4 max-w-xs mx-auto py-10">
+                <input type="password" placeholder="ადმინისტრატორის პაროლი" value={adminPass} onChange={e => setAdminPass(e.target.value)} className="w-full bg-stone-950 border border-rose-500/30 rounded-xl px-4 py-3 text-xs text-stone-100 outline-none text-center" />
+                <button type="submit" className="w-full py-3 bg-rose-500 text-stone-950 font-black rounded-xl text-xs uppercase shadow-lg hover:bg-rose-400 transition-all">შესვლა</button>
+                {adminMessage && <p className="text-[10px] text-rose-400 text-center font-bold">{adminMessage}</p>}
+              </form>
+            ) : (
+              <div>
+                {adminMessage && <div className="mb-4 p-2 bg-emerald-500/20 text-emerald-400 text-xs text-center rounded-lg font-bold">{adminMessage}</div>}
+                <div className="grid gap-3">
+                  {adminUsers.map((u, i) => (
+                    <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4`}>
+                      <div className="min-w-[150px]">
+                        <div className="text-sm font-black text-stone-100">{u.username}</div>
+                        <div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">{u.password}</span></div>
+                        <div className="text-[10px] text-stone-500 font-mono mt-0.5">📅 თარიღი: {u.dateOfBirth} | 📝 სიტყვა: {u.secretWord}</div>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs font-black">
+                         <div className="text-yellow-500">🪙 {u.coins}</div>
+                         <div className="text-blue-400">⭐ {u.xp} XP</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors">+500 🪙</button>
+                        <button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors">+1000 XP</button>
+                        {u.isBanned ? (
+                          <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors">UNBAN</button>
+                        ) : (
+                          <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors">BAN</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="relative z-10 flex flex-col flex-1 w-full h-full text-stone-100">
         <header className={`${activeTheme.card} flex items-center justify-between border-b border-white/5 backdrop-blur-xl px-4 md:px-8 py-3 md:py-4 sticky top-0 z-40 shadow-lg transition-colors duration-700`}>
@@ -535,14 +671,35 @@ const handleSendInvite = (targetSocketId) => {
             </div>
             <span className={`text-sm md:text-lg font-black tracking-widest ${activeTheme.accent}`}>PHURTI ARENA</span>
           </div>
-          <div className="flex items-center gap-2 md:gap-4">
-            <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
+          
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* 🏆 ლიდერბორდი */}
+            <button onClick={loadLeaderboard} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
+              <Trophy size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">ტოპ 10</span>
+            </button>
+            
+            {/* 🛡️ ადმინ პანელი */}
+            <button onClick={() => setIsAdminOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
+              <ShieldAlert size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">ადმინ</span>
+            </button>
+
+            {/* 🛒 მაღაზია */}
+            <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
               <ShoppingCart size={15} /> <span className="hidden md:block text-[10px] font-black uppercase">მაღაზია</span>
             </button>
+            
+            {/* ⚙️ პარამეტრები */}
+            <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-stone-200 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
+              <Settings size={15} className="md:w-4 md:h-4" />
+            </button>
+
+            {/* 🎵 მუსიკა */}
             <button onClick={() => setIsMusicPlaying(!isMusicPlaying)} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md ${isMusicPlaying ? activeTheme.accent : 'text-stone-500'}`}>
               <Music size={15} className="md:w-4 md:h-4" />
             </button>
-            <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:${activeTheme.accent} rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}>
+            
+            {/* 🚪 გამოსვლა */}
+            <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-rose-500 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}>
               <LogOut size={15} className="md:w-4 md:h-4" />
             </button>
           </div>
@@ -822,7 +979,6 @@ const handleSendInvite = (targetSocketId) => {
                                 <span className="text-xl">{p.avatar || '😎'}</span>
                                 <span className="font-bold text-[10px] md:text-xs text-stone-200"><VipName name={p.name} isVip={checkIsVip(p.vipUntil)} className={p.id === socket.id ? activeTheme.accent : 'text-stone-200'} /></span>
                               </div>
-                              {/* 🟢 HOST და READY ღილაკების ახალი დიზაინი (opacity-ის გარეშე) */}
                               <span className={`text-[8px] md:text-[10px] font-black px-3 py-1 rounded-md tracking-wider shadow-sm transition-all ${idx === 0 ? `${activeTheme.accentBg} text-stone-950` : 'bg-stone-800 border border-white/5 text-stone-400'}`}>{idx === 0 ? 'HOST' : 'READY'}</span>
                             </div>
                           ))}
