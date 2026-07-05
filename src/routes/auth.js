@@ -5,89 +5,133 @@ const User = require('../models/User');
 const ALL_DAILY_QUESTS = [
   { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 300 },
   { questId: 'win_ranked', title: 'მოიგე 2 რეიტინგული მატჩი', target: 2, xpReward: 500 },
-  { questId: 'get_10_diamond', title: 'მოიპოვე 10 აგური მატჩში', target: 1, xpReward: 400 }
+  { questId: 'get_10_diamond', title: 'მოიპოვე 10 აგური მატჩში', target: 1, xpReward: 400 },
+  { questId: 'get_2_club', title: 'მოიპოვე 2 ჯვარი მატჩში', target: 1, xpReward: 400 },
+  { questId: 'play_5_games', title: 'ითამაშე 5 მატჩი', target: 5, xpReward: 350 },
+  { questId: 'win_3_games', title: 'მოიგე 3 მატჩი', target: 3, xpReward: 600 },
+  { questId: 'sweep_table', title: 'გაასუფთავე მაგიდა (ვალეტით)', target: 1, xpReward: 300 }
 ];
 
+// 🟢 დამხმარე ფუნქცია: დიდი და პატარა ასოების იგნორირებისთვის (Case-insensitive)
+const caseInsensitive = (str) => ({ $regex: new RegExp('^' + str + '$', 'i') });
+
+// 🟢 რეგისტრაცია
 router.post('/register', async (req, res) => {
   try {
     const { username, dateOfBirth, secretWord, password } = req.body;
+    
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
-    if (!regex.test(password)) return res.status(400).json({ message: 'პაროლი არ არის საკმარისად ძლიერი!' });
+    if (!regex.test(password)) {
+      return res.status(400).json({ message: 'პაროლი არ არის საკმარისად ძლიერი!' });
+    }
 
-    const existingUser = await User.findOne({ username });
+    // ვეძებთ ზუსტად ამ სახელს (დიდი/პატარა ასოების მიუხედავად)
+    const existingUser = await User.findOne({ username: caseInsensitive(username) });
     if (existingUser) return res.status(400).json({ message: 'ეს სახელი უკვე დაკავებულია!' });
 
     const newUser = new User({ username, dateOfBirth, secretWord, password }); 
     await newUser.save();
+
     const { password: _, ...userData } = newUser._doc;
     res.status(201).json({ user: userData, message: 'წარმატებით დარეგისტრირდით!' });
-  } catch (err) { res.status(500).json({ message: 'სერვერის შეცდომა' }); }
+  } catch (err) {
+    res.status(500).json({ message: 'სერვერის შეცდომა რეგისტრაციისას' });
+  }
 });
 
+// 🟢 ავტორიზაცია
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    if (!user || user.password !== password) return res.status(400).json({ message: 'მომხმარებელი ან პაროლი არასწორია!' });
     
-    // 🟢 ბანის (დაბლოკვის) შემოწმება
+    // ვპოულობთ მოთამაშეს, მნიშვნელობა არ აქვს "Chachu" დაწერა თუ "chachu"
+    const user = await User.findOne({ username: caseInsensitive(username) });
+    
+    if (!user || user.password !== password) {
+      return res.status(400).json({ message: 'მომხმარებელი ან პაროლი არასწორია!' });
+    }
+    
     if (user.isBanned) return res.status(403).json({ message: 'თქვენი ანგარიში დაბლოკილია ადმინისტრატორის მიერ!' });
 
     const { password: _, ...userData } = user._doc;
     res.status(200).json({ user: userData, message: 'წარმატებული ავტორიზაცია!' });
-  } catch (err) { res.status(500).json({ message: 'სერვერის შეცდომა' }); }
+  } catch (err) {
+    res.status(500).json({ message: 'სერვერის შეცდომა ლოგინისას' });
+  }
 });
 
+// 🟢 მონაცემების შემოწმება პაროლის აღდგენის მე-2 ეტაპზე გადასვლამდე
 router.post('/verify-recovery', async (req, res) => {
   try {
     const { username, dateOfBirth, secretWord } = req.body;
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username: caseInsensitive(username) });
+    
     if (!user) return res.status(404).json({ message: 'მომხმარებელი ვერ მოიძებნა!' });
+    
     if (user.dateOfBirth !== dateOfBirth || user.secretWord !== secretWord) {
         return res.status(400).json({ message: 'დაბადების თარიღი ან საიდუმლო სიტყვა არასწორია!' });
     }
+    
     res.status(200).json({ message: 'მონაცემები სწორია.' });
-  } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
+  } catch (err) {
+    res.status(500).json({ message: 'სერვერის შეცდომა.' });
+  }
 });
 
+// 🟢 საბოლოო პაროლის აღდგენა
 router.post('/reset-password', async (req, res) => {
   try {
     const { username, dateOfBirth, secretWord, newPassword } = req.body;
-    const user = await User.findOne({ username });
-    if (!user || user.dateOfBirth !== dateOfBirth || user.secretWord !== secretWord) {
-        return res.status(400).json({ message: 'მონაცემები არასწორია!' });
+    const user = await User.findOne({ username: caseInsensitive(username) });
+    
+    if (!user) return res.status(404).json({ message: 'მომხმარებელი ვერ მოიძებნა!' });
+
+    if (user.dateOfBirth !== dateOfBirth || user.secretWord !== secretWord) {
+        return res.status(400).json({ message: 'მონაცემები არასწორია! აღდგენა შეუძლებელია.' });
     }
+
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
     if (!regex.test(newPassword)) return res.status(400).json({ message: 'ახალი პაროლი არ არის საკმარისად ძლიერი!' });
-    user.password = newPassword; await user.save();
-    res.status(200).json({ message: 'პაროლი შეიცვალა!' });
-  } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'პაროლი წარმატებით შეიცვალა! შეგიძლიათ შეხვიდეთ სისტემაში.' });
+  } catch (err) {
+    res.status(500).json({ message: 'სერვერის შეცდომა პაროლის აღდგენისას.' });
+  }
 });
 
+// 🟢 პაროლის შეცვლა (პროფილის პარამეტრებიდან)
 router.post('/change-password', async (req, res) => {
   try {
     const { username, currentPassword, newPassword } = req.body;
-    const user = await User.findOne({ username });
-    if (!user || user.password !== currentPassword) return res.status(400).json({ message: 'მიმდინარე პაროლი არასწორია' });
+    const user = await User.findOne({ username: caseInsensitive(username) });
+    
+    if (!user) return res.status(404).json({ message: 'მომხმარებელი ვერ მოიძებნა' });
+    if (user.password !== currentPassword) return res.status(400).json({ message: 'მიმდინარე პაროლი არასწორია' });
+
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
     if (!regex.test(newPassword)) return res.status(400).json({ message: 'ახალი პაროლი არ არის საკმარისად ძლიერი!' });
-    user.password = newPassword; await user.save();
-    res.status(200).json({ message: 'პაროლი შეიცვალა!' });
-  } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'პაროლი წარმატებით შეიცვალა!' });
+  } catch (err) { 
+    res.status(500).json({ message: 'სერვერის შეცდომა პაროლის შეცვლისას' }); 
+  }
 });
 
-// 🟢 ლიდერბორდი (შესწორებული სორტირება: ჯერ მოგება, მერე XP)
+// 🟢 ლიდერბორდი
 router.get('/leaderboard', async (req, res) => {
   try {
     const topUsers = await User.find({ isBanned: { $ne: true } })
-      // 👈 აქ შეიცვალა ლოგიკა: ჯერ gamesWon, შემდეგ xp
       .sort({ 'stats.gamesWon': -1, xp: -1 }) 
       .limit(10)
       .select('-password -secretWord -dateOfBirth');
     res.json(topUsers);
-  } catch (err) { 
-    res.status(500).json({ message: 'შეცდომა' }); 
-  }
+  } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
 });
 
 // ============================================
@@ -96,10 +140,9 @@ router.get('/leaderboard', async (req, res) => {
 router.post('/friend/request', async (req, res) => {
     try {
         const { sender, target } = req.body;
-        const targetUser = await User.findOne({ username: target });
+        const targetUser = await User.findOne({ username: caseInsensitive(target) });
         if (!targetUser) return res.status(404).json({message: 'მომხმარებელი ვერ მოიძებნა'});
         
-        // 🟢 დაცვა: თუ ძველი ექაუნთია, ვუქმნით ცარიელ მასივებს
         if (!targetUser.friendRequests) targetUser.friendRequests = [];
         if (!targetUser.friends) targetUser.friends = [];
         
@@ -119,10 +162,9 @@ router.post('/friend/request', async (req, res) => {
 router.post('/friend/accept', async (req, res) => {
     try {
         const { me, sender } = req.body;
-        const myUser = await User.findOne({ username: me });
-        const senderUser = await User.findOne({ username: sender });
+        const myUser = await User.findOne({ username: caseInsensitive(me) });
+        const senderUser = await User.findOne({ username: caseInsensitive(sender) });
         
-        // 🟢 დაცვა
         if (!myUser.friendRequests) myUser.friendRequests = [];
         if (!myUser.friends) myUser.friends = [];
         if (senderUser && !senderUser.friends) senderUser.friends = [];
@@ -144,9 +186,8 @@ router.post('/friend/accept', async (req, res) => {
 router.post('/friend/reject', async (req, res) => {
     try {
         const { me, sender } = req.body;
-        const myUser = await User.findOne({ username: me });
+        const myUser = await User.findOne({ username: caseInsensitive(me) });
         
-        // 🟢 დაცვა
         if (!myUser.friendRequests) myUser.friendRequests = [];
         
         myUser.friendRequests = myUser.friendRequests.filter(u => u !== sender);
@@ -156,16 +197,6 @@ router.post('/friend/reject', async (req, res) => {
         console.error("Friend Reject Error:", e);
         res.status(500).json({message: 'შეცდომა სერვერზე'}); 
     }
-});
-
-router.post('/friend/reject', async (req, res) => {
-    try {
-        const { me, sender } = req.body;
-        const myUser = await User.findOne({ username: me });
-        myUser.friendRequests = myUser.friendRequests.filter(u => u !== sender);
-        await myUser.save();
-        res.json({message: 'თხოვნა უარყოფილია!'});
-    } catch(e) { res.status(500).json({message: 'შეცდომა სერვერზე'}); }
 });
 
 // ============================================
@@ -186,7 +217,7 @@ router.post('/admin/update', async (req, res) => {
     const { adminPass, targetUser, action, amount } = req.body;
     if (adminPass !== ADMIN_PASS) return res.status(403).json({ message: 'არასწორი პაროლი!' });
     
-    const user = await User.findOne({ username: targetUser });
+    const user = await User.findOne({ username: caseInsensitive(targetUser) });
     if (!user) return res.status(404).json({ message: 'მოთამაშე ვერ მოიძებნა' });
 
     if (action === 'addCoins') user.coins += Number(amount);
@@ -199,10 +230,20 @@ router.post('/admin/update', async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
 });
 
+// 🟢 პროფილის ჩატვირთვა
 router.get('/profile/:username', async (req, res) => {
   try {
-    const user = await User.findOne({ username: req.params.username });
+    const user = await User.findOne({ username: caseInsensitive(req.params.username) });
     if (!user) return res.status(404).json({ message: 'მოთამაშე ვერ მოიძებნა' });
+    
+    const now = new Date();
+    if (!user.dailyQuests || user.dailyQuests.length === 0 || (user.lastQuestGeneration && (now - new Date(user.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
+        const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
+        user.dailyQuests = shuffled.slice(0, 3).map(q => ({ questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false }));
+        user.lastQuestGeneration = now;
+        await user.save(); 
+    }
+    
     const { password, ...userData } = user._doc;
     res.json(userData);
   } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
