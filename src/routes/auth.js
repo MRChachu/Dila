@@ -249,4 +249,56 @@ router.get('/profile/:username', async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
 });
 
+// ============================================
+// 🎁 ყოველდღიური შესვლის ბონუსი (Daily Reward)
+// ============================================
+router.post('/daily-reward', async (req, res) => {
+  try {
+    const { username } = req.body; 
+    const user = await User.findOne({ username: caseInsensitive(username) });
+
+    if (!user) return res.status(404).json({ message: 'მოთამაშე ვერ მოიძებნა' });
+
+    const now = new Date();
+    const todayString = now.toISOString().split('T')[0];
+    const lastRewardString = user.lastRewardDate ? user.lastRewardDate.toISOString().split('T')[0] : null;
+
+    // თუ დღეს უკვე აიღო ბონუსი
+    if (todayString === lastRewardString) {
+      return res.json({ success: false, message: 'ბონუსი დღეს უკვე აღებულია!' });
+    }
+
+    // გუშინდელი თარიღის გამოთვლა
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = yesterday.toISOString().split('T')[0];
+
+    // ვამოწმებთ, გუშინ თუ შემოვიდა
+    if (lastRewardString === yesterdayString) {
+      user.dailyStreak = (user.dailyStreak || 0) + 1; 
+    } else {
+      user.dailyStreak = 1; 
+    }
+
+    // ბონუსის გამოთვლა: 50 საბაზისო მონეტა + 10 მონეტა ყოველ სთრიქზე
+    const rewardCoins = 50 + (user.dailyStreak * 10);
+
+    // ვუნახავთ მონაცემებს
+    user.coins = (user.coins || 0) + rewardCoins;
+    user.lastRewardDate = now;
+    await user.save();
+
+    res.json({
+      success: true,
+      rewardCoins,
+      streak: user.dailyStreak,
+      totalCoins: user.coins
+    });
+
+  } catch (error) {
+    console.error("Daily Reward Error:", error);
+    res.status(500).json({ error: 'სერვერის შეცდომა' });
+  }
+});
+
 module.exports = router;

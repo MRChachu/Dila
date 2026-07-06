@@ -39,6 +39,8 @@ const userSchema = new mongoose.Schema({
   friends: [{ type: String }],
   friendRequests: [{ type: String }],
   coins: { type: Number, default: 0 },
+  dailyStreak: { type: Number, default: 0 },
+  lastRewardDate: { type: Date, default: null },
   avatar: { type: String, default: '😎' },
   unlockedAvatars: { type: [String], default: ['😎'] },
   tableTheme: { type: String, default: 'wood' },
@@ -46,6 +48,7 @@ const userSchema = new mongoose.Schema({
   cardBack: { type: String, default: 'classic' },
   unlockedCardBacks: { type: [String], default: ['classic'] },
   vipUntil: { type: Date, default: null }
+  
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
