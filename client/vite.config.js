@@ -7,8 +7,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate', 
+      injectRegister: 'auto',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
+        id: '/',
         name: 'Phurti Arena',
         short_name: 'Phurti',
         description: 'საუკეთესო ქართული ონლაინ ბანქოს თამაში',
@@ -16,6 +18,7 @@ export default defineConfig({
         background_color: '#0c0a09',
         display: 'standalone', 
         orientation: 'portrait', 
+        categories: ['games', 'card', 'entertainment'],
         icons: [
           {
             src: '/pwa-192x192.png',
@@ -32,6 +35,21 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
+          }
+        ],
+        // დროებით ლოგოს ვიყენებთ სქრინშოთებად (მერე Play Console-ში ნამდვილებს ატვირთავ)
+        screenshots: [
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            form_factor: 'wide'
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            form_factor: 'narrow'
           }
         ]
       }
