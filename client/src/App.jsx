@@ -111,6 +111,9 @@ export default function App() {
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminMessage, setAdminMessage] = useState('');
 
+  // 🟢 ყოველდღიური ბონუსის State
+  const [dailyReward, setDailyReward] = useState(null);
+
   useEffect(() => {
     roomDataRef.current = roomData;
   }, [roomData]);
@@ -137,6 +140,32 @@ export default function App() {
       if (resLead.ok) setLeaderboard(await resLead.json());
     } catch (err) {}
   };
+
+  // 🟢 ბონუსის შემოწმება სისტემაში შესვლისას
+  useEffect(() => {
+    const checkDailyReward = async () => {
+      if (!safeUsername || safeUsername === 'მოთამაშე') return;
+
+      try {
+        const response = await fetch('https://purti.onrender.com/api/auth/daily-reward', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: safeUsername })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          setDailyReward(data);
+          fetchDashboardData(safeUsername); // ბალანსი რომ ეგრევე განახლდეს ზედა პანელზე
+        }
+      } catch (err) {
+        console.error("ბონუსის შემოწმება ვერ მოხერხდა", err);
+      }
+    };
+    
+    checkDailyReward();
+  }, [safeUsername]);
 
   useEffect(() => {
     socket.on('roomUpdated', (room) => setRoomData(room));
@@ -307,7 +336,7 @@ export default function App() {
     }
   };
 
-const handleSendFriendReq = async (targetName) => {
+  const handleSendFriendReq = async (targetName) => {
     try {
       const res = await fetch('https://purti.onrender.com/api/auth/friend/request', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1152,6 +1181,39 @@ const handleSendFriendReq = async (targetName) => {
             <div className="grid grid-cols-2 gap-2 md:gap-3 pt-1">
               <button onClick={() => setIsPasswordModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">უკან</button>
               <button onClick={() => handleJoinSpecificRoom(selectedRoomIdForJoin, joinPasswordInput)} className={`py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg`}>შესვლა</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🟢 დღიური ბონუსის ანიმაციური ფანჯარა (Modal) */}
+      {dailyReward && (
+        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className={`bg-stone-900 border-2 border-yellow-500 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(234,179,8,0.2)] transform transition-all relative overflow-hidden`}>
+            
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-500/20 via-stone-900 to-stone-900 z-0"></div>
+            
+            <div className="relative z-10">
+              <div className="text-6xl md:text-7xl mb-4 animate-bounce drop-shadow-xl">🎁</div>
+              <h2 className="text-2xl md:text-3xl font-black text-yellow-400 mb-2 uppercase tracking-widest drop-shadow-md">დღიური ბონუსი!</h2>
+              
+              <p className="text-stone-300 mb-6 text-xs md:text-sm font-bold">
+                შენ ზედიზედ <span className="text-white font-black text-sm md:text-base bg-stone-800 px-2 py-0.5 rounded-md border border-white/10 mx-1">{dailyReward.streak}</span> დღეა შემოდიხარ. არ გაწყვიტო სერია და გაზარდე ჯილდო!
+              </p>
+              
+              <div className="bg-stone-950/80 rounded-2xl py-4 md:py-5 mb-6 border border-white/10 shadow-inner">
+                <div className="text-[10px] md:text-xs text-stone-500 font-black uppercase tracking-widest mb-1">შენი საჩუქარი</div>
+                <div className="text-4xl md:text-5xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.4)]">
+                  +{dailyReward.rewardCoins} <span className="text-3xl">🪙</span>
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => setDailyReward(null)}
+                className="w-full py-3 md:py-4 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-stone-950 font-black rounded-xl transition-all active:scale-95 uppercase tracking-widest shadow-lg text-xs md:text-sm"
+              >
+                ჯილდოს აღება
+              </button>
             </div>
           </div>
         </div>
