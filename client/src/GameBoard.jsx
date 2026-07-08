@@ -99,7 +99,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       if (window.innerWidth < 1024 && mobileModal !== 'chat') setUnreadChat(true);
       setTimeout(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, 100);
     };
-
+  
   // 🟢 სპეც-ეფექტები სპეციალურ სვლებზე (ვალეტი და 10 აგური)
   useEffect(() => {
     if (room?.lastAction && room.lastAction.type === 'CAPTURE') {
