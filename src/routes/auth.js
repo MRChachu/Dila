@@ -237,11 +237,28 @@ router.get('/profile/:username', async (req, res) => {
     if (!user) return res.status(404).json({ message: 'მოთამაშე ვერ მოიძებნა' });
     
     const now = new Date();
+    let needsSave = false;
+
+    // თუ მისიები არ აქვს ან 24 საათი გავიდა - ვაგენერირებთ თავიდან
     if (!user.dailyQuests || user.dailyQuests.length === 0 || (user.lastQuestGeneration && (now - new Date(user.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
         const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
         user.dailyQuests = shuffled.slice(0, 3).map(q => ({ questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false }));
         user.lastQuestGeneration = now;
-        await user.save(); 
+        needsSave = true;
+    } else {
+        // 🟢 ვაახლებთ უკვე არსებული მისიების XP-ს ახალი (შემცირებული) მნიშვნელობებით
+        user.dailyQuests.forEach(userQuest => {
+            const masterQuest = ALL_DAILY_QUESTS.find(q => q.questId === userQuest.questId);
+            if (masterQuest && userQuest.xpReward !== masterQuest.xpReward) {
+                userQuest.xpReward = masterQuest.xpReward;
+                needsSave = true; // ვიმახსოვრებთ, რომ ბაზაში რაღაც შეიცვალა
+            }
+        });
+    }
+
+    if (needsSave) {
+        user.markModified('dailyQuests'); // სავალდებულოა, რადგან array-ში object შევცვალეთ
+        await user.save();
     }
     
     const { password, ...userData } = user._doc;
