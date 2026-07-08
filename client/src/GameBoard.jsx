@@ -77,6 +77,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   }, [isMyTurn, room.turnExpiresAt]);
 
+  // ეს არის მხოლოდ საბოლოო მოგების ფეიერვერკი (თუ ამის ამოღებაც გინდა, მომწერე და ამოვიღებთ)
   useEffect(() => {
     if (room?.roundSummary?.matchWinner) {
       const isMeWinner = room.roundSummary.matchWinner === me?.name;
@@ -92,35 +93,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       }
     }
   }, [room?.roundSummary, me?.name]);
-
-  useEffect(() => {
-    if (room?.lastAction && room.lastAction.type === 'CAPTURE') {
-      const { cardFromHand, cardsFromTable } = room.lastAction;
-      
-      if (cardFromHand.rank === 'J' || cardFromHand.rank === 'j' || cardFromHand.rank === 'ვალეტი') {
-        confetti({
-          particleCount: 150,
-          spread: 100,
-          origin: { y: 0.6 },
-          colors: ['#fbbf24', '#f59e0b', '#d97706'], 
-          zIndex: 9999
-        });
-      }
-
-      const has10Diamond = cardsFromTable.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
-      if (has10Diamond || (cardFromHand.rank === '10' && (cardFromHand.suit === '♦' || cardFromHand.suit === '♦️'))) {
-         confetti({
-          particleCount: 80,
-          angle: 90,
-          spread: 80,
-          origin: { y: 0.5 },
-          colors: ['#ef4444', '#dc2626', '#ffffff'], 
-          shapes: ['square'],
-          zIndex: 9999
-        });
-      }
-    }
-  }, [room?.lastAction]);
 
   useEffect(() => {
     const handleReceiveMessage = (msg) => {
@@ -415,7 +387,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
           <div className="flex-1 flex flex-col items-center justify-center relative mt-2 w-full z-10 min-h-0">
             
-            {/* 🟢 აქ არის ჩასმული წაყვანის ისტორიის ახალი, გაფერადებული ლოგიკა */}
             <div className="h-10 md:h-14 mb-2 flex items-center justify-center w-full z-20 shrink-0">
               {room.lastAction && (() => {
                 const isCapture = room.lastAction.type === 'CAPTURE';
