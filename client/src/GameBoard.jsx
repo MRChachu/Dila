@@ -93,12 +93,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   }, [room?.roundSummary, me?.name]);
 
-  // 🟢 ახალი სპეც-ეფექტები სპეციალურ სვლებზე (ვალეტი და 10 აგური)
   useEffect(() => {
     if (room?.lastAction && room.lastAction.type === 'CAPTURE') {
       const { cardFromHand, cardsFromTable } = room.lastAction;
       
-      // ვალეტით (J) მაგიდის გასუფთავება
       if (cardFromHand.rank === 'J' || cardFromHand.rank === 'j' || cardFromHand.rank === 'ვალეტი') {
         confetti({
           particleCount: 150,
@@ -109,7 +107,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
         });
       }
 
-      // 10 აგურის მოჭრა
       const has10Diamond = cardsFromTable.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
       if (has10Diamond || (cardFromHand.rank === '10' && (cardFromHand.suit === '♦' || cardFromHand.suit === '♦️'))) {
          confetti({
@@ -392,7 +389,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
         <div className="flex-1 flex flex-col justify-between p-3 md:p-6 relative min-h-0">
           
-          {/* 🟢 ბანქოს დასტა გადმოვიდა აქ — სრულიად უსაფრთხო და კარგად ხილვად ადგილას! */}
           {room.deck?.length > 0 && (
             <div className="absolute top-2 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title="დარჩენილი ბანქო">
               <div className={`relative w-10 h-14 md:w-14 md:h-20 rounded-md md:rounded-lg border shadow-lg flex items-center justify-center ${activeCardBack}`}>
@@ -419,33 +415,78 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
           <div className="flex-1 flex flex-col items-center justify-center relative mt-2 w-full z-10 min-h-0">
             
+            {/* 🟢 აქ არის ჩასმული წაყვანის ისტორიის ახალი, გაფერადებული ლოგიკა */}
             <div className="h-10 md:h-14 mb-2 flex items-center justify-center w-full z-20 shrink-0">
-              {room.lastAction && (
-                <div className="bg-stone-900/90 border border-white/10 px-3 md:px-5 py-1.5 md:py-2 rounded-xl md:rounded-2xl shadow-xl flex items-center gap-1.5 md:gap-2 animate-in slide-in-from-bottom-2 duration-300">
-                  <span className="text-[8px] md:text-[10px] font-black text-stone-400 uppercase tracking-widest whitespace-nowrap">
-                    <VipName name={room.lastAction.playerName} isVip={checkIsVip(room.lastAction.isVip)} className={activeTheme.accent} />-მ {room.lastAction.type === 'CAPTURE' ? 'მოჭრა' : 'დააგდო'}
-                  </span>
-                  <div className="flex items-center gap-1 md:gap-1.5 ml-1">
-                    <div className="flex items-center gap-0.5 px-1.5 md:px-2 py-0.5 md:py-1 bg-stone-950 rounded-md md:rounded-lg border border-white/5">
-                      <span className={`text-[10px] md:text-xs font-black ${getSuitColor(room.lastAction.cardFromHand.suit)}`}>{room.lastAction.cardFromHand.rank}</span>
-                      <span className={`text-xs md:text-sm ${getSuitColor(room.lastAction.cardFromHand.suit)}`}>{room.lastAction.cardFromHand.suit}</span>
+              {room.lastAction && (() => {
+                const isCapture = room.lastAction.type === 'CAPTURE';
+                const isSweep = isCapture && ['J', 'j', 'ვალეტი'].includes(room.lastAction.cardFromHand.rank);
+                
+                const has10Diamond = isCapture && (
+                  (room.lastAction.cardFromHand.rank === '10' && ['♦', '♦️'].includes(room.lastAction.cardFromHand.suit)) ||
+                  room.lastAction.cardsFromTable?.some(c => c.rank === '10' && ['♦', '♦️'].includes(c.suit))
+                );
+                
+                const has2Club = isCapture && (
+                  (room.lastAction.cardFromHand.rank === '2' && ['♣', '♣️'].includes(room.lastAction.cardFromHand.suit)) ||
+                  room.lastAction.cardsFromTable?.some(c => c.rank === '2' && ['♣', '♣️'].includes(c.suit))
+                );
+
+                const renderCardInLog = (c, isHandCard = false) => {
+                  const is10D = c.rank === '10' && ['♦', '♦️'].includes(c.suit);
+                  const is2C = c.rank === '2' && ['♣', '♣️'].includes(c.suit);
+                  
+                  let extraClasses = "bg-stone-950 border-white/5";
+                  if (is10D) {
+                    extraClasses = "bg-rose-500/20 border-rose-500 shadow-[0_0_10px_rgba(225,29,72,0.8)] animate-pulse";
+                  } else if (is2C) {
+                    extraClasses = "bg-sky-500/20 border-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.8)] animate-pulse";
+                  } else if (isSweep && isHandCard) {
+                    extraClasses = "bg-yellow-500/20 border-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.8)] animate-pulse";
+                  }
+
+                  return (
+                    <div key={`${c.rank}-${c.suit}-${isHandCard ? 'hand' : 'table'}`} className={`flex items-center gap-0.5 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md md:rounded-lg border ${extraClasses}`}>
+                      <span className={`text-[10px] md:text-xs font-black ${getSuitColor(c.suit)}`}>{c.rank}</span>
+                      <span className={`text-xs md:text-sm ${getSuitColor(c.suit)}`}>{c.suit}</span>
                     </div>
-                    {room.lastAction.type === 'CAPTURE' && room.lastAction.cardsFromTable?.length > 0 && (
-                      <>
-                        <span className="text-stone-600 text-[10px] md:text-xs font-black">+</span>
-                        <div className="flex items-center gap-0.5 md:gap-1">
-                          {room.lastAction.cardsFromTable.map((c, idx) => (
-                            <div key={idx} className="flex items-center gap-0.5 px-1.5 md:px-2 py-0.5 md:py-1 bg-stone-950 rounded-md md:rounded-lg border border-white/5">
-                              <span className={`text-[10px] md:text-xs font-black ${getSuitColor(c.suit)}`}>{c.rank}</span>
-                              <span className={`text-xs md:text-sm ${getSuitColor(c.suit)}`}>{c.suit}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
+                  );
+                };
+
+                let containerBorder = "border-white/10";
+                let actionText = isCapture ? 'მოჭრა' : 'დააგდო';
+                let actionColor = "text-stone-400";
+                
+                if (isSweep) {
+                  containerBorder = "border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]";
+                  actionText = "გაასუფთავა 🧹";
+                  actionColor = "text-yellow-400 drop-shadow-md";
+                } else if (has10Diamond) {
+                  containerBorder = "border-rose-500/50 shadow-[0_0_15px_rgba(225,29,72,0.2)]";
+                } else if (has2Club) {
+                  containerBorder = "border-sky-400/50 shadow-[0_0_15px_rgba(56,189,248,0.2)]";
+                }
+
+                return (
+                  <div className={`bg-stone-900/95 border px-3 md:px-5 py-1.5 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-1.5 md:gap-2 animate-in slide-in-from-bottom-2 duration-300 ${containerBorder}`}>
+                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest whitespace-nowrap flex items-center gap-1 text-stone-400">
+                      <VipName name={room.lastAction.playerName} isVip={checkIsVip(room.lastAction.isVip)} className={activeTheme.accent} />-მ 
+                      <span className={actionColor}>{actionText}</span>
+                    </span>
+                    <div className="flex items-center gap-1 md:gap-1.5 ml-1">
+                      {renderCardInLog(room.lastAction.cardFromHand, true)}
+                      
+                      {isCapture && room.lastAction.cardsFromTable?.length > 0 && (
+                        <>
+                          <span className="text-stone-600 text-[10px] md:text-xs font-black">+</span>
+                          <div className="flex items-center gap-0.5 md:gap-1">
+                            {room.lastAction.cardsFromTable.map(c => renderCardInLog(c))}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             <div className="w-full md:w-[85%] max-w-2xl min-h-[11rem] md:min-h-[14rem] py-6 md:py-8 bg-stone-950/30 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 shadow-inner flex items-center justify-center px-2 md:px-4 z-10 relative">
