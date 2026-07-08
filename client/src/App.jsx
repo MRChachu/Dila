@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock } from 'lucide-react'; // 🟢 Clock დაემატა
 
 const socket = io('https://purti.onrender.com');
 
@@ -89,6 +89,9 @@ export default function App() {
   const [inspectProfile, setInspectProfile] = useState(null); 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
+  // 🟢 ისტორიის მოდალის State
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem('phurti_music') === 'true');
   const audioRef = useRef(typeof Audio !== 'undefined' ? new Audio('/bg-music.mp3') : null);
 
@@ -111,7 +114,6 @@ export default function App() {
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminMessage, setAdminMessage] = useState('');
 
-  // 🟢 ყოველდღიური ბონუსის State
   const [dailyReward, setDailyReward] = useState(null);
 
   useEffect(() => {
@@ -141,29 +143,22 @@ export default function App() {
     } catch (err) {}
   };
 
-  // 🟢 ბონუსის შემოწმება სისტემაში შესვლისას
   useEffect(() => {
     const checkDailyReward = async () => {
       if (!safeUsername || safeUsername === 'მოთამაშე') return;
-
       try {
         const response = await fetch('https://purti.onrender.com/api/auth/daily-reward', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: safeUsername })
         });
-        
         const data = await response.json();
-        
         if (data.success) {
           setDailyReward(data);
-          fetchDashboardData(safeUsername); // ბალანსი რომ ეგრევე განახლდეს ზედა პანელზე
+          fetchDashboardData(safeUsername); 
         }
-      } catch (err) {
-        console.error("ბონუსის შემოწმება ვერ მოხერხდა", err);
-      }
+      } catch (err) {}
     };
-    
     checkDailyReward();
   }, [safeUsername]);
 
@@ -749,6 +744,50 @@ export default function App() {
         </div>
       )}
 
+      {/* 🟢 ისტორიის მოდალი */}
+      {isHistoryOpen && (
+        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-stone-900 border border-white/10 rounded-[2rem] p-5 md:p-6 max-w-lg w-full shadow-2xl relative max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
+            <h2 className={`text-lg md:text-xl font-black text-stone-100 uppercase mb-4 flex items-center gap-3 justify-center border-b border-white/5 pb-4`}>
+              <Clock className={activeTheme.accent}/> მატჩების ისტორია
+            </h2>
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 min-h-[250px]">
+              {profileData?.gameHistory?.length > 0 ? (
+                profileData.gameHistory.map((game, i) => {
+                   const isWin = game.isWinner;
+                   return (
+                     <div key={i} className={`p-3 md:p-4 rounded-2xl border flex flex-col gap-2 transition-all hover:scale-[1.01] ${isWin ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
+                        <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                          <span className={`font-black text-xs md:text-sm uppercase tracking-wider flex items-center gap-1.5 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
+                             {isWin ? '🏆 მოგება' : '💔 წაგება'}
+                          </span>
+                          <span className="text-[9px] md:text-[10px] text-stone-400 font-bold bg-stone-950/50 px-2 py-1 rounded-lg">
+                            {new Date(game.playedAt).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px] md:text-xs pt-1">
+                          <span className="text-stone-400 font-medium truncate max-w-[50%]">
+                            წინააღმდეგ: <span className="font-bold text-stone-200 truncate">{game.opponents?.length ? game.opponents.join(', ') : 'რობოტი'}</span>
+                          </span>
+                          <span className="font-mono font-black text-stone-400 bg-stone-950/40 px-2 py-1 rounded-md border border-white/5 shrink-0">
+                            ქულა: <span className={isWin ? 'text-emerald-400' : 'text-rose-400'}>{game.myFinalScore}</span> / {game.targetScore}
+                          </span>
+                        </div>
+                     </div>
+                   )
+                })
+              ) : (
+                 <div className="flex flex-col items-center justify-center py-12 text-stone-500 opacity-50">
+                    <Clock size={40} className="mb-3"/>
+                    <p className="text-xs font-bold uppercase tracking-widest">ისტორია ცარიელია</p>
+                 </div>
+              )}
+            </div>
+            <button onClick={() => setIsHistoryOpen(false)} className="w-full mt-5 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all active:scale-95 shadow-inner">დახურვა</button>
+          </div>
+        </div>
+      )}
+
       <div className="relative z-10 flex flex-col flex-1 w-full h-full text-stone-100">
         <header className={`${activeTheme.card} flex items-center justify-between border-b border-white/5 backdrop-blur-xl px-4 md:px-8 py-3 md:py-4 sticky top-0 z-40 shadow-lg transition-colors duration-700`}>
           <div className="flex items-center gap-2.5 md:gap-3">
@@ -794,8 +833,8 @@ export default function App() {
               
               <div className="space-y-4 md:space-y-5">
                 
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
-                  <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4">
+                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700`}>
+                  <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4 mb-4 md:mb-5">
                     <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all" onClick={() => handleInspectPlayer(safeUsername)}>
                       <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-3xl md:text-4xl border border-white/10 shadow-xl relative`}>
                         {myAvatar}
@@ -822,7 +861,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 md:space-y-2">
+                  <div className="space-y-1.5 md:space-y-2 mb-4">
                     <div className="flex justify-between text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest">
                       <span>XP პროგრესი</span>
                       <span>{currentXp} / {targetXp}</span>
@@ -832,7 +871,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 pt-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner">
                       <p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">მატჩი</p>
                       <p className="text-sm md:text-base font-mono font-black text-stone-200 mt-0.5 md:mt-1">{profileData?.stats?.gamesPlayed || 0}</p>
@@ -846,6 +885,12 @@ export default function App() {
                       <p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1`}>{winRate}%</p>
                     </div>
                   </div>
+                  
+                  {/* 🟢 აქ დაემატა "მატჩების ისტორიის" ღილაკი */}
+                  <button onClick={() => setIsHistoryOpen(true)} className={`mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-950/60 border border-white/5 hover:bg-stone-900 transition-all text-stone-300 shadow-inner flex items-center justify-center gap-2 active:scale-95`}>
+                    <Clock size={16} className={activeTheme.accent} /> 📜 ჩემი ისტორია
+                  </button>
+
                 </div>
 
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
@@ -1186,7 +1231,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 დღიური ბონუსის ანიმაციური ფანჯარა (Modal) */}
+      {/* 🟢 ყოველდღიური ბონუსის მოდალი */}
       {dailyReward && (
         <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className={`bg-stone-900 border-2 border-yellow-500 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(234,179,8,0.2)] transform transition-all relative overflow-hidden`}>
