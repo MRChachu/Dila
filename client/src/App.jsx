@@ -546,24 +546,42 @@ export default function App() {
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[300px]">
               
               {shopTab === 'vip' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                  {[
-                    { days: 3, price: 1500, title: '3 დღე' },
-                    { days: 7, price: 3000, title: '7 დღე', best: true },
-                    { days: 30, price: 10000, title: '30 დღე' }
-                  ].map(pkg => (
-                    <div key={pkg.days} className={`p-4 md:p-5 rounded-2xl flex flex-col items-center justify-between gap-4 border transition-all bg-gradient-to-br ${pkg.best ? 'from-yellow-900/60 to-stone-950 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'from-yellow-900/20 to-stone-950 border-yellow-500/30'}`}>
-                      {pkg.best && <span className="absolute -top-3 bg-yellow-500 text-stone-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">საუკეთესო ფასი</span>}
-                      <span className="text-4xl md:text-5xl drop-shadow-lg">👑</span>
-                      <div className="text-center">
-                        <p className="text-sm md:text-base font-black text-yellow-500 tracking-wide">{pkg.title}</p>
-                        <p className="text-[9px] md:text-[10px] font-bold text-stone-400 mt-1">მანათობელი სახელი და ექსკლუზიური ემოჯები</p>
-                      </div>
-                      <button onClick={() => handleBuyVip(pkg.days, pkg.price)} className="w-full py-2.5 rounded-xl text-[10px] md:text-xs font-black bg-stone-900 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-stone-950 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md">
-                        <Coins size={12} /> {pkg.price}
-                      </button>
+                <div className="flex flex-col gap-4">
+                  
+                  {/* 🟢 ბანერი, რომელიც აჩვენებს როდემდეა VIP აქტიური */}
+                  {amIVip && profileData?.vipUntil && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-center animate-pulse shadow-inner">
+                      <p className="text-yellow-500 font-black text-[10px] md:text-xs tracking-wider uppercase">
+                        👑 VIP აქტიურია {new Date(profileData.vipUntil).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}-მდე
+                      </p>
                     </div>
-                  ))}
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                    {[
+                      { days: 3, price: 1500, title: '3 დღე' },
+                      { days: 7, price: 3000, title: '7 დღე', best: true },
+                      { days: 30, price: 10000, title: '30 დღე' }
+                    ].map(pkg => (
+                      <div key={pkg.days} className={`p-4 md:p-5 rounded-2xl flex flex-col items-center justify-between gap-4 border transition-all bg-gradient-to-br ${pkg.best ? 'from-yellow-900/60 to-stone-950 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'from-yellow-900/20 to-stone-950 border-yellow-500/30'}`}>
+                        {pkg.best && <span className="absolute -top-3 bg-yellow-500 text-stone-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">საუკეთესო ფასი</span>}
+                        <span className="text-4xl md:text-5xl drop-shadow-lg">👑</span>
+                        <div className="text-center">
+                          <p className="text-sm md:text-base font-black text-yellow-500 tracking-wide">{pkg.title}</p>
+                          <p className="text-[9px] md:text-[10px] font-bold text-stone-400 mt-1">მანათობელი სახელი და ექსკლუზიური ემოჯები</p>
+                        </div>
+                        
+                        {/* 🟢 ღილაკი იბლოკება, თუ VIP უკვე აქტიურია */}
+                        <button 
+                          onClick={() => handleBuyVip(pkg.days, pkg.price)} 
+                          disabled={amIVip}
+                          className={`w-full py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-md ${amIVip ? 'bg-stone-800 text-stone-500 border border-white/5 cursor-not-allowed uppercase' : 'bg-stone-900 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-stone-950 active:scale-95'}`}
+                        >
+                          {amIVip ? 'აქტიურია' : <><Coins size={12} /> {pkg.price}</>}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
