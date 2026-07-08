@@ -99,38 +99,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       if (window.innerWidth < 1024 && mobileModal !== 'chat') setUnreadChat(true);
       setTimeout(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, 100);
     };
-  
-  // 🟢 სპეც-ეფექტები სპეციალურ სვლებზე (ვალეტი და 10 აგური)
-  useEffect(() => {
-    if (room?.lastAction && room.lastAction.type === 'CAPTURE') {
-      const { cardFromHand, cardsFromTable } = room.lastAction;
-      
-      // 1. თუ მოჭრა ვალეტით (J) - ფეიერვერკი მაგიდის გასუფთავებაზე
-      if (cardFromHand.rank === 'J' || cardFromHand.rank === 'j' || cardFromHand.rank === 'ვალეტი') {
-        confetti({
-          particleCount: 150,
-          spread: 100,
-          origin: { y: 0.6 },
-          colors: ['#fbbf24', '#f59e0b', '#d97706'], // ოქროსფერი
-          zIndex: 9999
-        });
-      }
-
-      // 2. თუ მოჭრა 10 აგური - წითელი ალმასის ეფექტი
-      const has10Diamond = cardsFromTable.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
-      if (has10Diamond || (cardFromHand.rank === '10' && (cardFromHand.suit === '♦' || cardFromHand.suit === '♦️'))) {
-         confetti({
-          particleCount: 80,
-          angle: 90,
-          spread: 80,
-          origin: { y: 0.5 },
-          colors: ['#ef4444', '#dc2626', '#ffffff'], // წითელი და თეთრი
-          shapes: ['square'],
-          zIndex: 9999
-        });
-      }
-    }
-  }, [room?.lastAction]);
     
     const handleReceiveEmote = ({ playerId, emote }) => {
       const id = Date.now() + Math.random();
