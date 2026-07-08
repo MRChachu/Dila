@@ -16,19 +16,118 @@ const AVAILABLE_BADGES = [
   { id: 'legionnaire', icon: '🔥', name: 'ლეგიონერი (10 Win Streak)' }
 ];
 
-// 🟢 მაღაზიის ახალი, პრემიუმ ნივთები
+// 🟢 მაღაზიის ახალი, უზარმაზარი კოლექცია
 const SHOP_ITEMS = {
   avatars: [
+    // უფასო და იაფიანი (0 - 400 🪙)
     { id: '😎', price: 0, name: 'სტანდარტული' },
+    { id: '😉', price: 50, name: 'თვალი' },
+    { id: '🤪', price: 100, name: 'გიჟი' },
     { id: '🥷', price: 100, name: 'ნინძა' },
+    { id: '🤓', price: 150, name: 'ჭკვიანი' },
+    { id: '🧐', price: 150, name: 'მონოკლი' },
+    { id: '🤠', price: 200, name: 'კოვბოი' },
+    { id: '🥳', price: 200, name: 'წვეულება' },
     { id: '🧙‍♂️', price: 250, name: 'ჯადოქარი' },
+    { id: '👽', price: 250, name: 'უცხოპლანეტელი' },
+    { id: '👻', price: 300, name: 'მოჩვენება' },
+    { id: '🤖', price: 300, name: 'რობოტი' },
+    { id: '🤡', price: 350, name: 'ჯამბაზი' },
+    { id: '💩', price: 350, name: 'პუპ' },
+    { id: '💀', price: 400, name: 'თავის ქალა' },
     { id: '🧛', price: 400, name: 'ვამპირი' },
+    // საშუალო ფასიანი ცხოველები და არსებები (450 - 1500 🪙)
+    { id: '🎃', price: 450, name: 'გოგრა' },
+    { id: '😺', price: 500, name: 'კატა' },
+    { id: '🐶', price: 500, name: 'ძაღლი' },
+    { id: '🐭', price: 500, name: 'თაგვი' },
+    { id: '🦊', price: 600, name: 'მელია' },
+    { id: '🐻', price: 600, name: 'დათვი' },
+    { id: '🐼', price: 650, name: 'პანდა' },
+    { id: '🐨', price: 700, name: 'კოალა' },
+    { id: '🐯', price: 700, name: 'ვეფხვი' },
+    { id: '🐮', price: 750, name: 'ძროხა' },
+    { id: '🐷', price: 750, name: 'ღორი' },
     { id: '👑', price: 800, name: 'მეფე' },
+    { id: '🐸', price: 800, name: 'ბაყაყი' },
+    { id: '🐵', price: 850, name: 'მაიმუნი' },
+    { id: '🐔', price: 850, name: 'ქათამი' },
+    { id: '🐧', price: 900, name: 'პინგვინი' },
+    { id: '🐦', price: 900, name: 'ჩიტი' },
+    { id: '🦆', price: 950, name: 'იხვი' },
+    { id: '🦉', price: 1000, name: 'ბუ' },
+    { id: '🦇', price: 1000, name: 'ღამურა' },
+    { id: '🐺', price: 1100, name: 'მგელი' },
+    { id: '🐗', price: 1100, name: 'ტახი' },
+    { id: '🐴', price: 1200, name: 'ცხენი' },
     { id: '🦁', price: 1200, name: 'ლომი' },
+    { id: '🐝', price: 1300, name: 'ფუტკარი' },
+    { id: '🐛', price: 1300, name: 'მუხლუხო' },
+    { id: '🦋', price: 1400, name: 'პეპელა' },
+    { id: '🐌', price: 1400, name: 'ლოკოკინა' },
+    { id: '🐞', price: 1500, name: 'ჭიამაია' },
     { id: '🦅', price: 1500, name: 'არწივი' },
     { id: '🎱', price: 1500, name: 'რვიანი' },
     { id: '🇬🇪', price: 1500, name: 'საქართველო' },
-    { id: '🐉', price: 2500, name: 'დრაკონი' }
+    // ძვირიანი არსებები და ნივთები (1600 - 4500 🪙)
+    { id: '🐜', price: 1600, name: 'ჭიანჭველა' },
+    { id: '🐢', price: 1600, name: 'კუ' },
+    { id: '🐍', price: 1700, name: 'გველი' },
+    { id: '🐙', price: 1700, name: 'რვაფეხა' },
+    { id: '🦑', price: 1800, name: 'კალმარი' },
+    { id: '🦀', price: 1800, name: 'კიბორჩხალა' },
+    { id: '🐡', price: 1900, name: 'ფუგუ' },
+    { id: '🐠', price: 1900, name: 'თევზი' },
+    { id: '🐬', price: 2000, name: 'დელფინი' },
+    { id: '🦄', price: 2000, name: 'მარტორქა' },
+    { id: '🐳', price: 2100, name: 'ვეშაპი' },
+    { id: '🦈', price: 2200, name: 'ზვიგენი' },
+    { id: '🐊', price: 2300, name: 'ნიანგი' },
+    { id: '🐅', price: 2400, name: 'ვეფხვი 2' },
+    { id: '🐆', price: 2400, name: 'ლეოპარდი' },
+    { id: '🐉', price: 2500, name: 'დრაკონი' },
+    { id: '🦍', price: 2600, name: 'გორილა' },
+    { id: '🐘', price: 2700, name: 'სპილო' },
+    { id: '🦏', price: 2800, name: 'მარტორქა 2' },
+    { id: '🐪', price: 2900, name: 'აქლემი' },
+    { id: '🦒', price: 3000, name: 'ჟირაფი' },
+    { id: '🦘', price: 3200, name: 'კენგურუ' },
+    { id: '🦚', price: 3500, name: 'ფარშევანგი' },
+    { id: '🦢', price: 3800, name: 'გედი' },
+    { id: '🦩', price: 4000, name: 'ფლამინგო' },
+    { id: '🐲', price: 4500, name: 'დრაკონის თავი' },
+    // საჭმელი და ნივთები (500 - 8000 🪙)
+    { id: '🍎', price: 500, name: 'ვაშლი' },
+    { id: '🍓', price: 600, name: 'მარწყვი' },
+    { id: '🍉', price: 700, name: 'საზამთრო' },
+    { id: '🍌', price: 800, name: 'ბანანი' },
+    { id: '🍍', price: 900, name: 'ანანასი' },
+    { id: '🥝', price: 1000, name: 'კივი' },
+    { id: '🍔', price: 1200, name: 'ბურგერი' },
+    { id: '🍕', price: 1500, name: 'პიცა' },
+    { id: '🌮', price: 1800, name: 'ტაკო' },
+    { id: '🍣', price: 2000, name: 'სუში' },
+    { id: '🍩', price: 2200, name: 'დონატი' },
+    { id: '☕', price: 2500, name: 'ყავა' },
+    { id: '🍹', price: 2800, name: 'კოქტეილი' },
+    { id: '🍺', price: 3000, name: 'ლუდი' },
+    { id: '🍷', price: 3500, name: 'ღვინო' },
+    { id: '⚽', price: 1000, name: 'ფეხბურთი' },
+    { id: '🏀', price: 1200, name: 'კალათბურთი' },
+    { id: '🏈', price: 1500, name: 'რაგბი' },
+    { id: '🎾', price: 1800, name: 'ჩოგბურთი' },
+    { id: '🎸', price: 2500, name: 'გიტარა' },
+    { id: '🎷', price: 3000, name: 'საქსოფონი' },
+    { id: '🚀', price: 4000, name: 'რაკეტა' },
+    { id: '🛸', price: 5000, name: 'მფრინავი თეფში' },
+    { id: '🚁', price: 6000, name: 'ვერტმფრენი' },
+    { id: '⛵', price: 7000, name: 'იალქნიანი' },
+    { id: '⚓', price: 8000, name: 'ღუზა' },
+    // 💎 ყველაზე ელიტური, პრემიუმ კარტის ნიშნები (25,000 🪙)
+    { id: '❤️', price: 25000, name: 'გული' },
+    { id: '♦️', price: 25000, name: 'აგური' },
+    { id: '♠️', price: 25000, name: 'ყვავი' },
+    { id: '♣️', price: 25000, name: 'ჯვარი' },
   ],
   tables: [
     { id: 'wood', price: 0, name: 'Classic Wood' },
@@ -410,7 +509,6 @@ export default function App() {
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
   const myAchievements = profileData?.achievements || [];
 
-  // 🟢 დამატებულია ახალი პრემიუმ თემები!
   const themeStyles = {
     wood: { bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", overlay: "bg-black/10", accent: "text-amber-500", accentBg: "bg-amber-500", card: "bg-stone-900/80" },
     lavender: { bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)", overlay: "bg-black/10", accent: "text-violet-400", accentBg: "bg-violet-500", card: "bg-indigo-950/70" },
@@ -547,8 +645,6 @@ export default function App() {
               
               {shopTab === 'vip' && (
                 <div className="flex flex-col gap-4">
-                  
-                  {/* 🟢 ბანერი, რომელიც აჩვენებს როდემდეა VIP აქტიური */}
                   {amIVip && profileData?.vipUntil && (
                     <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-center animate-pulse shadow-inner">
                       <p className="text-yellow-500 font-black text-[10px] md:text-xs tracking-wider uppercase">
@@ -570,8 +666,6 @@ export default function App() {
                           <p className="text-sm md:text-base font-black text-yellow-500 tracking-wide">{pkg.title}</p>
                           <p className="text-[9px] md:text-[10px] font-bold text-stone-400 mt-1">მანათობელი სახელი და ექსკლუზიური ემოჯები</p>
                         </div>
-                        
-                        {/* 🟢 ღილაკი იბლოკება, თუ VIP უკვე აქტიურია */}
                         <button 
                           onClick={() => handleBuyVip(pkg.days, pkg.price)} 
                           disabled={amIVip}
@@ -586,17 +680,19 @@ export default function App() {
               )}
 
               {shopTab === 'avatars' && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 pb-6">
                   {SHOP_ITEMS.avatars.map(item => {
                     const isUnlocked = unlockedAvatars.includes(item.id);
                     const isEquipped = profileData?.avatar === item.id;
+                    const isCardSuit = ['❤️', '♦️', '♠️', '♣️'].includes(item.id);
+
                     return (
-                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col items-center justify-between gap-2 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
-                        <span className="text-3xl md:text-4xl drop-shadow-lg">{item.id}</span>
-                        <span className="text-[9px] font-bold text-stone-400 text-center leading-tight">{item.name}</span>
+                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col items-center justify-between gap-2 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : isCardSuit ? 'bg-gradient-to-br from-yellow-900/20 to-stone-950 border-yellow-500/30 hover:border-yellow-500/60' : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
+                        <span className={`text-3xl md:text-4xl drop-shadow-lg ${isCardSuit ? 'animate-pulse' : ''}`}>{item.id}</span>
+                        <span className={`text-[9px] font-bold text-center leading-tight ${isCardSuit ? 'text-yellow-500' : 'text-stone-400'}`}>{item.name}</span>
                         {isEquipped ? <button disabled className="w-full py-1.5 rounded-lg text-[8px] font-black bg-stone-800 text-stone-500 uppercase mt-1">დაყენებულია</button> 
                         : isUnlocked ? <button onClick={() => handleEquipItem('avatar', item.id)} className={`w-full py-1.5 rounded-lg text-[8px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase mt-1`}>დაყენება</button>
-                        : <button onClick={() => handleBuyItem('avatar', item.id, item.price)} className="w-full py-1.5 rounded-lg text-[9px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1 mt-1"><Coins size={10} /> {item.price}</button>}
+                        : <button onClick={() => handleBuyItem('avatar', item.id, item.price)} className={`w-full py-1.5 rounded-lg text-[9px] font-black transition-all flex items-center justify-center gap-1 mt-1 active:scale-95 ${isCardSuit ? 'bg-yellow-500 text-stone-950 shadow-lg' : 'bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10'}`}><Coins size={10} /> {item.price}</button>}
                       </div>
                     )
                   })}
@@ -621,7 +717,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* 🟢 მაღაზიაში კარტის ზურგების დიზაინები განახლდა */}
               {shopTab === 'cards' && (
                 <div className="grid grid-cols-2 gap-3 md:gap-4">
                   {SHOP_ITEMS.cards.map(item => {
@@ -1257,6 +1352,39 @@ export default function App() {
             <div className="grid grid-cols-2 gap-2 md:gap-3 pt-1">
               <button onClick={() => setIsPasswordModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">უკან</button>
               <button onClick={() => handleJoinSpecificRoom(selectedRoomIdForJoin, joinPasswordInput)} className={`py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg`}>შესვლა</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🟢 ყოველდღიური ბონუსის მოდალი */}
+      {dailyReward && (
+        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className={`bg-stone-900 border-2 border-yellow-500 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(234,179,8,0.2)] transform transition-all relative overflow-hidden`}>
+            
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-500/20 via-stone-900 to-stone-900 z-0"></div>
+            
+            <div className="relative z-10">
+              <div className="text-6xl md:text-7xl mb-4 animate-bounce drop-shadow-xl">🎁</div>
+              <h2 className="text-2xl md:text-3xl font-black text-yellow-400 mb-2 uppercase tracking-widest drop-shadow-md">დღიური ბონუსი!</h2>
+              
+              <p className="text-stone-300 mb-6 text-xs md:text-sm font-bold">
+                შენ ზედიზედ <span className="text-white font-black text-sm md:text-base bg-stone-800 px-2 py-0.5 rounded-md border border-white/10 mx-1">{dailyReward.streak}</span> დღეა შემოდიხარ. არ გაწყვიტო სერია და გაზარდე ჯილდო!
+              </p>
+              
+              <div className="bg-stone-950/80 rounded-2xl py-4 md:py-5 mb-6 border border-white/10 shadow-inner">
+                <div className="text-[10px] md:text-xs text-stone-500 font-black uppercase tracking-widest mb-1">შენი საჩუქარი</div>
+                <div className="text-4xl md:text-5xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.4)]">
+                  +{dailyReward.rewardCoins} <span className="text-3xl">🪙</span>
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => setDailyReward(null)}
+                className="w-full py-3 md:py-4 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-stone-950 font-black rounded-xl transition-all active:scale-95 uppercase tracking-widest shadow-lg text-xs md:text-sm"
+              >
+                ჯილდოს აღება
+              </button>
             </div>
           </div>
         </div>
