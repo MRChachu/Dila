@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock } from 'lucide-react'; // 🟢 Clock დაემატა
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
-// 🟢 აქ დაემატა 2 ახალი მიღწევა
 const AVAILABLE_BADGES = [
   { id: 'first_win', icon: '🥇', name: 'პირველი მოგება' },
   { id: 'diamond_10', icon: '💎', name: '10 აგური' },
@@ -17,6 +16,7 @@ const AVAILABLE_BADGES = [
   { id: 'legionnaire', icon: '🔥', name: 'ლეგიონერი (10 Win Streak)' }
 ];
 
+// 🟢 მაღაზიის ახალი, პრემიუმ ნივთები
 const SHOP_ITEMS = {
   avatars: [
     { id: '😎', price: 0, name: 'სტანდარტული' },
@@ -34,13 +34,18 @@ const SHOP_ITEMS = {
     { id: 'wood', price: 0, name: 'Classic Wood' },
     { id: 'lavender', price: 0, name: 'Soft Lavender' },
     { id: 'casino', price: 1500, name: 'Dark Casino' },
-    { id: 'midnight', price: 2500, name: 'Midnight Gold' }
+    { id: 'midnight', price: 2500, name: 'Midnight Gold' },
+    { id: 'neon', price: 4000, name: 'Cyberpunk Neon' },
+    { id: 'dark_club', price: 5000, name: 'VIP Dark Club' }
   ],
   cards: [
     { id: 'classic', price: 0, name: 'Classic Blue' },
     { id: 'crimson', price: 500, name: 'Deep Crimson' },
     { id: 'gold', price: 1000, name: 'Solid Gold' },
-    { id: 'obsidian', price: 2000, name: 'Obsidian Black' }
+    { id: 'obsidian', price: 2000, name: 'Obsidian Black' },
+    { id: 'cyber', price: 3000, name: 'Neon Cyber' },
+    { id: 'royal', price: 4000, name: 'Royal Purple' },
+    { id: 'hacker', price: 5000, name: 'Matrix Hacker' }
   ]
 };
 
@@ -88,8 +93,6 @@ export default function App() {
   const [shopTab, setShopTab] = useState('vip'); 
   const [inspectProfile, setInspectProfile] = useState(null); 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  
-  // 🟢 ისტორიის მოდალის State
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem('phurti_music') === 'true');
@@ -407,11 +410,14 @@ export default function App() {
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
   const myAchievements = profileData?.achievements || [];
 
+  // 🟢 დამატებულია ახალი პრემიუმ თემები!
   const themeStyles = {
     wood: { bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", overlay: "bg-black/10", accent: "text-amber-500", accentBg: "bg-amber-500", card: "bg-stone-900/80" },
     lavender: { bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)", overlay: "bg-black/10", accent: "text-violet-400", accentBg: "bg-violet-500", card: "bg-indigo-950/70" },
     casino: { bg: "linear-gradient(135deg, #062615 0%, #020c06 100%)", overlay: "bg-black/20", accent: "text-emerald-400", accentBg: "bg-emerald-500", card: "bg-stone-950/80" },
-    midnight: { bg: "linear-gradient(135deg, #0b1120 0%, #03050a 100%)", overlay: "bg-black/10", accent: "text-yellow-500", accentBg: "bg-yellow-500", card: "bg-slate-900/70" }
+    midnight: { bg: "linear-gradient(135deg, #0b1120 0%, #03050a 100%)", overlay: "bg-black/10", accent: "text-yellow-500", accentBg: "bg-yellow-500", card: "bg-slate-900/70" },
+    neon: { bg: "linear-gradient(135deg, #09090b 0%, #020617 100%)", overlay: "bg-fuchsia-900/10", accent: "text-fuchsia-400 drop-shadow-[0_0_5px_rgba(232,121,249,0.8)]", accentBg: "bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.5)]", card: "bg-slate-950/80 border-fuchsia-500/20" },
+    dark_club: { bg: "radial-gradient(circle at top right, #3f3f46 0%, #000000 100%)", overlay: "bg-rose-900/5", accent: "text-rose-500 drop-shadow-[0_0_5px_rgba(244,63,94,0.6)]", accentBg: "bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.5)]", card: "bg-black/80 border-rose-900/20" }
   };
 
   const activeThemeName = (inRoom && roomData?.hostTheme) ? roomData.hostTheme : (profileData?.tableTheme || 'wood');
@@ -597,18 +603,27 @@ export default function App() {
                 </div>
               )}
 
+              {/* 🟢 მაღაზიაში კარტის ზურგების დიზაინები განახლდა */}
               {shopTab === 'cards' && (
                 <div className="grid grid-cols-2 gap-3 md:gap-4">
                   {SHOP_ITEMS.cards.map(item => {
                     const isUnlocked = unlockedCards.includes(item.id);
                     const isEquipped = profileData?.cardBack === item.id || (!profileData?.cardBack && item.id === 'classic');
                     
-                    const cBg = item.id === 'classic' ? 'bg-blue-900' : item.id === 'crimson' ? 'bg-red-900' : item.id === 'gold' ? 'bg-yellow-600' : 'bg-stone-950';
-                    const cBorder = item.id === 'gold' ? 'border-yellow-400' : 'border-white/20';
+                    const shopCardStyles = {
+                      classic: 'bg-blue-900 border-white/20',
+                      crimson: 'bg-red-900 border-white/20',
+                      gold: 'bg-yellow-600 border-yellow-400',
+                      obsidian: 'bg-stone-950 border-stone-700',
+                      cyber: 'bg-fuchsia-900 border-fuchsia-400 shadow-[0_0_10px_rgba(232,121,249,0.5)]',
+                      royal: 'bg-purple-900 border-yellow-500',
+                      hacker: 'bg-black border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)] text-green-500'
+                    };
+                    const cardStyle = shopCardStyles[item.id] || shopCardStyles.classic;
 
                     return (
                       <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between items-center gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
-                        <div className={`w-12 h-16 rounded-md ${cBg} border-2 ${cBorder} shadow-lg flex items-center justify-center`}><Shield size={16} className={item.id==='gold'?'text-stone-900':'text-white/30'}/></div>
+                        <div className={`w-12 h-16 rounded-md ${cardStyle} border-2 shadow-lg flex items-center justify-center`}><Shield size={16} className={item.id==='gold'?'text-stone-900':'text-white/30'}/></div>
                         <span className="text-[10px] md:text-xs font-bold text-stone-200 text-center uppercase tracking-widest">{item.name}</span>
                         {isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> 
                         : isUnlocked ? <button onClick={() => handleEquipItem('card', item.id)} className={`w-full py-2 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button>
@@ -744,7 +759,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 ისტორიის მოდალი */}
       {isHistoryOpen && (
         <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="bg-stone-900 border border-white/10 rounded-[2rem] p-5 md:p-6 max-w-lg w-full shadow-2xl relative max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
@@ -886,7 +900,6 @@ export default function App() {
                     </div>
                   </div>
                   
-                  {/* 🟢 აქ დაემატა "მატჩების ისტორიის" ღილაკი */}
                   <button onClick={() => setIsHistoryOpen(true)} className={`mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-950/60 border border-white/5 hover:bg-stone-900 transition-all text-stone-300 shadow-inner flex items-center justify-center gap-2 active:scale-95`}>
                     <Clock size={16} className={activeTheme.accent} /> 📜 ჩემი ისტორია
                   </button>
@@ -1226,39 +1239,6 @@ export default function App() {
             <div className="grid grid-cols-2 gap-2 md:gap-3 pt-1">
               <button onClick={() => setIsPasswordModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">უკან</button>
               <button onClick={() => handleJoinSpecificRoom(selectedRoomIdForJoin, joinPasswordInput)} className={`py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg`}>შესვლა</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 🟢 ყოველდღიური ბონუსის მოდალი */}
-      {dailyReward && (
-        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className={`bg-stone-900 border-2 border-yellow-500 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(234,179,8,0.2)] transform transition-all relative overflow-hidden`}>
-            
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-500/20 via-stone-900 to-stone-900 z-0"></div>
-            
-            <div className="relative z-10">
-              <div className="text-6xl md:text-7xl mb-4 animate-bounce drop-shadow-xl">🎁</div>
-              <h2 className="text-2xl md:text-3xl font-black text-yellow-400 mb-2 uppercase tracking-widest drop-shadow-md">დღიური ბონუსი!</h2>
-              
-              <p className="text-stone-300 mb-6 text-xs md:text-sm font-bold">
-                შენ ზედიზედ <span className="text-white font-black text-sm md:text-base bg-stone-800 px-2 py-0.5 rounded-md border border-white/10 mx-1">{dailyReward.streak}</span> დღეა შემოდიხარ. არ გაწყვიტო სერია და გაზარდე ჯილდო!
-              </p>
-              
-              <div className="bg-stone-950/80 rounded-2xl py-4 md:py-5 mb-6 border border-white/10 shadow-inner">
-                <div className="text-[10px] md:text-xs text-stone-500 font-black uppercase tracking-widest mb-1">შენი საჩუქარი</div>
-                <div className="text-4xl md:text-5xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.4)]">
-                  +{dailyReward.rewardCoins} <span className="text-3xl">🪙</span>
-                </div>
-              </div>
-              
-              <button 
-                onClick={() => setDailyReward(null)}
-                className="w-full py-3 md:py-4 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-stone-950 font-black rounded-xl transition-all active:scale-95 uppercase tracking-widest shadow-lg text-xs md:text-sm"
-              >
-                ჯილდოს აღება
-              </button>
             </div>
           </div>
         </div>
