@@ -153,7 +153,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     classic: 'bg-blue-900 border-white/20',
     crimson: 'bg-red-900 border-white/20',
     gold: 'bg-yellow-600 border-yellow-400',
-    obsidian: 'bg-stone-950 border-stone-700'
+    obsidian: 'bg-stone-950 border-stone-700',
+    cyber: 'bg-fuchsia-900 border-fuchsia-400 shadow-[0_0_10px_rgba(232,121,249,0.5)]',
+    royal: 'bg-purple-900 border-yellow-500',
+    hacker: 'bg-black border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]'
   };
   const activeCardBack = cardBackStyles[room?.hostCardBack] || cardBackStyles['classic'];
   const borderColorClass = activeTheme.accent.replace('text-', 'border-');
