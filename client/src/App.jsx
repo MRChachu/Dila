@@ -16,10 +16,8 @@ const AVAILABLE_BADGES = [
   { id: 'legionnaire', icon: '🔥', name: 'ლეგიონერი (10 Win Streak)' }
 ];
 
-// 🟢 მაღაზიის ახალი, უზარმაზარი კოლექცია
 const SHOP_ITEMS = {
   avatars: [
-    // უფასო და იაფიანი (0 - 400 🪙)
     { id: '😎', price: 0, name: 'სტანდარტული' },
     { id: '😉', price: 50, name: 'თვალი' },
     { id: '🤪', price: 100, name: 'გიჟი' },
@@ -36,7 +34,6 @@ const SHOP_ITEMS = {
     { id: '💩', price: 350, name: 'პუპ' },
     { id: '💀', price: 400, name: 'თავის ქალა' },
     { id: '🧛', price: 400, name: 'ვამპირი' },
-    // საშუალო ფასიანი ცხოველები და არსებები (450 - 1500 🪙)
     { id: '🎃', price: 450, name: 'გოგრა' },
     { id: '😺', price: 500, name: 'კატა' },
     { id: '🐶', price: 500, name: 'ძაღლი' },
@@ -69,7 +66,6 @@ const SHOP_ITEMS = {
     { id: '🦅', price: 1500, name: 'არწივი' },
     { id: '🎱', price: 1500, name: 'რვიანი' },
     { id: '🇬🇪', price: 1500, name: 'საქართველო' },
-    // ძვირიანი არსებები და ნივთები (1600 - 4500 🪙)
     { id: '🐜', price: 1600, name: 'ჭიანჭველა' },
     { id: '🐢', price: 1600, name: 'კუ' },
     { id: '🐍', price: 1700, name: 'გველი' },
@@ -96,7 +92,6 @@ const SHOP_ITEMS = {
     { id: '🦢', price: 3800, name: 'გედი' },
     { id: '🦩', price: 4000, name: 'ფლამინგო' },
     { id: '🐲', price: 4500, name: 'დრაკონის თავი' },
-    // საჭმელი და ნივთები (500 - 8000 🪙)
     { id: '🍎', price: 500, name: 'ვაშლი' },
     { id: '🍓', price: 600, name: 'მარწყვი' },
     { id: '🍉', price: 700, name: 'საზამთრო' },
@@ -123,7 +118,6 @@ const SHOP_ITEMS = {
     { id: '🚁', price: 6000, name: 'ვერტმფრენი' },
     { id: '⛵', price: 7000, name: 'იალქნიანი' },
     { id: '⚓', price: 8000, name: 'ღუზა' },
-    // 💎 ყველაზე ელიტური, პრემიუმ კარტის ნიშნები (25,000 🪙)
     { id: '❤️', price: 25000, name: 'გული' },
     { id: '♦️', price: 25000, name: 'აგური' },
     { id: '♠️', price: 25000, name: 'ყვავი' },
@@ -269,6 +263,18 @@ export default function App() {
     socket.on('gameStarted', (room) => setRoomData(room));
     socket.on('gameUpdated', (room) => setRoomData(room));
     socket.on('error', (msg) => setError(msg));
+    
+    // 🟢 აქ დაემატა joinError ლოგიკა, რომელიც მაშინვე აბრუნებს მომხმარებელს ლობიში
+    socket.on('joinError', (msg) => {
+      setError(msg);
+      socket.emit('leaveRoom');
+      setInRoom(false);
+      setRoomId('');
+      setRoomData(null);
+      localStorage.removeItem('phurti_roomId');
+      localStorage.removeItem('phurti_inRoom');
+    });
+
     socket.on('activeRoomsList', (rooms) => setLiveRooms(rooms));
     socket.on('updateOnlineUsers', (users) => setOnlineUser(users));
     socket.on('receiveInvite', (data) => setInviteAlert(data));
@@ -319,7 +325,7 @@ export default function App() {
     if (socket.connected) handleOnConnect();
 
     return () => {
-      socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('activeRoomsList'); 
+      socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('joinError'); socket.off('activeRoomsList'); 
       socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound');
       socket.off('connect', handleOnConnect);
     };
@@ -401,20 +407,22 @@ export default function App() {
     if (actualUser?.username) socket.emit('setOnlineUser', actualUser.username); 
   };
 
+  // 🟢 აქ დაემატა action: 'join' 
   const handleJoinSpecificRoom = (targetId, pass = '') => {
     if (!targetId || !targetId.trim()) return;
     setError('');
-    socket.emit('joinRoom', { roomId: targetId.trim(), playerName: safeUsername, roomPassword: pass });
+    socket.emit('joinRoom', { action: 'join', roomId: targetId.trim(), playerName: safeUsername, roomPassword: pass });
     setInRoom(true);
     localStorage.setItem('phurti_roomId', targetId.trim());
     localStorage.setItem('phurti_inRoom', 'true');
     setIsPasswordModalOpen(false); setJoinPasswordInput('');
   };
 
+  // 🟢 აქ დაემატა action: 'create'
   const handleConfirmCreateRoom = (e) => {
     e.preventDefault();
     const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
-    socket.emit('joinRoom', { roomId: generatedId, playerName: safeUsername, roomPassword: mRoomPassword ? mRoomPassword.trim() : null, maxPlayers: mMaxPlayers, targetScore: mTargetScore, allowBots: mAllowBots, isRanked: mIsRanked });
+    socket.emit('joinRoom', { action: 'create', roomId: generatedId, playerName: safeUsername, roomPassword: mRoomPassword ? mRoomPassword.trim() : null, maxPlayers: mMaxPlayers, targetScore: mTargetScore, allowBots: mAllowBots, isRanked: mIsRanked });
     setInRoom(true);
     localStorage.setItem('phurti_roomId', generatedId); localStorage.setItem('phurti_inRoom', 'true');
     setIsCreateModalOpen(false); setMRoomPassword('');
@@ -425,7 +433,7 @@ export default function App() {
       socket.emit('sendInvite', { targetSocketId, roomId: roomData.id, password: roomData.password, fromName: safeUsername });
     } else {
       const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
-      socket.emit('joinRoom', { roomId: generatedId, playerName: safeUsername, roomPassword: null, maxPlayers: 4, targetScore: 11, allowBots: false, isRanked: true });
+      socket.emit('joinRoom', { action: 'create', roomId: generatedId, playerName: safeUsername, roomPassword: null, maxPlayers: 4, targetScore: 11, allowBots: false, isRanked: true });
       setInRoom(true);
       localStorage.setItem('phurti_roomId', generatedId); 
       localStorage.setItem('phurti_inRoom', 'true');

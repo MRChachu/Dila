@@ -236,7 +236,7 @@ io.on('connection', (socket) => {
             User.findOne({ username: originalName }).then(dbUser => {
               if (dbUser) {
                 dbUser.stats.gamesPlayed += 1;
-                dbUser.xp = Math.max(0, dbUser.xp - 15); // გაქცევაზე -15 XP 
+                dbUser.xp = Math.max(0, dbUser.xp - 15); 
                 dbUser.stats.totalPointsScored -= room.targetScore;
                 dbUser.stats.winStreak = 0; 
                 
@@ -244,7 +244,7 @@ io.on('connection', (socket) => {
                 dbUser.gameHistory.unshift({ 
                   roomId: room.id, targetScore: room.targetScore, myFinalScore: 0, isWinner: false, playedAt: new Date(), opponents: opponentNames 
                 });
-                if (dbUser.gameHistory.length > 30) dbUser.gameHistory.pop(); // ვინახავთ ბოლო 30 თამაშს
+                if (dbUser.gameHistory.length > 30) dbUser.gameHistory.pop(); 
 
                 dbUser.save();
               }
@@ -287,7 +287,8 @@ io.on('connection', (socket) => {
     } else { socket.emit('roomNotFound'); }
   });
 
-  socket.on('joinRoom', async ({ roomId, playerName, roomPassword, maxPlayers, targetScore, allowBots, isRanked }) => {
+  // 🟢 აქ დაემატა ACTION-ის შემოწმება ("შექმნა" vs "შესვლა")
+  socket.on('joinRoom', async ({ action, roomId, playerName, roomPassword, maxPlayers, targetScore, allowBots, isRanked }) => {
     if (!roomId || !playerName) return socket.emit('error', 'მონაცემები არასრულია');
     socket.join(roomId);
 
@@ -308,7 +309,12 @@ io.on('connection', (socket) => {
         }
     } catch(e) {}
 
+    // თუ მაგიდა არ არსებობს
     if (!rooms[roomId]) {
+      if (action === 'join' || !maxPlayers) {
+         // თუ ითხოვს შესვლას და მაგიდა არ არის, აბრუნებს ერორს და არ ქმნის!
+         return socket.emit('joinError', 'ასეთი მაგიდა არ არსებობს!');
+      }
       rooms[roomId] = {
         id: roomId, players: [], gameStarted: false, deck: [], tableCards: [],
         currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null,
@@ -326,7 +332,7 @@ io.on('connection', (socket) => {
     if (room.isPrivate && !room.gameStarted) {
       const isAlreadyIn = room.players.some(p => p.name === playerName);
       if (!isAlreadyIn && room.password !== roomPassword?.trim()) {
-        return socket.emit('error', 'არასწორი ოთახის პაროლი!');
+        return socket.emit('joinError', 'არასწორი ოთახის პაროლი!');
       }
     }
 
@@ -343,7 +349,7 @@ io.on('connection', (socket) => {
     }
 
     if (room.players.length >= room.maxPlayers && !room.gameStarted) {
-      return socket.emit('error', 'ოთახი უკვე სავსეა!');
+      return socket.emit('joinError', 'ოთახი უკვე სავსეა!');
     }
 
     room.players.push({ id: socket.id, name: playerName, avatar: userAvatar, vipUntil: userVip, xp: userXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
@@ -564,7 +570,6 @@ function handleTurnTransition(room, roomId) {
                       dbUser.lastQuestGeneration = now;
                   }
 
-                  // 🟢 ახალი და დაბალანსებული XP და 🪙 მონეტები!
                   let earnedXp = isWinner ? 10 : 2; 
                   let earnedCoins = isWinner ? 20 : 5;
                   
@@ -635,7 +640,6 @@ function handleTurnTransition(room, roomId) {
                   dbUser.stats.gamesPlayed += 1;
                   dbUser.stats.totalPointsScored += p.totalScore;
                   
-                  // 🟢 ინახავს მოწინააღმდეგის სახელებს ისტორიაში
                   const opponentNames = room.players.filter(op => op.id !== p.id).map(op => op.name);
                   dbUser.gameHistory.unshift({ 
                       roomId: room.id, 
@@ -645,7 +649,7 @@ function handleTurnTransition(room, roomId) {
                       playedAt: new Date(),
                       opponents: opponentNames
                   });
-                  if (dbUser.gameHistory.length > 30) dbUser.gameHistory.pop(); // ვინახავთ მხოლოდ ბოლო 30 თამაშს
+                  if (dbUser.gameHistory.length > 30) dbUser.gameHistory.pop(); 
                   
                   await dbUser.save();
               }
