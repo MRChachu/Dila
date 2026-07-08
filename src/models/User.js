@@ -14,14 +14,16 @@ const userSchema = new mongoose.Schema({
   stats: {
     gamesPlayed: { type: Number, default: 0 },
     gamesWon: { type: Number, default: 0 },
-    totalPointsScored: { type: Number, default: 0 }
+    totalPointsScored: { type: Number, default: 0 },
+    winStreak: { type: Number, default: 0 } // 🟢 დაემატა ზედიზედ მოგებების მთვლელი
   },
   gameHistory: [{
       roomId: { type: String },
       targetScore: { type: Number },
       myFinalScore: { type: Number },
       isWinner: { type: Boolean },
-      playedAt: { type: Date, default: Date.now }
+      playedAt: { type: Date, default: Date.now },
+      opponents: { type: [String], default: [] } // 🟢 დაემატა მოწინააღმდეგეების სია
   }],
   achievements: [{ type: String }],
   achievementProgress: {

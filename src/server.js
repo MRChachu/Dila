@@ -12,13 +12,13 @@ const User = require('./models/User');
 const { createDeck, isValidCapture, calculateRoundScores, getBestMove } = require('./gameLogic');
 
 const ALL_DAILY_QUESTS = [
-  { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 300 },
-  { questId: 'win_ranked', title: 'მოიგე 2 რეიტინგული მატჩი', target: 2, xpReward: 500 },
-  { questId: 'get_10_diamond', title: 'მოიპოვე 10 აგური მატჩში', target: 1, xpReward: 400 },
-  { questId: 'get_2_club', title: 'მოიპოვე 2 ჯვარი მატჩში', target: 1, xpReward: 400 },
-  { questId: 'play_5_games', title: 'ითამაშე 5 მატჩი', target: 5, xpReward: 350 },
-  { questId: 'win_3_games', title: 'მოიგე 3 მატჩი', target: 3, xpReward: 600 },
-  { questId: 'sweep_table', title: 'გაასუფთავე მაგიდა (ვალეტით)', target: 1, xpReward: 300 }
+  { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 15 },
+  { questId: 'win_ranked', title: 'მოიგე 2 რეიტინგული მატჩი', target: 2, xpReward: 25 },
+  { questId: 'get_10_diamond', title: 'მოიპოვე 10 აგური მატჩში', target: 1, xpReward: 20 },
+  { questId: 'get_2_club', title: 'მოიპოვე 2 ჯვარი მატჩში', target: 1, xpReward: 20 },
+  { questId: 'play_5_games', title: 'ითამაშე 5 მატჩი', target: 5, xpReward: 20 },
+  { questId: 'win_3_games', title: 'მოიგე 3 მატჩი', target: 3, xpReward: 30 },
+  { questId: 'sweep_table', title: 'გაასუფთავე მაგიდა (ვალეტით)', target: 1, xpReward: 15 }
 ];
 
 const app = express();
@@ -124,7 +124,6 @@ io.on('connection', (socket) => {
           else if (type === 'table') user.tableTheme = itemId;
           else if (type === 'card') user.cardBack = itemId;
           
-          // 🟢 კოლექციონერის ლოგიკა
           if (user.unlockedAvatars.length > 20 && !user.achievements.includes('collector')) {
              user.achievements.push('collector');
           }
@@ -237,12 +236,16 @@ io.on('connection', (socket) => {
             User.findOne({ username: originalName }).then(dbUser => {
               if (dbUser) {
                 dbUser.stats.gamesPlayed += 1;
-                dbUser.xp = Math.max(0, dbUser.xp - 150); 
+                dbUser.xp = Math.max(0, dbUser.xp - 15); // გაქცევაზე -15 XP 
                 dbUser.stats.totalPointsScored -= room.targetScore;
-                dbUser.stats.winStreak = 0; // 🟢 გაქცევისას Win Streak ნულდება
+                dbUser.stats.winStreak = 0; 
+                
+                const opponentNames = room.players.filter(op => op.id !== p.id).map(op => op.name);
                 dbUser.gameHistory.unshift({ 
-                  roomId: room.id, targetScore: room.targetScore, myFinalScore: -room.targetScore, isWinner: false, playedAt: new Date() 
+                  roomId: room.id, targetScore: room.targetScore, myFinalScore: 0, isWinner: false, playedAt: new Date(), opponents: opponentNames 
                 });
+                if (dbUser.gameHistory.length > 30) dbUser.gameHistory.pop(); // ვინახავთ ბოლო 30 თამაშს
+
                 dbUser.save();
               }
             }).catch(err => console.error(err));
@@ -561,16 +564,15 @@ function handleTurnTransition(room, roomId) {
                       dbUser.lastQuestGeneration = now;
                   }
 
-                  let earnedXp = 100; let earnedCoins = 10;
+                  // 🟢 ახალი და დაბალანსებული XP და 🪙 მონეტები!
+                  let earnedXp = isWinner ? 10 : 2; 
+                  let earnedCoins = isWinner ? 20 : 5;
+                  
                   if (isWinner) { 
-                      earnedXp += 200; 
-                      earnedCoins += 40; 
                       dbUser.stats.gamesWon += 1;
                       
-                      // 🟢 ვუმატებთ სთრიქს
                       dbUser.stats.winStreak = (dbUser.stats.winStreak || 0) + 1; 
                       
-                      // 🟢 ლეგიონერის მიღწევა
                       if (dbUser.stats.winStreak >= 10 && !dbUser.achievements.includes('legionnaire')) {
                           dbUser.achievements.push('legionnaire');
                       }
@@ -600,7 +602,6 @@ function handleTurnTransition(room, roomId) {
                           if (dbUser.achievementProgress.sweeper >= 50) dbUser.achievements.push('sweeper');
                       }
                   } else {
-                      // 🟢 წაგებისას სთრიქი ნულდება
                       dbUser.stats.winStreak = 0; 
                   }
 
@@ -633,7 +634,18 @@ function handleTurnTransition(room, roomId) {
 
                   dbUser.stats.gamesPlayed += 1;
                   dbUser.stats.totalPointsScored += p.totalScore;
-                  dbUser.gameHistory.unshift({ roomId: room.id, targetScore: room.targetScore, myFinalScore: p.totalScore, isWinner: isWinner, playedAt: new Date() });
+                  
+                  // 🟢 ინახავს მოწინააღმდეგის სახელებს ისტორიაში
+                  const opponentNames = room.players.filter(op => op.id !== p.id).map(op => op.name);
+                  dbUser.gameHistory.unshift({ 
+                      roomId: room.id, 
+                      targetScore: room.targetScore, 
+                      myFinalScore: p.totalScore, 
+                      isWinner: isWinner, 
+                      playedAt: new Date(),
+                      opponents: opponentNames
+                  });
+                  if (dbUser.gameHistory.length > 30) dbUser.gameHistory.pop(); // ვინახავთ მხოლოდ ბოლო 30 თამაშს
                   
                   await dbUser.save();
               }
