@@ -23,7 +23,7 @@ const SHOP_ITEMS = {
     { id: '🐜', price: 1600, name: 'ჭიანჭველა' }, { id: '🐢', price: 1600, name: 'კუ' }, { id: '🐍', price: 1700, name: 'გველი' }, { id: '🐙', price: 1700, name: 'რვაფეხა' }, { id: '🦑', price: 1800, name: 'კალმარი' }, { id: '🦀', price: 1800, name: 'კიბორჩხალა' }, { id: '🐡', price: 1900, name: 'ფუგუ' }, { id: '🐠', price: 1900, name: 'თევზი' }, { id: '🐬', price: 2000, name: 'დელფინი' }, { id: '🦄', price: 2000, name: 'მარტორქა' }, { id: '🐳', price: 2100, name: 'ვეშაპი' }, { id: '🦈', price: 2200, name: 'ზვიგენი' }, { id: '🐊', price: 2300, name: 'ნიანგი' }, { id: '🐅', price: 2400, name: 'ვეფხვი 2' }, { id: '🐆', price: 2400, name: 'ლეოპარდი' }, { id: '🐉', price: 2500, name: 'დრაკონი' }, { id: '🦍', price: 2600, name: 'გორილა' }, { id: '🐘', price: 2700, name: 'სპილო' }, { id: '🦏', price: 2800, name: 'მარტორქა 2' }, { id: '🐪', price: 2900, name: 'აქლემი' }, { id: '🦒', price: 3000, name: 'ჟირაფი' }, { id: '🦘', price: 3200, name: 'კენგურუ' }, { id: '🦚', price: 3500, name: 'ფარშევანგი' }, { id: '🦢', price: 3800, name: 'გედი' }, { id: '🦩', price: 4000, name: 'ფლამინგო' }, { id: '🐲', price: 4500, name: 'დრაკონის თავი' },
     { id: '🍎', price: 500, name: 'ვაშლი' }, { id: '🍓', price: 600, name: 'მარწყვი' }, { id: '🍉', price: 700, name: 'საზამთრო' }, { id: '🍌', price: 800, name: 'ბანანი' }, { id: '🍍', price: 900, name: 'ანანასი' }, { id: '🥝', price: 1000, name: 'კივი' }, { id: '🍔', price: 1200, name: 'ბურგერი' }, { id: '🍕', price: 1500, name: 'პიცა' }, { id: '🌮', price: 1800, name: 'ტაკო' }, { id: '🍣', price: 2000, name: 'სუში' }, { id: '🍩', price: 2200, name: 'დონატი' }, { id: '☕', price: 2500, name: 'ყავა' }, { id: '🍹', price: 2800, name: 'კოქტეილი' }, { id: '🍺', price: 3000, name: 'ლუდი' }, { id: '🍷', price: 3500, name: 'ღვინო' },
     { id: '⚽', price: 1000, name: 'ფეხბურთი' }, { id: '🏀', price: 1200, name: 'კალათბურთი' }, { id: '🏈', price: 1500, name: 'რაგბი' }, { id: '🎾', price: 1800, name: 'ჩოგბურთი' }, { id: '🎸', price: 2500, name: 'გიტარა' }, { id: '🎷', price: 3000, name: 'საქსოფონი' }, { id: '🚀', price: 4000, name: 'რაკეტა' }, { id: '🛸', price: 5000, name: 'მფრინავი თეფში' }, { id: '🚁', price: 6000, name: 'ვერტმფრენი' }, { id: '⛵', price: 7000, name: 'იალქნიანი' }, { id: '⚓', price: 8000, name: 'ღუზა' },
-    { id: '❤️', price: 25000, name: 'გული' }, { id: '♦️', price: 25000, name: 'აგური' }, { id: '♠️', price: 25000, name: 'ყვავი' }, { id: '♣️', price: 25000, name: 'ჯვარი' },
+    { id: '❤️', price: 25000, name: 'გული' }, { id: '♦️', price: 25000, name: 'აგური' }, { id: '♠️', price: 25000, name: 'ყვავი' }, { id: '♣️', price: 25000, name: 'ჯვარი' }
   ],
   tables: [
     { id: 'wood', price: 0, name: 'Classic Wood' }, { id: 'lavender', price: 0, name: 'Soft Lavender' }, { id: 'casino', price: 1500, name: 'Dark Casino' }, { id: 'midnight', price: 2500, name: 'Midnight Gold' }, { id: 'neon', price: 4000, name: 'Cyberpunk Neon' }, { id: 'dark_club', price: 5000, name: 'VIP Dark Club' }
@@ -33,7 +33,6 @@ const SHOP_ITEMS = {
   ]
 };
 
-// 🟢 სრული ენების ლექსიკონი (UI ტექსტები 100%)
 const translations = {
   ka: {
     top10: "ტოპ 10", shop: "მაღაზია", admin: "ადმინ", settings: "პარამეტრები",
@@ -53,12 +52,9 @@ const translations = {
     equipped: "დაყენებულია", equip: "დაყენება", bestPrice: "საუკეთესო ფასი", days: "დღე",
     vipDesc: "მანათობელი სახელი და ექსკლუზიური ემოჯები", vipActiveTill: "👑 VIP აქტიურია",
     dailyBonusTitle: "დღიური ბონუსი!", dailyBonusText1: "შენ ზედიზედ", dailyBonusText2: "დღეა შემოდიხარ. არ გაწყვიტო სერია და გაზარდე ჯილდო!",
-    yourGift: "შენი საჩუქარი", claim: "აღება",
-    configTitle: "ახალი მაგიდის კონფიგურაცია", gameType: "🏆 თამაშის ტიპი",
-    passLabel: "ოთახის პაროლი (საჯაროსთვის ცარიელი)", enterPass: "შეიყვანე პაროლი...",
-    protectedTable: "დაცული მაგიდა", back: "უკან", toScore: "ქულამდე", playersCount: "კაცი",
-    leave: "გამოსვლა ↩️", start: "დაწყება 🎮", rules: "მაგიდის წესები", statusType: "სტატუსი (ტიპი)",
-    botName: "რობოტი"
+    yourGift: "შენი საჩუქარი", claim: "აღება", configTitle: "ახალი მაგიდის კონფიგურაცია", gameType: "🏆 თამაშის ტიპი",
+    passLabel: "ოთახის პაროლი (საჯაროსთვის ცარიელი)", enterPass: "შეიყვანე პაროლი...", protectedTable: "დაცული მაგიდა", back: "უკან", toScore: "ქულამდე", playersCount: "კაცი",
+    leave: "გამოსვლა ↩️", start: "დაწყება 🎮", rules: "მაგიდის წესები", statusType: "სტატუსი (ტიპი)", botName: "რობოტი"
   },
   en: {
     top10: "Top 10", shop: "Shop", admin: "Admin", settings: "Settings",
@@ -78,12 +74,9 @@ const translations = {
     equipped: "Equipped", equip: "Equip", bestPrice: "Best Value", days: "Days",
     vipDesc: "Glowing name & exclusive emotes", vipActiveTill: "👑 VIP active until",
     dailyBonusTitle: "Daily Bonus!", dailyBonusText1: "You logged in", dailyBonusText2: "days in a row. Keep the streak!",
-    yourGift: "Your Gift", claim: "Claim",
-    configTitle: "Table Configuration", gameType: "🏆 Game Type",
-    passLabel: "Room Password (Leave empty for public)", enterPass: "Enter password...",
-    protectedTable: "Private Table", back: "Back", toScore: "Score", playersCount: "Players",
-    leave: "Leave ↩️", start: "Start 🎮", rules: "Table Rules", statusType: "Status (Type)",
-    botName: "Bot"
+    yourGift: "Your Gift", claim: "Claim", configTitle: "Table Configuration", gameType: "🏆 Game Type",
+    passLabel: "Room Password (Leave empty for public)", enterPass: "Enter password...", protectedTable: "Private Table", back: "Back", toScore: "Score", playersCount: "Players",
+    leave: "Leave ↩️", start: "Start 🎮", rules: "Table Rules", statusType: "Status (Type)", botName: "Bot"
   },
   ru: {
     top10: "Топ 10", shop: "Магазин", admin: "Админ", settings: "Настройки",
@@ -103,13 +96,25 @@ const translations = {
     equipped: "Установлено", equip: "Установить", bestPrice: "Лучшая цена", days: "Дней",
     vipDesc: "Светящееся имя и эмодзи", vipActiveTill: "👑 VIP активен до",
     dailyBonusTitle: "Ежедневный бонус!", dailyBonusText1: "Вы заходите", dailyBonusText2: "дней подряд. Не прерывайте!",
-    yourGift: "Ваш подарок", claim: "Забрать",
-    configTitle: "Настройки стола", gameType: "🏆 Тип игры",
-    passLabel: "Пароль (оставьте пустым для всех)", enterPass: "Введите пароль...",
-    protectedTable: "Частный стол", back: "Назад", toScore: "Очков", playersCount: "Игроков",
-    leave: "Выйти ↩️", start: "Начать 🎮", rules: "Правила стола", statusType: "Статус (Тип)",
-    botName: "Бот"
+    yourGift: "Ваш подарок", claim: "Забрать", configTitle: "Настройки стола", gameType: "🏆 Тип игры",
+    passLabel: "Пароль (оставьте пустым для всех)", enterPass: "Введите пароль...", protectedTable: "Частный стол", back: "Назад", toScore: "Очков", playersCount: "Игроков",
+    leave: "Выйти ↩️", start: "Начать 🎮", rules: "Правила стола", statusType: "Статус (Тип)", botName: "Бот"
   }
+};
+
+export const checkIsVip = (vipDate) => {
+  return vipDate && new Date(vipDate) > new Date();
+};
+
+export const VipName = ({ name, isVip, className = '' }) => {
+  if (isVip) {
+    return (
+      <span className={`bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-600 bg-clip-text text-transparent font-black drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] animate-pulse ${className}`}>
+        👑 {name}
+      </span>
+    );
+  }
+  return <span className={className}>{name}</span>;
 };
 
 export default function App() {
@@ -121,7 +126,6 @@ export default function App() {
   const user = userState?.user || userState; 
   const safeUsername = user?.username || 'მოთამაშე';
 
-  // 🟢 ენის მართვა
   const [lang, setLang] = useState(() => localStorage.getItem('phurti_lang') || 'ka');
   useEffect(() => { localStorage.setItem('phurti_lang', lang); }, [lang]);
   const t = translations[lang];
@@ -135,13 +139,11 @@ export default function App() {
   
   const [error, setError] = useState('');
   const [toastMsg, setToastMsg] = useState('');
-
   const [onlineUser, setOnlineUser] = useState([]);
   const [inviteAlert, setInviteAlert] = useState(null);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  
   const [isShopOpen, setIsShopOpen] = useState(false); 
   const [shopTab, setShopTab] = useState('vip'); 
   const [inspectProfile, setInspectProfile] = useState(null); 
@@ -153,23 +155,18 @@ export default function App() {
 
   const [selectedRoomIdForJoin, setSelectedRoomIdForJoin] = useState('');
   const [joinPasswordInput, setJoinPasswordInput] = useState('');
-
   const [mTargetScore, setMTargetScore] = useState(11);
   const [mMaxPlayers, setMMaxPlayers] = useState(4);
   const [mAllowBots, setMAllowBots] = useState(false);
   const [mRoomPassword, setMRoomPassword] = useState('');
   const [mIsRanked, setMIsRanked] = useState(true); 
-
   const [socialTab, setSocialTab] = useState('online');
-
   const [leaderboard, setLeaderboard] = useState([]); 
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
-  
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [adminPass, setAdminPass] = useState('');
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminMessage, setAdminMessage] = useState('');
-
   const [dailyReward, setDailyReward] = useState(null);
 
   useEffect(() => { roomDataRef.current = roomData; }, [roomData]);
@@ -178,11 +175,8 @@ export default function App() {
     if (audioRef.current) {
       audioRef.current.loop = true;
       audioRef.current.volume = 0.15; 
-      if (isMusicPlaying && userState) {
-        audioRef.current.play().catch(e => console.log("Autoplay prevented:", e));
-      } else {
-        audioRef.current.pause();
-      }
+      if (isMusicPlaying && userState) audioRef.current.play().catch(e => console.log("Autoplay prevented:", e));
+      else audioRef.current.pause();
       localStorage.setItem('phurti_music', isMusicPlaying);
     }
   }, [isMusicPlaying, userState]);
@@ -191,7 +185,6 @@ export default function App() {
     try {
       const resProf = await fetch(`https://purti.onrender.com/api/auth/profile/${username}`);
       if (resProf.ok) setProfileData(await resProf.json());
-
       const resLead = await fetch(`https://purti.onrender.com/api/auth/leaderboard`);
       if (resLead.ok) setLeaderboard(await resLead.json());
     } catch (err) {}
@@ -202,8 +195,7 @@ export default function App() {
       if (!safeUsername || safeUsername === 'მოთამაშე') return;
       try {
         const response = await fetch('https://purti.onrender.com/api/auth/daily-reward', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: safeUsername })
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: safeUsername })
         });
         const data = await response.json();
         if (data.success) { setDailyReward(data); fetchDashboardData(safeUsername); }
@@ -267,13 +259,8 @@ export default function App() {
     if (userState && !inRoom && safeUsername !== 'მოთამაშე') { fetchDashboardData(safeUsername); socket.emit('getLiveRooms'); socket.emit('setOnlineUser', safeUsername); }
   }, [userState, inRoom, safeUsername]);
 
-  useEffect(() => {
-    if (error) { const timer = setTimeout(() => setError(''), 4000); return () => clearTimeout(timer); }
-  }, [error]);
-
-  useEffect(() => {
-    if (toastMsg) { const timer = setTimeout(() => setToastMsg(''), 4000); return () => clearTimeout(timer); }
-  }, [toastMsg]);
+  useEffect(() => { if (error) { const timer = setTimeout(() => setError(''), 4000); return () => clearTimeout(timer); } }, [error]);
+  useEffect(() => { if (toastMsg) { const timer = setTimeout(() => setToastMsg(''), 4000); return () => clearTimeout(timer); } }, [toastMsg]);
 
   const getLeague = (xp = 0) => {
     if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
@@ -284,10 +271,7 @@ export default function App() {
   };
 
   const loadLeaderboard = async () => {
-    try {
-      const res = await fetch('https://purti.onrender.com/api/auth/leaderboard');
-      setLeaderboard(await res.json()); setIsLeaderboardOpen(true);
-    } catch(err) { console.error(err); }
+    try { const res = await fetch('https://purti.onrender.com/api/auth/leaderboard'); setLeaderboard(await res.json()); setIsLeaderboardOpen(true); } catch(err) { console.error(err); }
   };
 
   const loginAdmin = async (e) => {
@@ -501,6 +485,7 @@ export default function App() {
                  )
               })}
             </div>
+
             <button onClick={() => setInspectProfile(null)} className="w-full py-3 mt-6 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner uppercase">{t.close}</button>
           </div>
         </div>
@@ -529,7 +514,7 @@ export default function App() {
                   {amIVip && profileData?.vipUntil && (
                     <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-center animate-pulse shadow-inner">
                       <p className="text-yellow-500 font-black text-[10px] md:text-xs tracking-wider uppercase">
-                        {t.vipActiveTill} {new Date(profileData.vipUntil).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {t.vipActiveTill} {new Date(profileData.vipUntil).toLocaleString(lang === 'ka' ? 'ka-GE' : lang === 'ru' ? 'ru-RU' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   )}
@@ -727,49 +712,6 @@ export default function App() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {isHistoryOpen && (
-        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-stone-900 border border-white/10 rounded-[2rem] p-5 md:p-6 max-w-lg w-full shadow-2xl relative max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
-            <h2 className={`text-lg md:text-xl font-black text-stone-100 uppercase mb-4 flex items-center gap-3 justify-center border-b border-white/5 pb-4`}>
-              <Clock className={activeTheme.accent}/> {t.myHistory}
-            </h2>
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 min-h-[250px]">
-              {profileData?.gameHistory?.length > 0 ? (
-                profileData.gameHistory.map((game, i) => {
-                   const isWin = game.isWinner;
-                   return (
-                     <div key={i} className={`p-3 md:p-4 rounded-2xl border flex flex-col gap-2 transition-all hover:scale-[1.01] ${isWin ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
-                        <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                          <span className={`font-black text-xs md:text-sm uppercase tracking-wider flex items-center gap-1.5 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
-                             {isWin ? t.winText : t.loseText}
-                          </span>
-                          <span className="text-[9px] md:text-[10px] text-stone-400 font-bold bg-stone-950/50 px-2 py-1 rounded-lg">
-                            {new Date(game.playedAt).toLocaleString(lang === 'ka' ? 'ka-GE' : lang === 'ru' ? 'ru-RU' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-[10px] md:text-xs pt-1">
-                          <span className="text-stone-400 font-medium truncate max-w-[50%]">
-                            {t.opponent}: <span className="font-bold text-stone-200 truncate">{game.opponents?.length ? game.opponents.join(', ') : t.botName}</span>
-                          </span>
-                          <span className="font-mono font-black text-stone-400 bg-stone-950/40 px-2 py-1 rounded-md border border-white/5 shrink-0">
-                            {t.score}: <span className={isWin ? 'text-emerald-400' : 'text-rose-400'}>{game.myFinalScore}</span> / {game.targetScore}
-                          </span>
-                        </div>
-                     </div>
-                   )
-                })
-              ) : (
-                 <div className="flex flex-col items-center justify-center py-12 text-stone-500 opacity-50">
-                    <Clock size={40} className="mb-3"/>
-                    <p className="text-xs font-bold uppercase tracking-widest">{t.emptyHistory}</p>
-                 </div>
-              )}
-            </div>
-            <button onClick={() => setIsHistoryOpen(false)} className="w-full mt-5 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all active:scale-95 shadow-inner">{t.close}</button>
           </div>
         </div>
       )}
@@ -1109,7 +1051,7 @@ export default function App() {
                                 <span className="text-xl">{p.avatar || '😎'}</span>
                                 <span className="font-bold text-[10px] md:text-xs text-stone-200"><VipName name={p.name} isVip={checkIsVip(p.vipUntil)} className={p.id === socket.id ? activeTheme.accent : 'text-stone-200'} /></span>
                               </div>
-                              <span className={`text-[8px] md:text-[10px] font-black px-3 py-1 rounded-md tracking-wider shadow-sm transition-all ${idx === 0 ? `${activeTheme.accentBg} text-stone-950` : 'bg-stone-800 border border-white/5 text-stone-400'}`}>{idx === 0 ? t.host : t.ready}</span>
+                              <span className={`text-[8px] md:text-[10px] font-black px-3 py-1 rounded-md tracking-wider shadow-sm transition-all ${idx === 0 ? `${activeTheme.accentBg} text-stone-950` : 'bg-stone-800 border border-white/5 text-stone-400'}`}>{idx === 0 ? 'HOST' : 'READY'}</span>
                             </div>
                           ))}
                         </div>
@@ -1133,7 +1075,7 @@ export default function App() {
                         </div>
 
                         <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
-                          <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">{t.scoreLimit}</label>
+                          <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">{t.targetScore}</label>
                           <div className="grid grid-cols-2 gap-2 md:gap-2.5">
                             {[11, 21].map((score) => (
                               <button key={score} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: score, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.targetScore === score ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{score} {t.toScore}</button>
@@ -1161,91 +1103,6 @@ export default function App() {
         </main>
       </div>
 
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-2xl font-sans relative`}>
-            <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} border-b border-white/10 pb-2.5 md:pb-3 uppercase tracking-wider`}>{t.configTitle}</h3>
-            
-            <div className="space-y-2 md:space-y-2.5">
-              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.gameType}</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" disabled={mAllowBots} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
-                <button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
-              </div>
-            </div>
-
-            <div className="space-y-2 md:space-y-2.5">
-              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.botsTitle}</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => { setMAllowBots(true); setMIsRanked(false); }} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mAllowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.on}</button>
-                <button type="button" onClick={() => setMAllowBots(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mAllowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.off}</button>
-              </div>
-            </div>
-
-            <div className="space-y-2 md:space-y-2.5">
-              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.scoreLimit}</label>
-              <div className="grid grid-cols-2 gap-2">
-                {[11, 21].map(sc => (
-                  <button type="button" key={sc} onClick={() => setMTargetScore(sc)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mTargetScore === sc ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{sc} {t.toScore}</button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2 md:space-y-2.5">
-              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.playerLimit}</label>
-              <div className="grid grid-cols-3 gap-2">
-                {[2, 3, 4].map(num => (
-                  <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num} {t.playersCount}</button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-1.5 md:space-y-2">
-              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.passLabel}</label>
-              <input type="password" value={mRoomPassword} onChange={(e) => setMRoomPassword(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none placeholder-stone-700 shadow-inner`} placeholder="••••••••" />
-            </div>
-            <div className="grid grid-cols-2 gap-2 md:gap-3 pt-2 md:pt-3 border-t border-white/5">
-              <button type="button" onClick={() => setIsCreateModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">{t.cancel}</button>
-              <button type="submit" className={`py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg`}>{t.create}</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {isPasswordModalOpen && (
-        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-5 max-w-xs w-full space-y-3 md:space-y-4 shadow-2xl font-sans`}>
-            <h3 className={`text-xs md:text-sm font-black ${activeTheme.accent} border-b border-white/10 pb-2 md:pb-2.5 uppercase tracking-wider`}>{t.protectedTable}</h3>
-            <input type="password" placeholder={t.enterPass} value={joinPasswordInput} onChange={(e) => setJoinPasswordInput(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none shadow-inner`} />
-            <div className="grid grid-cols-2 gap-2 md:gap-3 pt-1">
-              <button onClick={() => setIsPasswordModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">{t.cancel}</button>
-              <button onClick={() => handleJoinSpecificRoom(selectedRoomIdForJoin, joinPasswordInput)} className={`py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg`}>{t.join}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {dailyReward && (
-        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className={`bg-stone-900 border-2 border-yellow-500 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(234,179,8,0.2)] transform transition-all relative overflow-hidden`}>
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-500/20 via-stone-900 to-stone-900 z-0"></div>
-            <div className="relative z-10">
-              <div className="text-6xl md:text-7xl mb-4 animate-bounce drop-shadow-xl">🎁</div>
-              <h2 className="text-2xl md:text-3xl font-black text-yellow-400 mb-2 uppercase tracking-widest drop-shadow-md">{t.dailyBonusTitle}</h2>
-              <p className="text-stone-300 mb-6 text-xs md:text-sm font-bold">
-                {t.dailyBonusText1} <span className="text-white font-black text-sm md:text-base bg-stone-800 px-2 py-0.5 rounded-md border border-white/10 mx-1">{dailyReward.streak}</span> {t.dailyBonusText2}
-              </p>
-              <div className="bg-stone-950/80 rounded-2xl py-4 md:py-5 mb-6 border border-white/10 shadow-inner">
-                <div className="text-[10px] md:text-xs text-stone-500 font-black uppercase tracking-widest mb-1">{t.yourGift}</div>
-                <div className="text-4xl md:text-5xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.4)]">
-                  +{dailyReward.rewardCoins} <span className="text-3xl">🪙</span>
-                </div>
-              </div>
-              <button onClick={() => setDailyReward(null)} className="w-full py-3 md:py-4 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-stone-950 font-black rounded-xl transition-all active:scale-95 uppercase tracking-widest shadow-lg text-xs md:text-sm">
-                {t.claim}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
