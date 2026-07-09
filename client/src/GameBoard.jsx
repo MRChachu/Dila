@@ -2,7 +2,64 @@ import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users, Lock, X } from 'lucide-react';
 
-export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName }) {
+// 🟢 GameBoard-ის ლოკალური ლექსიკონი
+const translations = {
+  ka: {
+    players: "👥 მოთამაშეები", chat: "💬 ჩატი", quickChat: "სწრაფი ჩატი",
+    noPhrases: "ფრაზები არ არის", leave: "გამოსვლა", room: "ოთახი",
+    yourTurn: "შენი სვლაა!", waiting: "ველოდებით...",
+    tableEmpty: "მაგიდა ცარიელია", captured: "მოჭრა", discarded: "დააგდო", swept: "გაასუფთავა 🧹",
+    remainingCards: "დარჩენილი ბანქო", matchOver: "მატჩი დასრულდა", roundOver: "რაუნდი დასრულდა",
+    winner: "გამარჯვებული", mostCards: "ბევრი კარტი:", mostClubs: "ბევრი ჯვარი:",
+    diamond10: "აგურის 10:", club2: "ჯვრის 2:", waitingBtn: "მოლოდინი...",
+    backToLobby: "ლობიში დაბრუნება", nextRound: "შემდეგი რაუნდი",
+    actionCapture: "მოჭრა ⚔️", actionDiscard: "დაგდება 🃏", dealer: "ამჟამინდელი დილერი",
+    score: "ქულა:", diamond10Title: "10 აგური", club2Title: "2 ჯვარი", player: "მოთამაშე",
+    phrases: [
+      "გამარჯობა! 👋", "კარგი სვლაა! 🔥", "ჩქარა ითამაშე ⏳", "იღბლიანი ხარ 🎲",
+      "აუჰ... 🤦‍♂️", "ცუდი კარტი მყავს 🃏", "ბოდიში 😅", "კარგი თამაში იყო 🤝"
+    ]
+  },
+  en: {
+    players: "👥 Players", chat: "💬 Chat", quickChat: "Quick Chat",
+    noPhrases: "No phrases", leave: "LEAVE", room: "ROOM",
+    yourTurn: "Your turn!", waiting: "Waiting...",
+    tableEmpty: "Table is empty", captured: "captured", discarded: "discarded", swept: "swept 🧹",
+    remainingCards: "Remaining cards", matchOver: "Match Over", roundOver: "Round Over",
+    winner: "Winner", mostCards: "Most cards:", mostClubs: "Most clubs:",
+    diamond10: "10 of Diamonds:", club2: "2 of Clubs:", waitingBtn: "Waiting...",
+    backToLobby: "Back to Lobby", nextRound: "Next Round",
+    actionCapture: "Capture ⚔️", actionDiscard: "Discard 🃏", dealer: "Current Dealer",
+    score: "Score:", diamond10Title: "10 of Diamonds", club2Title: "2 of Clubs", player: "Player",
+    phrases: [
+      "Hello! 👋", "Nice move! 🔥", "Play faster ⏳", "You're lucky 🎲",
+      "Ouch... 🤦‍♂️", "Bad cards 🃏", "Sorry 😅", "Good game 🤝"
+    ]
+  },
+  ru: {
+    players: "👥 Игроки", chat: "💬 Чат", quickChat: "Быстрый чат",
+    noPhrases: "Нет фраз", leave: "ВЫЙТИ", room: "КОМНАТА",
+    yourTurn: "Твой ход!", waiting: "Ожидание...",
+    tableEmpty: "Стол пуст", captured: "взял(а)", discarded: "бросил(а)", swept: "очистил(а) 🧹",
+    remainingCards: "Осталось карт", matchOver: "Матч завершен", roundOver: "Раунд завершен",
+    winner: "Победитель", mostCards: "Больше карт:", mostClubs: "Больше треф:",
+    diamond10: "10 Бубен:", club2: "2 Треф:", waitingBtn: "Ожидание...",
+    backToLobby: "В лобби", nextRound: "След. раунд",
+    actionCapture: "Взять ⚔️", actionDiscard: "Бросить 🃏", dealer: "Текущий дилер",
+    score: "Счет:", diamond10Title: "10 Бубен", club2Title: "2 Треф", player: "Игрок",
+    phrases: [
+      "Привет! 👋", "Хороший ход! 🔥", "Играй быстрее ⏳", "Тебе везет 🎲",
+      "Ой... 🤦‍♂️", "Плохие карты 🃏", "Извини 😅", "Хорошая игра 🤝"
+    ]
+  }
+};
+
+// 🟢 დამატებულია lang ენის მიმღები Prop
+export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName, lang = 'ka' }) {
+  
+  // 🟢 ვიყენებთ არჩეულ ენას
+  const t = translations[lang] || translations['ka'];
+
   const [selectedCardFromHand, setSelectedCardFromHand] = useState(null);
   const [selectedCardsFromTable, setSelectedCardsFromTable] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -21,17 +78,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
   const standardEmotes = ['🔥', '😂', '😎', '🤯', '🃏', '⏳', '👏', '💀'];
   const vipEmotes = ['🤑', '🤬', '🍻', '🤡', '👽'];
-
-  const QUICK_PHRASES = [
-    "გამარჯობა! 👋",
-    "კარგი სვლაა! 🔥",
-    "ჩქარა ითამაშე ⏳",
-    "იღბლიანი ხარ 🎲",
-    "აუჰ... 🤦‍♂️",
-    "ცუდი კარტი მყავს 🃏",
-    "ბოდიში 😅",
-    "კარგი თამაში იყო 🤝"
-  ];
 
   const getLeague = (xp = 0) => {
     if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
@@ -77,7 +123,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   }, [isMyTurn, room.turnExpiresAt]);
 
-  // ეს არის მხოლოდ საბოლოო მოგების ფეიერვერკი (თუ ამის ამოღებაც გინდა, მომწერე და ამოვიღებთ)
   useEffect(() => {
     if (room?.roundSummary?.matchWinner) {
       const isMeWinner = room.roundSummary.matchWinner === me?.name;
@@ -177,7 +222,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           {mobileModal && (
             <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10 lg:hidden shrink-0">
               <span className={`text-sm font-black uppercase tracking-widest ${activeTheme.accent}`}>
-                {mobileModal === 'players' ? '👥 მოთამაშეები' : '💬 Quick Chat'}
+                {mobileModal === 'players' ? t.players : t.chat}
               </span>
               <button onClick={() => setMobileModal(null)} className="p-2 bg-stone-800 text-stone-400 hover:text-white rounded-xl transition-all active:scale-95 border border-white/5 shadow-md">
                 <X size={18} />
@@ -192,7 +237,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               
               {!mobileModal && (
                 <h3 className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 mb-3 shrink-0 ${activeTheme.accent}`}>
-                  <Users size={14} /> მოთამაშეები
+                  <Users size={14} /> {t.players.replace('👥 ', '')}
                 </h3>
               )}
               
@@ -216,10 +261,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                           
                           <div className="flex items-center gap-1.5">
                             <span className="font-bold text-xs md:text-sm truncate max-w-[120px]">
-                              <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
+                              <VipName name={p.name} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
                             </span>
                             {isDealer && (
-                              <span className="bg-stone-800 text-stone-400 text-[8px] px-1.5 py-0.5 rounded border border-white/10 uppercase font-black" title="ამჟამინდელი დილერი">D</span>
+                              <span className="bg-stone-800 text-stone-400 text-[8px] px-1.5 py-0.5 rounded border border-white/10 uppercase font-black" title={t.dealer}>D</span>
                             )}
                           </div>
                           
@@ -229,7 +274,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                                <span className={`text-[8px] font-black uppercase tracking-wider ${league.color}`}>{league.name}</span>
                             </div>
 
-                            <span className="text-[9px] text-stone-500 font-bold">ქულა: <span className="text-stone-200">{p.totalScore}</span></span>
+                            <span className="text-[9px] text-stone-500 font-bold">{t.score} <span className="text-stone-200">{p.totalScore}</span></span>
                             
                             <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-stone-950/60 rounded border border-white/5 shrink-0">
                               <span className="text-[9px] font-mono font-black text-stone-300">🃏 {capturedCards}</span>
@@ -238,8 +283,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                             </div>
                             
                             <div className="flex gap-1">
-                              {has10Diamond && <span className="text-[11px] drop-shadow-md" title="10 აგური">💎</span>}
-                              {has2Club && <span className="text-[11px] drop-shadow-md" title="2 ჯვარი">♣️</span>}
+                              {has10Diamond && <span className="text-[11px] drop-shadow-md" title={t.diamond10Title}>💎</span>}
+                              {has2Club && <span className="text-[11px] drop-shadow-md" title={t.club2Title}>♣️</span>}
                             </div>
                           </div>
 
@@ -270,13 +315,13 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               {!mobileModal && (
                 <div className={`p-4 border-b border-white/5 flex items-center gap-2 shrink-0`}>
                   <MessageSquare size={14} className={activeTheme.accent} />
-                  <h3 className="text-[10px] md:text-xs font-black text-stone-400 uppercase tracking-widest">Quick Chat</h3>
+                  <h3 className="text-[10px] md:text-xs font-black text-stone-400 uppercase tracking-widest">{t.quickChat}</h3>
                 </div>
               )}
               
               <div ref={chatRef} className="flex-1 p-3 md:p-4 overflow-y-auto custom-scrollbar flex flex-col gap-3 min-h-[150px]">
                 {messages.length === 0 ? (
-                  <div className="m-auto text-[10px] font-bold text-stone-600 uppercase tracking-widest text-center">ფრაზები არ არის</div>
+                  <div className="m-auto text-[10px] font-bold text-stone-600 uppercase tracking-widest text-center">{t.noPhrases}</div>
                 ) : (
                   messages.map((m, i) => (
                     <div key={i} className={`flex flex-col max-w-[85%] ${m.senderId === socket.id ? 'self-end items-end' : 'self-start items-start'}`}>
@@ -292,7 +337,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </div>
               
               <div className={`p-2.5 md:p-3 ${mobileModal ? 'bg-stone-950/60 rounded-2xl mt-2' : 'bg-stone-950/60 border-t border-white/5'} shrink-0 grid grid-cols-2 gap-2`}>
-                {QUICK_PHRASES.map((phrase, idx) => (
+                {t.phrases.map((phrase, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
@@ -320,7 +365,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               return (
                 <div key={e.id} className="flex flex-col items-center animate-in slide-in-from-right-10 fade-in zoom-in duration-300">
                   <span className="text-5xl md:text-6xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] animate-bounce">{e.emote}</span>
-                  <span className={`text-[9px] md:text-[10px] font-black bg-stone-900/90 px-3 py-1.5 rounded-full ${activeTheme.accent} mt-1 backdrop-blur-md border border-white/10 uppercase tracking-wider shadow-xl`}>{player?.name || 'მოთამაშე'}</span>
+                  <span className={`text-[9px] md:text-[10px] font-black bg-stone-900/90 px-3 py-1.5 rounded-full ${activeTheme.accent} mt-1 backdrop-blur-md border border-white/10 uppercase tracking-wider shadow-xl`}>{player?.name || t.player}</span>
                 </div>
               )
             })}
@@ -330,9 +375,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
         <div className="flex items-center justify-between p-2.5 md:p-4 border-b border-white/5 bg-stone-950/40 rounded-t-3xl shrink-0">
           
           <div className="flex items-center gap-2">
-            <span className={`text-[10px] md:text-xs font-black tracking-widest font-mono ${activeTheme.accent} hidden sm:block`}>ROOM: {room.id}</span>
+            <span className={`text-[10px] md:text-xs font-black tracking-widest font-mono ${activeTheme.accent} hidden sm:block`}>{t.room}: {room.id}</span>
             <button onClick={onLeave} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-[9px] md:text-[10px] font-black transition-colors border border-rose-500/20 active:scale-95">
-              <LogOut size={12} /> <span className="hidden sm:block">LEAVE</span>
+              <LogOut size={12} /> <span className="hidden sm:block">{t.leave}</span>
             </button>
           </div>
 
@@ -365,7 +410,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
         <div className="flex-1 flex flex-col justify-between p-3 md:p-6 relative min-h-0">
           
           {room.deck?.length > 0 && (
-            <div className="absolute top-2 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title="დარჩენილი ბანქო">
+            <div className="absolute top-2 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title={t.remainingCards}>
               <div className={`relative w-10 h-14 md:w-14 md:h-20 rounded-md md:rounded-lg border shadow-lg flex items-center justify-center ${activeCardBack}`}>
                 <div className={`absolute inset-0 rounded-md md:rounded-lg border ${activeCardBack} translate-x-[3px] -translate-y-[3px] -z-10 shadow-sm`}></div>
                 <div className={`absolute inset-0 rounded-md md:rounded-lg border ${activeCardBack} translate-x-[6px] -translate-y-[6px] -z-20 shadow-sm`}></div>
@@ -379,11 +424,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           <div className="text-center h-8 md:h-10 relative z-10 shrink-0">
             {isMyTurn ? (
               <div className={`inline-flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-stone-900 border border-white/10 rounded-full ${activeTheme.accent} text-[10px] md:text-xs font-black shadow-[0_0_15px_currentColor] animate-pulse`}>
-                <Sparkles size={14} className="md:w-[16px] md:h-[16px]" /> შენი სვლაა!
+                <Sparkles size={14} className="md:w-[16px] md:h-[16px]" /> {t.yourTurn}
               </div>
             ) : (
               <div className="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-stone-950/60 border border-white/5 rounded-full text-stone-400 text-[10px] md:text-xs font-bold shadow-inner">
-                <Clock size={12} className="animate-spin-slow md:w-[14px] md:h-[14px]" /> ველოდებით...
+                <Clock size={12} className="animate-spin-slow md:w-[14px] md:h-[14px]" /> {t.waiting}
               </div>
             )}
           </div>
@@ -427,12 +472,12 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 };
 
                 let containerBorder = "border-white/10";
-                let actionText = isCapture ? 'მოჭრა' : 'დააგდო';
+                let actionText = isCapture ? t.captured : t.discarded;
                 let actionColor = "text-stone-400";
                 
                 if (isSweep) {
                   containerBorder = "border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]";
-                  actionText = "გაასუფთავა 🧹";
+                  actionText = t.swept;
                   actionColor = "text-yellow-400 drop-shadow-md";
                 } else if (has10Diamond) {
                   containerBorder = "border-rose-500/50 shadow-[0_0_15px_rgba(225,29,72,0.2)]";
@@ -443,7 +488,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 return (
                   <div className={`bg-stone-900/95 border px-3 md:px-5 py-1.5 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-1.5 md:gap-2 animate-in slide-in-from-bottom-2 duration-300 ${containerBorder}`}>
                     <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest whitespace-nowrap flex items-center gap-1 text-stone-400">
-                      <VipName name={room.lastAction.playerName} isVip={checkIsVip(room.lastAction.isVip)} className={activeTheme.accent} />-მ 
+                      <VipName name={room.lastAction.playerName} isVip={checkIsVip(room.lastAction.isVip)} className={activeTheme.accent} /> 
                       <span className={actionColor}>{actionText}</span>
                     </span>
                     <div className="flex items-center gap-1 md:gap-1.5 ml-1">
@@ -485,7 +530,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                     </div>
                   );
                 }) : (
-                  <span className="text-stone-700/50 font-black text-xs md:text-xl uppercase tracking-widest select-none z-10">მაგიდა ცარიელია</span>
+                  <span className="text-stone-700/50 font-black text-xs md:text-xl uppercase tracking-widest select-none z-10">{t.tableEmpty}</span>
                 )}
               </div>
             </div>
@@ -527,7 +572,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 disabled={!isMyTurn || !selectedCardFromHand}
                 className={`w-full md:w-auto shrink-0 px-4 md:px-6 py-2.5 md:py-2.5 rounded-xl md:rounded-full text-[11px] md:text-xs font-black transition-all shadow-md active:scale-95 uppercase tracking-wide ${!isMyTurn || !selectedCardFromHand ? 'bg-stone-800 text-stone-500 cursor-not-allowed' : selectedCardsFromTable.length > 0 ? 'bg-white text-stone-900 shadow-xl' : `${activeTheme.accentBg} text-stone-950 shadow-xl`}`}
               >
-                {selectedCardsFromTable.length > 0 ? 'მოჭრა ⚔️' : 'დაგდება 🃏'}
+                {selectedCardsFromTable.length > 0 ? t.actionCapture : t.actionDiscard}
               </button>
             </div>
 
@@ -561,12 +606,12 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               <div className="relative z-10">
                 <Trophy size={36} className="mx-auto mb-3 md:mb-4 drop-shadow-lg md:w-[48px] md:h-[48px]" />
                 <h2 className="text-xl md:text-2xl font-black text-stone-100 mb-2 uppercase tracking-widest">
-                  {room.roundSummary.matchWinner ? 'მატჩი დასრულდა' : 'რაუნდი დასრულდა'}
+                  {room.roundSummary.matchWinner ? t.matchOver : t.roundOver}
                 </h2>
                 
                 {room.roundSummary.matchWinner && (
                   <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 md:mb-6 shadow-inner ring-1 ring-white/5">
-                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">გამარჯვებული</p>
+                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">{t.winner}</p>
                     <div className="text-2xl md:text-3xl font-black text-white drop-shadow-md">
                       <VipName name={room.roundSummary.matchWinner} isVip={checkIsVip(room.players.find(p=>p.name===room.roundSummary.matchWinner)?.vipUntil)} /> 🎉
                     </div>
@@ -575,10 +620,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
                 {!room.roundSummary.matchWinner && (
                   <div className="space-y-2 md:space-y-3 bg-stone-950/80 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/5 text-[10px] md:text-sm font-medium text-stone-300 mb-4 md:mb-6 text-left shadow-inner">
-                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">ბევრი კარტი:</span> <span className="font-black text-stone-100">{room.roundSummary.cardsWinner}</span></div>
-                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">ბევრი ჯვარი:</span> <span className="font-black text-stone-100">{room.roundSummary.clubsWinner}</span></div>
-                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">აგურის 10:</span> <span className="font-black text-stone-100">{room.roundSummary.diamond10Winner}</span></div>
-                    <div className="flex justify-between"><span className="text-stone-400">ჯვრის 2:</span> <span className="font-black text-stone-100">{room.roundSummary.club2Winner}</span></div>
+                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">{t.mostCards}</span> <span className="font-black text-stone-100">{room.roundSummary.cardsWinner}</span></div>
+                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">{t.mostClubs}</span> <span className="font-black text-stone-100">{room.roundSummary.clubsWinner}</span></div>
+                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">{t.diamond10}</span> <span className="font-black text-stone-100">{room.roundSummary.diamond10Winner}</span></div>
+                    <div className="flex justify-between"><span className="text-stone-400">{t.club2}</span> <span className="font-black text-stone-100">{room.roundSummary.club2Winner}</span></div>
                   </div>
                 )}
 
@@ -586,7 +631,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   onClick={() => socket.emit('nextRoundReady', { roomId: room.id })}
                   className={`w-full py-3 md:py-4 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all`}
                 >
-                  {room.readyForNextRound?.includes(socket.id) ? 'მოლოდინი...' : room.roundSummary.matchWinner ? 'ლობიში დაბრუნება' : 'შემდეგი რაუნდი'}
+                  {room.readyForNextRound?.includes(socket.id) ? t.waitingBtn : room.roundSummary.matchWinner ? t.backToLobby : t.nextRound}
                 </button>
               </div>
             </div>
