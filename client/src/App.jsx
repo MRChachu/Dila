@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Activity, Users } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -142,7 +142,6 @@ const SHOP_ITEMS = {
   ]
 };
 
-// 🟢 ენების ლექსიკონი (Dictionary)
 const translations = {
   ka: {
     top10: "ტოპ 10", shop: "მაღაზია", admin: "ადმინ", settings: "პარამეტრები",
@@ -215,14 +214,12 @@ export default function App() {
   const user = userState?.user || userState; 
   const safeUsername = user?.username || 'მოთამაშე';
 
-  // 🟢 ენის State (ინახავს ლოკალურად)
   const [lang, setLang] = useState(() => localStorage.getItem('phurti_lang') || 'ka');
   
   useEffect(() => {
     localStorage.setItem('phurti_lang', lang);
   }, [lang]);
 
-  // დამხმარე ფუნქცია თარგმნისთვის
   const t = translations[lang];
 
   const [roomId, setRoomId] = useState(() => localStorage.getItem('phurti_roomId') || '');
@@ -264,9 +261,12 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState([]); 
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   
+  // 🟢 Admin State Changes
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [adminTab, setAdminTab] = useState('users'); 
   const [adminPass, setAdminPass] = useState('');
   const [adminUsers, setAdminUsers] = useState([]);
+  const [adminStats, setAdminStats] = useState(null);
   const [adminMessage, setAdminMessage] = useState('');
 
   const [dailyReward, setDailyReward] = useState(null);
@@ -428,6 +428,7 @@ export default function App() {
     } catch(err) { console.error(err); }
   };
 
+  // 🟢 Admin Login Updated
   const loginAdmin = async (e) => {
     e.preventDefault();
     try {
@@ -436,8 +437,13 @@ export default function App() {
         body: JSON.stringify({ adminPass })
       });
       const data = await res.json();
-      if (res.ok) setAdminUsers(data);
-      else setAdminMessage(data.message);
+      if (res.ok) {
+        setAdminUsers(data);
+        const statsRes = await fetch('https://purti.onrender.com/api/admin/stats');
+        if (statsRes.ok) setAdminStats(await statsRes.json());
+      } else {
+        setAdminMessage(data.message);
+      }
     } catch (err) { setAdminMessage('შეცდომა სერვერთან კავშირისას!'); }
   };
 
@@ -454,6 +460,9 @@ export default function App() {
            body: JSON.stringify({ adminPass }) 
          });
          setAdminUsers(await usersRes.json());
+         
+         const statsRes = await fetch('https://purti.onrender.com/api/admin/stats');
+         if (statsRes.ok) setAdminStats(await statsRes.json());
       }
     } catch (err) { console.error(err); }
   };
@@ -889,11 +898,12 @@ export default function App() {
         </div>
       )}
 
+      {/* 🟢 განახლებული Admin Panel */}
       {isAdminOpen && (
         <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
-          <div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-              <h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Control Panel</h2>
+          <div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] flex flex-col relative">
+            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 shrink-0">
+              <h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Game Master</h2>
               <button onClick={() => {setIsAdminOpen(false); setAdminUsers([]); setAdminPass(''); setAdminMessage('');}} className="text-stone-500 hover:text-stone-300">{t.close}</button>
             </div>
 
@@ -904,31 +914,99 @@ export default function App() {
                 {adminMessage && <p className="text-[10px] text-rose-400 text-center font-bold">{adminMessage}</p>}
               </form>
             ) : (
-              <div>
-                {adminMessage && <div className="mb-4 p-2 bg-emerald-500/20 text-emerald-400 text-xs text-center rounded-lg font-bold">{adminMessage}</div>}
-                <div className="grid gap-3">
-                  {adminUsers.map((u, i) => (
-                    <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4`}>
-                      <div className="min-w-[150px]">
-                        <div className="text-sm font-black text-stone-100">{u.username}</div>
-                        <div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">{u.password}</span></div>
-                        <div className="text-[10px] text-stone-500 font-mono mt-0.5">📅 თარიღი: {u.dateOfBirth} | 📝 სიტყვა: {u.secretWord}</div>
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <div className="flex gap-2 mb-5 border-b border-white/10 pb-3 shrink-0">
+                  <button onClick={() => setAdminTab('users')} className={`px-5 py-2.5 text-[10px] md:text-xs uppercase tracking-widest font-black rounded-xl transition-all flex items-center gap-2 ${adminTab === 'users' ? 'bg-rose-500 text-stone-950 shadow-[0_0_15px_rgba(244,63,94,0.4)]' : 'bg-stone-950/50 text-rose-500 hover:bg-rose-500/10 border border-rose-500/20'}`}>
+                    <Users size={16} /> მოთამაშეები
+                  </button>
+                  <button onClick={() => setAdminTab('stats')} className={`px-5 py-2.5 text-[10px] md:text-xs uppercase tracking-widest font-black rounded-xl transition-all flex items-center gap-2 ${adminTab === 'stats' ? 'bg-rose-500 text-stone-950 shadow-[0_0_15px_rgba(244,63,94,0.4)]' : 'bg-stone-950/50 text-rose-500 hover:bg-rose-500/10 border border-rose-500/20'}`}>
+                    <Activity size={16} /> სტატისტიკა
+                  </button>
+                </div>
+
+                {adminMessage && <div className="mb-4 p-2 bg-emerald-500/20 text-emerald-400 text-xs text-center rounded-lg font-bold shrink-0">{adminMessage}</div>}
+                
+                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                  
+                  {adminTab === 'users' && (
+                    <div className="grid gap-3">
+                      {adminUsers.map((u, i) => (
+                        <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4`}>
+                          <div className="min-w-[150px]">
+                            <div className="text-sm font-black text-stone-100">{u.username}</div>
+                            <div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">{u.password}</span></div>
+                            <div className="text-[10px] text-stone-500 font-mono mt-0.5">📅 თარიღი: {u.dateOfBirth} | 📝 სიტყვა: {u.secretWord}</div>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs font-black">
+                             <div className="text-yellow-500">🪙 {u.coins}</div>
+                             <div className="text-blue-400">⭐ {u.xp} XP</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors">+500 🪙</button>
+                            <button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors">+1000 XP</button>
+                            {u.isBanned ? (
+                              <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors">UNBAN</button>
+                            ) : (
+                              <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors">BAN</button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {adminTab === 'stats' && adminStats && (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-stone-950/60 border border-rose-500/20 p-5 rounded-2xl flex flex-col items-center justify-center text-center shadow-inner">
+                          <Users className="text-rose-500 mb-2" size={28}/>
+                          <h4 className="text-[10px] text-stone-400 uppercase font-bold tracking-widest">სულ მოთამაშე</h4>
+                          <p className="text-3xl font-black text-stone-100 mt-1">{adminStats.totalUsers}</p>
+                        </div>
+                        <div className="bg-stone-950/60 border border-blue-500/20 p-5 rounded-2xl flex flex-col items-center justify-center text-center shadow-inner">
+                          <Swords className="text-blue-400 mb-2" size={28}/>
+                          <h4 className="text-[10px] text-stone-400 uppercase font-bold tracking-widest">ნათამაშები მატჩი</h4>
+                          <p className="text-3xl font-black text-blue-400 mt-1">{adminStats.totalGamesPlayed}</p>
+                        </div>
+                        <div className="bg-stone-950/60 border border-yellow-500/20 p-5 rounded-2xl flex flex-col items-center justify-center text-center shadow-inner">
+                          <Coins className="text-yellow-500 mb-2" size={28}/>
+                          <h4 className="text-[10px] text-stone-400 uppercase font-bold tracking-widest">სერვერის ეკონომიკა</h4>
+                          <p className="text-3xl font-black text-yellow-500 mt-1">{adminStats.totalCoins} <span className="text-sm">🪙</span></p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-xs font-black">
-                         <div className="text-yellow-500">🪙 {u.coins}</div>
-                         <div className="text-blue-400">⭐ {u.xp} XP</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors">+500 🪙</button>
-                        <button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors">+1000 XP</button>
-                        {u.isBanned ? (
-                          <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors">UNBAN</button>
-                        ) : (
-                          <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors">BAN</button>
-                        )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-stone-950/40 border border-white/5 p-5 rounded-2xl">
+                          <h3 className="text-[11px] uppercase text-stone-400 font-black mb-4 flex items-center gap-2 border-b border-white/5 pb-2">
+                             <Crown size={14} className="text-rose-400"/> ტოპ ავატარები
+                          </h3>
+                          <div className="space-y-3">
+                            {adminStats.topAvatars?.map((av, i) => (
+                              <div key={i} className="flex justify-between items-center bg-stone-900 p-2.5 rounded-xl border border-white/5">
+                                <span className="text-2xl">{av._id}</span>
+                                <span className="text-[10px] font-black text-stone-400 bg-stone-950 px-2 py-1 rounded-md">{av.count} მოთამაშე</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="bg-stone-950/40 border border-white/5 p-5 rounded-2xl">
+                          <h3 className="text-[11px] uppercase text-stone-400 font-black mb-4 flex items-center gap-2 border-b border-white/5 pb-2">
+                             <LayoutGrid size={14} className="text-rose-400"/> პოპულარული მაგიდები
+                          </h3>
+                          <div className="space-y-3">
+                            {adminStats.topThemes?.map((th, i) => (
+                              <div key={i} className="flex justify-between items-center bg-stone-900 p-2.5 rounded-xl border border-white/5">
+                                <span className="text-[10px] uppercase font-black text-stone-200 tracking-wider">{SHOP_ITEMS.tables.find(t => t.id === th._id)?.name || th._id}</span>
+                                <span className="text-[10px] font-black text-stone-400 bg-stone-950 px-2 py-1 rounded-md">{th.count} მომხმარებელი</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  )}
+
                 </div>
               </div>
             )}
@@ -990,7 +1068,6 @@ export default function App() {
           
           <div className="flex items-center gap-2 md:gap-3">
             
-            {/* 🟢 ენის გადამრთველი ღილაკები მოთავსდა ჰედერში */}
             <div className="flex bg-stone-900/80 rounded-lg md:rounded-xl border border-white/5 p-1 gap-1 shadow-md mr-1 md:mr-2">
               <button onClick={() => setLang('ka')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'ka' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇪</button>
               <button onClick={() => setLang('en')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'en' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇧</button>
