@@ -35,6 +35,52 @@ app.use(express.json());
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
+// 🟢 ადმინ პანელის სტატისტიკის API
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    // 1. სულ დარეგისტრირებული მოთამაშეები
+    const totalUsers = await User.countDocuments();
+
+    // 2. ეკონომიკისა და თამაშების ჯამური დათვლა (Aggregation)
+    const globalStats = await User.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalGamesPlayed: { $sum: "$stats.gamesPlayed" },
+          totalCoins: { $sum: "$coins" }
+        }
+      }
+    ]);
+
+    // 3. ყველაზე პოპულარული ავატარები ტოპ 3
+    const topAvatars = await User.aggregate([
+      { $match: { avatar: { $ne: null } } },
+      { $group: { _id: "$avatar", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 3 }
+    ]);
+
+    // 4. ყველაზე პოპულარული მაგიდის დიზაინები ტოპ 3
+    const topThemes = await User.aggregate([
+      { $match: { tableTheme: { $ne: null } } },
+      { $group: { _id: "$tableTheme", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 3 }
+    ]);
+
+    res.json({
+      totalUsers,
+      totalGamesPlayed: globalStats[0]?.totalGamesPlayed || 0,
+      totalCoins: globalStats[0]?.totalCoins || 0,
+      topAvatars,
+      topThemes
+    });
+  } catch (err) {
+    console.error('სტატისტიკის შეცდომა:', err);
+    res.status(500).json({ message: 'სერვერის შეცდომა სტატისტიკის ჩატვირთვისას' });
+  }
+});
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ მონაცემთა ბაზა წარმატებით დაუკავშირდა'))
   .catch(err => console.error('❌ ბაზასთან კავშირის შეცდომა:', err.message));
@@ -287,7 +333,6 @@ io.on('connection', (socket) => {
     } else { socket.emit('roomNotFound'); }
   });
 
-  // 🟢 აქ დაემატა ACTION-ის შემოწმება ("შექმნა" vs "შესვლა")
   socket.on('joinRoom', async ({ action, roomId, playerName, roomPassword, maxPlayers, targetScore, allowBots, isRanked }) => {
     if (!roomId || !playerName) return socket.emit('error', 'მონაცემები არასრულია');
     socket.join(roomId);
@@ -309,10 +354,8 @@ io.on('connection', (socket) => {
         }
     } catch(e) {}
 
-    // თუ მაგიდა არ არსებობს
     if (!rooms[roomId]) {
       if (action === 'join' || !maxPlayers) {
-         // თუ ითხოვს შესვლას და მაგიდა არ არის, აბრუნებს ერორს და არ ქმნის!
          return socket.emit('joinError', 'ასეთი მაგიდა არ არსებობს!');
       }
       rooms[roomId] = {
