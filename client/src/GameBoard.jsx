@@ -564,12 +564,33 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 </h2>
                 
                 {room.roundSummary.matchWinner && (
-                  <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 shadow-inner ring-1 ring-white/5">
-                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">გამარჯვებული</p>
-                    <div className="text-2xl md:text-3xl font-black text-white drop-shadow-md">
-                      <VipName name={room.roundSummary.matchWinner} isVip={checkIsVip(room.players.find(p=>p.name===room.roundSummary.matchWinner)?.vipUntil)} /> 🎉
+                  <>
+                    <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 shadow-inner ring-1 ring-white/5">
+                      <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">გამარჯვებული</p>
+                      <div className="text-2xl md:text-3xl font-black text-white drop-shadow-md">
+                        <VipName name={room.roundSummary.matchWinner} isVip={checkIsVip(room.players.find(p=>p.name===room.roundSummary.matchWinner)?.vipUntil)} /> 🎉
+                      </div>
                     </div>
-                  </div>
+
+                    {/* 🟢 რეიტინგული თამაშის პერსონალური შედეგი */}
+                    {(room.betAmount > 0 || room.bet > 0 || room.isRanked) && (
+                      <div className="bg-stone-950/80 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-4 mb-4 shadow-inner flex justify-around items-center ring-1 ring-white/5">
+                        <div className="flex flex-col items-center">
+                          <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-1">XP (გამოცდილება)</span>
+                          <span className={`text-base md:text-lg font-black ${room.roundSummary.matchWinner === me?.name ? 'text-green-400' : 'text-rose-400'} drop-shadow-md`}>
+                            {room.roundSummary.matchWinner === me?.name ? '↑ +25' : '↓ -10'}
+                          </span>
+                        </div>
+                        <div className="w-px h-8 bg-white/10"></div>
+                        <div className="flex flex-col items-center">
+                          <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-1">ქოინები</span>
+                          <span className={`text-base md:text-lg font-black ${room.roundSummary.matchWinner === me?.name ? 'text-yellow-400' : 'text-rose-400'} drop-shadow-md`}>
+                            {room.roundSummary.matchWinner === me?.name ? '+' : '-'}{room.betAmount || room.bet || 50} 🪙
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className="bg-stone-950/80 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/5 mb-4 shadow-inner text-left">
@@ -602,7 +623,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   </div>
                 )}
 
-                {/* 🟢 სწორედ აქ შევცვალეთ ღილაკის ლოგიკა */}
                 <button 
                   onClick={() => {
                     if (room.roundSummary.matchWinner) {
