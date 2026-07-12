@@ -277,16 +277,24 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 {messages.length === 0 ? (
                   <div className="m-auto text-[10px] font-bold text-stone-600 uppercase tracking-widest text-center">ფრაზები არ არის</div>
                 ) : (
-                  messages.map((m, i) => (
-                    <div key={i} className={`flex flex-col max-w-[85%] ${m.senderId === socket.id ? 'self-end items-end' : 'self-start items-start'}`}>
-                      <span className="text-[8px] md:text-[9px] text-stone-500 font-bold mb-1 ml-1">
-                         <VipName name={m.sender} isVip={checkIsVip(m.isVip)} />
-                      </span>
-                      <div className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-2xl text-[10px] md:text-xs font-medium shadow-md ${m.senderId === socket.id ? `${activeTheme.accentBg} text-stone-950 rounded-tr-sm` : 'bg-stone-800 text-stone-200 rounded-tl-sm border border-white/5'}`}>
-                        {m.text}
+                  messages.map((m, i) => {
+                    const isMsgVip = checkIsVip(m.isVip);
+                    return (
+                      <div key={i} className={`flex flex-col max-w-[85%] ${m.senderId === socket.id ? 'self-end items-end' : 'self-start items-start'}`}>
+                        <span className="text-[8px] md:text-[9px] text-stone-500 font-bold mb-1 ml-1">
+                           <VipName name={m.sender} isVip={isMsgVip} />
+                        </span>
+                        <div className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-2xl text-[10px] md:text-xs font-medium shadow-md transition-all
+                          ${m.senderId === socket.id 
+                            ? (isMsgVip ? `${activeTheme.accentBg} text-stone-950 rounded-tr-sm ring-1 ring-yellow-400` : `${activeTheme.accentBg} text-stone-950 rounded-tr-sm`) 
+                            : (isMsgVip ? 'bg-stone-800/90 text-yellow-500 rounded-tl-sm border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.1)]' : 'bg-stone-800 text-stone-200 rounded-tl-sm border border-white/5')
+                          }`}
+                        >
+                          {m.text}
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </div>
               
@@ -554,44 +562,49 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
         {room?.roundSummary && (
           <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-            <div className={`bg-stone-900 border border-opacity-30 border-current rounded-2xl md:rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl text-center relative overflow-hidden ${activeTheme.accent}`}>
+            <div className={`bg-stone-900 border border-opacity-30 border-current rounded-2xl md:rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl text-center space-y-4 md:space-y-6 relative overflow-hidden ${activeTheme.accent}`}>
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-current/10 via-stone-900 to-stone-900"></div>
               
               <div className="relative z-10">
                 <Trophy size={36} className="mx-auto mb-3 md:mb-4 drop-shadow-lg md:w-[48px] md:h-[48px]" />
-                <h2 className="text-xl md:text-2xl font-black text-stone-100 mb-4 uppercase tracking-widest">
+                <h2 className="text-xl md:text-2xl font-black text-stone-100 mb-2 uppercase tracking-widest">
                   {room.roundSummary.matchWinner ? 'მატჩი დასრულდა' : 'რაუნდი დასრულდა'}
                 </h2>
                 
                 {room.roundSummary.matchWinner && (
-                  <>
-                    <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 shadow-inner ring-1 ring-white/5">
-                      <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">გამარჯვებული</p>
-                      <div className="text-2xl md:text-3xl font-black text-white drop-shadow-md">
-                        <VipName name={room.roundSummary.matchWinner} isVip={checkIsVip(room.players.find(p=>p.name===room.roundSummary.matchWinner)?.vipUntil)} /> 🎉
+                  <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 md:mb-6 shadow-inner ring-1 ring-white/5">
+                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">გამარჯვებული</p>
+                    <div className="text-2xl md:text-3xl font-black text-white drop-shadow-md">
+                      <VipName name={room.roundSummary.matchWinner} isVip={checkIsVip(room.players.find(p=>p.name===room.roundSummary.matchWinner)?.vipUntil)} /> 🎉
+                    </div>
+                  </div>
+                )}
+
+                {room.roundSummary.matchWinner && (room.betAmount > 0 || room.bet > 0 || room.isRanked) && (() => {
+                  const baseBet = 50;
+                  const winXp = amIVip ? 35 : 25;
+                  const loseXp = amIVip ? 5 : 10;
+                  const winCoins = amIVip ? 75 : 50;
+                  const loseCoins = amIVip ? 25 : 50;
+
+                  return (
+                    <div className="bg-stone-950/80 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-4 mb-4 md:mb-6 shadow-inner flex justify-around items-center ring-1 ring-white/5">
+                      <div className="flex flex-col items-center">
+                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-1">XP</span>
+                        <span className={`text-base md:text-lg font-black ${room.roundSummary.matchWinner === me?.name ? 'text-green-400' : 'text-rose-400'} drop-shadow-md`}>
+                          {room.roundSummary.matchWinner === me?.name ? `↑ +${winXp}` : `↓ -${loseXp}`}
+                        </span>
+                      </div>
+                      <div className="w-px h-8 bg-white/10"></div>
+                      <div className="flex flex-col items-center">
+                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-1">ქოინები</span>
+                        <span className={`text-base md:text-lg font-black ${room.roundSummary.matchWinner === me?.name ? 'text-yellow-400' : 'text-rose-400'} drop-shadow-md`}>
+                          {room.roundSummary.matchWinner === me?.name ? `+${winCoins}` : `-${loseCoins}`} 🪙
+                        </span>
                       </div>
                     </div>
-
-                    {/* 🟢 რეიტინგული თამაშის პერსონალური შედეგი */}
-                    {(room.betAmount > 0 || room.bet > 0 || room.isRanked) && (
-                      <div className="bg-stone-950/80 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-4 mb-4 shadow-inner flex justify-around items-center ring-1 ring-white/5">
-                        <div className="flex flex-col items-center">
-                          <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-1">XP (გამოცდილება)</span>
-                          <span className={`text-base md:text-lg font-black ${room.roundSummary.matchWinner === me?.name ? 'text-green-400' : 'text-rose-400'} drop-shadow-md`}>
-                            {room.roundSummary.matchWinner === me?.name ? '↑ +25' : '↓ -10'}
-                          </span>
-                        </div>
-                        <div className="w-px h-8 bg-white/10"></div>
-                        <div className="flex flex-col items-center">
-                          <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-1">ქოინები</span>
-                          <span className={`text-base md:text-lg font-black ${room.roundSummary.matchWinner === me?.name ? 'text-yellow-400' : 'text-rose-400'} drop-shadow-md`}>
-                            {room.roundSummary.matchWinner === me?.name ? '+' : '-'}{room.betAmount || room.bet || 50} 🪙
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
+                  );
+                })()}
 
                 <div className="bg-stone-950/80 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/5 mb-4 shadow-inner text-left">
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3 border-b border-white/10 pb-2">
