@@ -108,7 +108,6 @@ io.on('connection', (socket) => {
     io.emit('updateOnlineUsers', usersList);
   };
 
-  // 🟢 აქ დავამატეთ: ლოგინის დროს ვამოწმებთ, დადგა თუ არა ახალი დღე და ვაძლევთ ახალ მისიებს
   socket.on('setOnlineUser', async (username) => {
     onlineUsersMap[socket.id] = username;
     broadcastOnlineUsers();
@@ -119,11 +118,12 @@ io.on('connection', (socket) => {
           const now = new Date();
           const lastGen = dbUser.lastQuestGeneration ? new Date(dbUser.lastQuestGeneration) : null;
           let needsNewQuests = false;
+          
+          const isVip = dbUser.vipUntil && new Date(dbUser.vipUntil) > new Date();
 
           if (!dbUser.dailyQuests || dbUser.dailyQuests.length === 0 || !lastGen) {
               needsNewQuests = true;
           } else {
-              // ამოწმებს კალენდარულ დღეს საქართველოს დროით
               const getGeoDateStr = (d) => new Date(d).toLocaleDateString('en-US', { timeZone: 'Asia/Tbilisi' });
               if (getGeoDateStr(now) !== getGeoDateStr(lastGen)) {
                   needsNewQuests = true;
@@ -131,14 +131,21 @@ io.on('connection', (socket) => {
           }
 
           if (needsNewQuests) {
+              const questCount = isVip ? 4 : 3; 
               const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
-              dbUser.dailyQuests = shuffled.slice(0, 3).map(q => ({
+              dbUser.dailyQuests = shuffled.slice(0, questCount).map(q => ({
                   questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false
               }));
               dbUser.lastQuestGeneration = now;
               dbUser.markModified('dailyQuests');
+              
+              if (isVip) {
+                  dbUser.coins = (dbUser.coins || 0) + 100;
+                  socket.emit('vipBonusClaimed', 100);
+              }
+              
               await dbUser.save();
-              socket.emit('friendListUpdated'); // ეს ავტომატურად გააახლებს ეკრანს ახალი მისიებით
+              socket.emit('friendListUpdated');
           }
       }
     } catch(e) { console.error(e) }
@@ -213,6 +220,17 @@ io.on('connection', (socket) => {
       if(!uname) return;
       const user = await User.findOne({username: uname});
       if(user) {
+        const isVipUser = user.vipUntil && new Date(user.vipUntil) > new Date();
+        const VIP_TABLES = ['vip_gold', 'vip_diamond'];
+        
+        if (type === 'table' && VIP_TABLES.includes(itemId)) {
+            if (!isVipUser) return socket.emit('error', 'ეს მაგიდა მხოლოდ VIP-სთვისაა!');
+            user.tableTheme = itemId;
+            await user.save();
+            socket.emit('successMessage', 'VIP დიზაინი დაყენებულია!');
+            return socket.emit('friendListUpdated');
+        }
+
         let unlockedArray = type === 'avatar' ? user.unlockedAvatars : type === 'table' ? user.unlockedTableThemes : user.unlockedCardBacks;
         if(unlockedArray.includes(itemId)) {
           if (type === 'avatar') user.avatar = itemId;
@@ -304,8 +322,11 @@ io.on('connection', (socket) => {
           if (!p.isBot && room.isRanked && !isMatchOver) {
             User.findOne({ username: originalName }).then(dbUser => {
               if (dbUser) {
+                const isVip = dbUser.vipUntil && new Date(dbUser.vipUntil) > new Date();
+                const penaltyXp = isVip ? 5 : 10;
+                
                 dbUser.stats.gamesPlayed += 1;
-                dbUser.xp = Math.max(0, dbUser.xp - 15); 
+                dbUser.xp = Math.max(0, dbUser.xp - penaltyXp); 
                 dbUser.stats.totalPointsScored -= room.targetScore;
                 dbUser.stats.winStreak = 0; 
                 
@@ -626,60 +647,30 @@ function handleTurnTransition(room, roomId) {
 
               const dbUser = await User.findOne({ username: p.name });
               if (dbUser) {
-                  const now = new Date();
-                  const lastGen = dbUser.lastQuestGeneration ? new Date(dbUser.lastQuestGeneration) : null;
-                  let needsNewQuests = false;
-
-                  if (!dbUser.dailyQuests || dbUser.dailyQuests.length === 0 || !lastGen) {
-                      needsNewQuests = true;
-                  } else {
-                      // ამოწმებს კალენდარულ დღეს საქართველოს დროით
-                      const getGeoDateStr = (d) => new Date(d).toLocaleDateString('en-US', { timeZone: 'Asia/Tbilisi' });
-                      if (getGeoDateStr(now) !== getGeoDateStr(lastGen)) {
-                          needsNewQuests = true;
-                      }
-                  }
-
-                  if (needsNewQuests) {
-                      const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
-                      dbUser.dailyQuests = shuffled.slice(0, 3).map(q => ({
-                          questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false
-                      }));
-                      dbUser.lastQuestGeneration = now;
-                  }
-
-                  let earnedXp = isWinner ? 10 : 2; 
-                  let earnedCoins = isWinner ? 20 : 5;
+                  const isVip = dbUser.vipUntil && new Date(dbUser.vipUntil) > new Date();
+                  
+                  // 🟢 VIP ეკონომიკური ბუსტი
+                  const baseBet = 50; 
+                  let earnedXp = isWinner ? (isVip ? 35 : 25) : (isVip ? -5 : -10);
+                  let earnedCoins = isWinner ? (isVip ? 75 : 50) : (isVip ? -25 : -50);
                   
                   if (isWinner) { 
                       dbUser.stats.gamesWon += 1;
-                      
                       dbUser.stats.winStreak = (dbUser.stats.winStreak || 0) + 1; 
                       
-                      if (dbUser.stats.winStreak >= 10 && !dbUser.achievements.includes('legionnaire')) {
-                          dbUser.achievements.push('legionnaire');
-                      }
-
-                      if (!dbUser.achievements.includes('first_win')) {
-                          dbUser.achievements.push('first_win');
-                      }
-                      
-                      if (dbUser.stats.gamesWon >= 100 && !dbUser.achievements.includes('veteran')) {
-                          dbUser.achievements.push('veteran');
-                      }
+                      if (dbUser.stats.winStreak >= 10 && !dbUser.achievements.includes('legionnaire')) dbUser.achievements.push('legionnaire');
+                      if (!dbUser.achievements.includes('first_win')) dbUser.achievements.push('first_win');
+                      if (dbUser.stats.gamesWon >= 100 && !dbUser.achievements.includes('veteran')) dbUser.achievements.push('veteran');
 
                       if (!dbUser.achievementProgress) dbUser.achievementProgress = { diamond_10: 0, club_2: 0, sweeper: 0 };
-
                       if (matchAchievements.includes('diamond_10') && !dbUser.achievements.includes('diamond_10')) {
                           dbUser.achievementProgress.diamond_10 = (dbUser.achievementProgress.diamond_10 || 0) + 1;
                           if (dbUser.achievementProgress.diamond_10 >= 50) dbUser.achievements.push('diamond_10');
                       }
-
                       if (matchAchievements.includes('club_2') && !dbUser.achievements.includes('club_2')) {
                           dbUser.achievementProgress.club_2 = (dbUser.achievementProgress.club_2 || 0) + 1;
                           if (dbUser.achievementProgress.club_2 >= 50) dbUser.achievements.push('club_2');
                       }
-
                       if (matchAchievements.includes('sweeper') && !dbUser.achievements.includes('sweeper')) {
                           dbUser.achievementProgress.sweeper = (dbUser.achievementProgress.sweeper || 0) + 1;
                           if (dbUser.achievementProgress.sweeper >= 50) dbUser.achievements.push('sweeper');
@@ -688,29 +679,29 @@ function handleTurnTransition(room, roomId) {
                       dbUser.stats.winStreak = 0; 
                   }
 
-                  dbUser.dailyQuests.forEach(q => {
-                      if (q.isCompleted) return;
-                      
-                      if (q.questId === 'play_ranked' && room.isRanked) q.progress += 1;
-                      if (q.questId === 'win_ranked' && room.isRanked && isWinner) q.progress += 1;
-                      if (q.questId === 'get_10_diamond' && matchAchievements.includes('diamond_10')) q.progress += 1;
-                      if (q.questId === 'get_2_club' && matchAchievements.includes('club_2')) q.progress += 1;
-                      if (q.questId === 'play_5_games') q.progress += 1; 
-                      if (q.questId === 'win_3_games' && isWinner) q.progress += 1;
-                      if (q.questId === 'sweep_table' && matchAchievements.includes('sweeper')) q.progress += 1;
+                  if (dbUser.dailyQuests && dbUser.dailyQuests.length > 0) {
+                      dbUser.dailyQuests.forEach(q => {
+                          if (q.isCompleted) return;
+                          if (q.questId === 'play_ranked' && room.isRanked) q.progress += 1;
+                          if (q.questId === 'win_ranked' && room.isRanked && isWinner) q.progress += 1;
+                          if (q.questId === 'get_10_diamond' && matchAchievements.includes('diamond_10')) q.progress += 1;
+                          if (q.questId === 'get_2_club' && matchAchievements.includes('club_2')) q.progress += 1;
+                          if (q.questId === 'play_5_games') q.progress += 1; 
+                          if (q.questId === 'win_3_games' && isWinner) q.progress += 1;
+                          if (q.questId === 'sweep_table' && matchAchievements.includes('sweeper')) q.progress += 1;
 
-                      if (q.progress >= q.target) {
-                          q.progress = q.target; 
-                          q.isCompleted = true;
-                          earnedXp += q.xpReward; 
-                          earnedCoins += 50; 
-                      }
-                  });
-
-                  // 🟢 აუცილებელი ხაზი: ეუბნება ბაზას, რომ შიდა მასივი შეიცვალა
-                  dbUser.markModified('dailyQuests');
+                          if (q.progress >= q.target) {
+                              q.progress = q.target; 
+                              q.isCompleted = true;
+                              earnedXp += q.xpReward; 
+                              earnedCoins += 50; 
+                          }
+                      });
+                      dbUser.markModified('dailyQuests');
+                  }
                   
-                  dbUser.xp += earnedXp; dbUser.coins = (dbUser.coins || 0) + earnedCoins;
+                  dbUser.xp = Math.max(0, dbUser.xp + earnedXp);
+                  dbUser.coins = Math.max(0, (dbUser.coins || 0) + earnedCoins);
                   
                   let levelThreshold = dbUser.level * 1000;
                   while (dbUser.xp >= levelThreshold) {

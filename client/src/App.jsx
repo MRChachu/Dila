@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Activity, Users } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -129,7 +129,10 @@ const SHOP_ITEMS = {
     { id: 'casino', price: 1500, name: 'Dark Casino' },
     { id: 'midnight', price: 2500, name: 'Midnight Gold' },
     { id: 'neon', price: 4000, name: 'Cyberpunk Neon' },
-    { id: 'dark_club', price: 5000, name: 'VIP Dark Club' }
+    { id: 'dark_club', price: 5000, name: 'VIP Dark Club' },
+    // 🟢 აქ დავამატეთ 2 ახალი VIP მაგიდა
+    { id: 'vip_gold', price: 'VIP', name: '👑 Royal Gold', isVipExclusive: true },
+    { id: 'vip_diamond', price: 'VIP', name: '💎 Diamond Lounge', isVipExclusive: true }
   ],
   cards: [
     { id: 'classic', price: 0, name: 'Classic Blue' },
@@ -261,15 +264,13 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState([]); 
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   
-  // 🟢 Admin State Changes
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [adminTab, setAdminTab] = useState('users'); 
   const [adminPass, setAdminPass] = useState('');
   const [adminUsers, setAdminUsers] = useState([]);
-  const [adminStats, setAdminStats] = useState(null);
   const [adminMessage, setAdminMessage] = useState('');
 
   const [dailyReward, setDailyReward] = useState(null);
+  const [vipDailyReward, setVipDailyReward] = useState(null);
 
   useEffect(() => {
     roomDataRef.current = roomData;
@@ -356,6 +357,12 @@ export default function App() {
     socket.on('receiveUserProfile', (data) => setInspectProfile(data)); 
     socket.on('roomNotFound', () => handleResetToLobby());
 
+    // 🟢 VIP დღიური საჩუქრის მიღების ლოგიკა
+    socket.on('vipBonusClaimed', (amount) => {
+      setVipDailyReward(amount);
+      fetchDashboardData(safeUsername);
+    });
+
     const handleOnConnect = () => {
       const oldSocketId = localStorage.getItem('phurti_socketId');
       const savedUserRaw = localStorage.getItem('phurti_user');
@@ -384,7 +391,7 @@ export default function App() {
 
     return () => {
       socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('joinError'); socket.off('activeRoomsList'); 
-      socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound');
+      socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound'); socket.off('vipBonusClaimed');
       socket.off('connect', handleOnConnect);
     };
   }, []);
@@ -428,7 +435,6 @@ export default function App() {
     } catch(err) { console.error(err); }
   };
 
-  // 🟢 Admin Login Updated
   const loginAdmin = async (e) => {
     e.preventDefault();
     try {
@@ -437,13 +443,8 @@ export default function App() {
         body: JSON.stringify({ adminPass })
       });
       const data = await res.json();
-      if (res.ok) {
-        setAdminUsers(data);
-        const statsRes = await fetch('https://purti.onrender.com/api/admin/stats');
-        if (statsRes.ok) setAdminStats(await statsRes.json());
-      } else {
-        setAdminMessage(data.message);
-      }
+      if (res.ok) setAdminUsers(data);
+      else setAdminMessage(data.message);
     } catch (err) { setAdminMessage('შეცდომა სერვერთან კავშირისას!'); }
   };
 
@@ -460,9 +461,6 @@ export default function App() {
            body: JSON.stringify({ adminPass }) 
          });
          setAdminUsers(await usersRes.json());
-         
-         const statsRes = await fetch('https://purti.onrender.com/api/admin/stats');
-         if (statsRes.ok) setAdminStats(await statsRes.json());
       }
     } catch (err) { console.error(err); }
   };
@@ -582,13 +580,16 @@ export default function App() {
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
   const myAchievements = profileData?.achievements || [];
 
+  // 🟢 2 ახალი VIP მაგიდის დიზაინი
   const themeStyles = {
     wood: { bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", overlay: "bg-black/10", accent: "text-amber-500", accentBg: "bg-amber-500", card: "bg-stone-900/80" },
     lavender: { bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)", overlay: "bg-black/10", accent: "text-violet-400", accentBg: "bg-violet-500", card: "bg-indigo-950/70" },
     casino: { bg: "linear-gradient(135deg, #062615 0%, #020c06 100%)", overlay: "bg-black/20", accent: "text-emerald-400", accentBg: "bg-emerald-500", card: "bg-stone-950/80" },
     midnight: { bg: "linear-gradient(135deg, #0b1120 0%, #03050a 100%)", overlay: "bg-black/10", accent: "text-yellow-500", accentBg: "bg-yellow-500", card: "bg-slate-900/70" },
     neon: { bg: "linear-gradient(135deg, #09090b 0%, #020617 100%)", overlay: "bg-fuchsia-900/10", accent: "text-fuchsia-400 drop-shadow-[0_0_5px_rgba(232,121,249,0.8)]", accentBg: "bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.5)]", card: "bg-slate-950/80 border-fuchsia-500/20" },
-    dark_club: { bg: "radial-gradient(circle at top right, #3f3f46 0%, #000000 100%)", overlay: "bg-rose-900/5", accent: "text-rose-500 drop-shadow-[0_0_5px_rgba(244,63,94,0.6)]", accentBg: "bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.5)]", card: "bg-black/80 border-rose-900/20" }
+    dark_club: { bg: "radial-gradient(circle at top right, #3f3f46 0%, #000000 100%)", overlay: "bg-rose-900/5", accent: "text-rose-500 drop-shadow-[0_0_5px_rgba(244,63,94,0.6)]", accentBg: "bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.5)]", card: "bg-black/80 border-rose-900/20" },
+    vip_gold: { bg: "linear-gradient(135deg, #1f1400 0%, #000000 100%)", overlay: "bg-yellow-900/10", accent: "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]", accentBg: "bg-gradient-to-r from-yellow-600 to-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]", card: "bg-black/90 border-yellow-500/30 ring-1 ring-yellow-500/20" },
+    vip_diamond: { bg: "linear-gradient(135deg, #040e1f 0%, #000000 100%)", overlay: "bg-cyan-900/10", accent: "text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]", accentBg: "bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]", card: "bg-black/90 border-cyan-500/30 ring-1 ring-cyan-500/20" }
   };
 
   const activeThemeName = (inRoom && roomData?.hostTheme) ? roomData.hostTheme : (profileData?.tableTheme || 'wood');
@@ -737,7 +738,7 @@ export default function App() {
                         <span className="text-4xl md:text-5xl drop-shadow-lg">👑</span>
                         <div className="text-center">
                           <p className="text-sm md:text-base font-black text-yellow-500 tracking-wide">{pkg.title}</p>
-                          <p className="text-[9px] md:text-[10px] font-bold text-stone-400 mt-1">მანათობელი სახელი და ექსკლუზიური ემოჯები</p>
+                          <p className="text-[9px] md:text-[10px] font-bold text-stone-400 mt-1">უფრო მეტი XP, ქოინები და ექსკლუზივები!</p>
                         </div>
                         <button 
                           onClick={() => handleBuyVip(pkg.days, pkg.price)} 
@@ -772,16 +773,21 @@ export default function App() {
                 </div>
               )}
 
+              {/* 🟢 აქ დავამატეთ VIP ექსკლუზიური მაგიდების დაყენების ლოგიკა */}
               {shopTab === 'tables' && (
                 <div className="grid grid-cols-2 gap-3 md:gap-4">
                   {SHOP_ITEMS.tables.map(item => {
-                    const isUnlocked = unlockedTables.includes(item.id);
+                    const isUnlocked = item.isVipExclusive ? amIVip : unlockedTables.includes(item.id);
                     const isEquipped = profileData?.tableTheme === item.id || (!profileData?.tableTheme && item.id === 'wood');
                     return (
-                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
-                        <div className="h-16 rounded-xl border border-white/10" style={{ background: themeStyles[item.id]?.bg || themeStyles.wood.bg }}></div>
-                        <span className="text-[10px] md:text-xs font-bold text-stone-200 text-center uppercase tracking-widest">{item.name}</span>
+                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : item.isVipExclusive ? 'bg-gradient-to-b from-stone-900 to-stone-950 border-yellow-500/30' : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
+                        <div className="h-16 rounded-xl border border-white/10 relative overflow-hidden" style={{ background: themeStyles[item.id]?.bg || themeStyles.wood.bg }}>
+                          {item.isVipExclusive && <div className="absolute top-0 right-0 w-8 h-8 bg-yellow-500 blur-xl opacity-30"></div>}
+                        </div>
+                        <span className={`text-[10px] md:text-xs font-bold text-center uppercase tracking-widest ${item.isVipExclusive ? 'text-yellow-400 drop-shadow-md' : 'text-stone-200'}`}>{item.name}</span>
+                        
                         {isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> 
+                        : item.isVipExclusive && !amIVip ? <button onClick={() => setShopTab('vip')} className={`w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/30 shadow-md active:scale-95 transition-all uppercase flex items-center justify-center gap-1`}><Crown size={12}/> VIP გახსნა</button>
                         : isUnlocked ? <button onClick={() => handleEquipItem('table', item.id)} className={`w-full py-2 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button>
                         : <button onClick={() => handleBuyItem('table', item.id, item.price)} className="w-full py-2 rounded-lg text-[10px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"><Coins size={12} /> {item.price}</button>}
                       </div>
@@ -898,12 +904,11 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 განახლებული Admin Panel */}
       {isAdminOpen && (
         <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
-          <div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] flex flex-col relative">
-            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 shrink-0">
-              <h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Game Master</h2>
+          <div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+              <h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Control Panel</h2>
               <button onClick={() => {setIsAdminOpen(false); setAdminUsers([]); setAdminPass(''); setAdminMessage('');}} className="text-stone-500 hover:text-stone-300">{t.close}</button>
             </div>
 
@@ -914,99 +919,31 @@ export default function App() {
                 {adminMessage && <p className="text-[10px] text-rose-400 text-center font-bold">{adminMessage}</p>}
               </form>
             ) : (
-              <div className="flex flex-col flex-1 overflow-hidden">
-                <div className="flex gap-2 mb-5 border-b border-white/10 pb-3 shrink-0">
-                  <button onClick={() => setAdminTab('users')} className={`px-5 py-2.5 text-[10px] md:text-xs uppercase tracking-widest font-black rounded-xl transition-all flex items-center gap-2 ${adminTab === 'users' ? 'bg-rose-500 text-stone-950 shadow-[0_0_15px_rgba(244,63,94,0.4)]' : 'bg-stone-950/50 text-rose-500 hover:bg-rose-500/10 border border-rose-500/20'}`}>
-                    <Users size={16} /> მოთამაშეები
-                  </button>
-                  <button onClick={() => setAdminTab('stats')} className={`px-5 py-2.5 text-[10px] md:text-xs uppercase tracking-widest font-black rounded-xl transition-all flex items-center gap-2 ${adminTab === 'stats' ? 'bg-rose-500 text-stone-950 shadow-[0_0_15px_rgba(244,63,94,0.4)]' : 'bg-stone-950/50 text-rose-500 hover:bg-rose-500/10 border border-rose-500/20'}`}>
-                    <Activity size={16} /> სტატისტიკა
-                  </button>
-                </div>
-
-                {adminMessage && <div className="mb-4 p-2 bg-emerald-500/20 text-emerald-400 text-xs text-center rounded-lg font-bold shrink-0">{adminMessage}</div>}
-                
-                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                  
-                  {adminTab === 'users' && (
-                    <div className="grid gap-3">
-                      {adminUsers.map((u, i) => (
-                        <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4`}>
-                          <div className="min-w-[150px]">
-                            <div className="text-sm font-black text-stone-100">{u.username}</div>
-                            <div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">{u.password}</span></div>
-                            <div className="text-[10px] text-stone-500 font-mono mt-0.5">📅 თარიღი: {u.dateOfBirth} | 📝 სიტყვა: {u.secretWord}</div>
-                          </div>
-                          <div className="flex items-center gap-4 text-xs font-black">
-                             <div className="text-yellow-500">🪙 {u.coins}</div>
-                             <div className="text-blue-400">⭐ {u.xp} XP</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors">+500 🪙</button>
-                            <button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors">+1000 XP</button>
-                            {u.isBanned ? (
-                              <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors">UNBAN</button>
-                            ) : (
-                              <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors">BAN</button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {adminTab === 'stats' && adminStats && (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-stone-950/60 border border-rose-500/20 p-5 rounded-2xl flex flex-col items-center justify-center text-center shadow-inner">
-                          <Users className="text-rose-500 mb-2" size={28}/>
-                          <h4 className="text-[10px] text-stone-400 uppercase font-bold tracking-widest">სულ მოთამაშე</h4>
-                          <p className="text-3xl font-black text-stone-100 mt-1">{adminStats.totalUsers}</p>
-                        </div>
-                        <div className="bg-stone-950/60 border border-blue-500/20 p-5 rounded-2xl flex flex-col items-center justify-center text-center shadow-inner">
-                          <Swords className="text-blue-400 mb-2" size={28}/>
-                          <h4 className="text-[10px] text-stone-400 uppercase font-bold tracking-widest">ნათამაშები მატჩი</h4>
-                          <p className="text-3xl font-black text-blue-400 mt-1">{adminStats.totalGamesPlayed}</p>
-                        </div>
-                        <div className="bg-stone-950/60 border border-yellow-500/20 p-5 rounded-2xl flex flex-col items-center justify-center text-center shadow-inner">
-                          <Coins className="text-yellow-500 mb-2" size={28}/>
-                          <h4 className="text-[10px] text-stone-400 uppercase font-bold tracking-widest">სერვერის ეკონომიკა</h4>
-                          <p className="text-3xl font-black text-yellow-500 mt-1">{adminStats.totalCoins} <span className="text-sm">🪙</span></p>
-                        </div>
+              <div>
+                {adminMessage && <div className="mb-4 p-2 bg-emerald-500/20 text-emerald-400 text-xs text-center rounded-lg font-bold">{adminMessage}</div>}
+                <div className="grid gap-3">
+                  {adminUsers.map((u, i) => (
+                    <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4`}>
+                      <div className="min-w-[150px]">
+                        <div className="text-sm font-black text-stone-100">{u.username}</div>
+                        <div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">{u.password}</span></div>
+                        <div className="text-[10px] text-stone-500 font-mono mt-0.5">📅 თარიღი: {u.dateOfBirth} | 📝 სიტყვა: {u.secretWord}</div>
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-stone-950/40 border border-white/5 p-5 rounded-2xl">
-                          <h3 className="text-[11px] uppercase text-stone-400 font-black mb-4 flex items-center gap-2 border-b border-white/5 pb-2">
-                             <Crown size={14} className="text-rose-400"/> ტოპ ავატარები
-                          </h3>
-                          <div className="space-y-3">
-                            {adminStats.topAvatars?.map((av, i) => (
-                              <div key={i} className="flex justify-between items-center bg-stone-900 p-2.5 rounded-xl border border-white/5">
-                                <span className="text-2xl">{av._id}</span>
-                                <span className="text-[10px] font-black text-stone-400 bg-stone-950 px-2 py-1 rounded-md">{av.count} მოთამაშე</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="bg-stone-950/40 border border-white/5 p-5 rounded-2xl">
-                          <h3 className="text-[11px] uppercase text-stone-400 font-black mb-4 flex items-center gap-2 border-b border-white/5 pb-2">
-                             <LayoutGrid size={14} className="text-rose-400"/> პოპულარული მაგიდები
-                          </h3>
-                          <div className="space-y-3">
-                            {adminStats.topThemes?.map((th, i) => (
-                              <div key={i} className="flex justify-between items-center bg-stone-900 p-2.5 rounded-xl border border-white/5">
-                                <span className="text-[10px] uppercase font-black text-stone-200 tracking-wider">{SHOP_ITEMS.tables.find(t => t.id === th._id)?.name || th._id}</span>
-                                <span className="text-[10px] font-black text-stone-400 bg-stone-950 px-2 py-1 rounded-md">{th.count} მომხმარებელი</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-4 text-xs font-black">
+                         <div className="text-yellow-500">🪙 {u.coins}</div>
+                         <div className="text-blue-400">⭐ {u.xp} XP</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors">+500 🪙</button>
+                        <button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors">+1000 XP</button>
+                        {u.isBanned ? (
+                          <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors">UNBAN</button>
+                        ) : (
+                          <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors">BAN</button>
+                        )}
                       </div>
                     </div>
-                  )}
-
+                  ))}
                 </div>
               </div>
             )}
@@ -1521,6 +1458,34 @@ export default function App() {
               
               <button 
                 onClick={() => setDailyReward(null)}
+                className="w-full py-3 md:py-4 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-stone-950 font-black rounded-xl transition-all active:scale-95 uppercase tracking-widest shadow-lg text-xs md:text-sm"
+              >
+                აღება
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🟢 ახალი VIP ექსკლუზიური ყოველდღიური საჩუქრის ანიმაცია */}
+      {vipDailyReward && (
+        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className={`bg-stone-900 border-2 border-yellow-400 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(250,204,21,0.2)] transform transition-all relative overflow-hidden`}>
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-500/20 via-stone-900 to-stone-900 z-0"></div>
+            <div className="relative z-10">
+              <div className="text-6xl md:text-7xl mb-4 animate-bounce drop-shadow-xl">👑</div>
+              <h2 className="text-2xl md:text-3xl font-black text-yellow-400 mb-2 uppercase tracking-widest drop-shadow-md">VIP ბონუსი!</h2>
+              <p className="text-stone-300 mb-6 text-xs md:text-sm font-bold">
+                როგორც პრემიუმ მოთამაშეს, შენი ყოველდღიური საჩუქარი უკვე დაგერიცხა!
+              </p>
+              <div className="bg-stone-950/80 rounded-2xl py-4 md:py-5 mb-6 border border-yellow-500/30 shadow-inner">
+                <div className="text-[10px] md:text-xs text-yellow-500 font-black uppercase tracking-widest mb-1">VIP ექსკლუზივი</div>
+                <div className="text-4xl md:text-5xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.4)]">
+                  +{vipDailyReward} <span className="text-3xl">🪙</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setVipDailyReward(null)} 
                 className="w-full py-3 md:py-4 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-stone-950 font-black rounded-xl transition-all active:scale-95 uppercase tracking-widest shadow-lg text-xs md:text-sm"
               >
                 აღება
