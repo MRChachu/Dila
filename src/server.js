@@ -35,13 +35,9 @@ app.use(express.json());
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
-// 🟢 ადმინ პანელის სტატისტიკის API
 app.get('/api/admin/stats', async (req, res) => {
   try {
-    // 1. სულ დარეგისტრირებული მოთამაშეები
     const totalUsers = await User.countDocuments();
-
-    // 2. ეკონომიკისა და თამაშების ჯამური დათვლა (Aggregation)
     const globalStats = await User.aggregate([
       {
         $group: {
@@ -51,16 +47,12 @@ app.get('/api/admin/stats', async (req, res) => {
         }
       }
     ]);
-
-    // 3. ყველაზე პოპულარული ავატარები ტოპ 3
     const topAvatars = await User.aggregate([
       { $match: { avatar: { $ne: null } } },
       { $group: { _id: "$avatar", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 3 }
     ]);
-
-    // 4. ყველაზე პოპულარული მაგიდის დიზაინები ტოპ 3
     const topThemes = await User.aggregate([
       { $match: { tableTheme: { $ne: null } } },
       { $group: { _id: "$tableTheme", count: { $sum: 1 } } },
@@ -116,9 +108,40 @@ io.on('connection', (socket) => {
     io.emit('updateOnlineUsers', usersList);
   };
 
-  socket.on('setOnlineUser', (username) => {
+  // 🟢 აქ დავამატეთ: ლოგინის დროს ვამოწმებთ, დადგა თუ არა ახალი დღე და ვაძლევთ ახალ მისიებს
+  socket.on('setOnlineUser', async (username) => {
     onlineUsersMap[socket.id] = username;
     broadcastOnlineUsers();
+    
+    try {
+      const dbUser = await User.findOne({ username });
+      if (dbUser) {
+          const now = new Date();
+          const lastGen = dbUser.lastQuestGeneration ? new Date(dbUser.lastQuestGeneration) : null;
+          let needsNewQuests = false;
+
+          if (!dbUser.dailyQuests || dbUser.dailyQuests.length === 0 || !lastGen) {
+              needsNewQuests = true;
+          } else {
+              // ამოწმებს კალენდარულ დღეს საქართველოს დროით
+              const getGeoDateStr = (d) => new Date(d).toLocaleDateString('en-US', { timeZone: 'Asia/Tbilisi' });
+              if (getGeoDateStr(now) !== getGeoDateStr(lastGen)) {
+                  needsNewQuests = true;
+              }
+          }
+
+          if (needsNewQuests) {
+              const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
+              dbUser.dailyQuests = shuffled.slice(0, 3).map(q => ({
+                  questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false
+              }));
+              dbUser.lastQuestGeneration = now;
+              dbUser.markModified('dailyQuests');
+              await dbUser.save();
+              socket.emit('friendListUpdated'); // ეს ავტომატურად გააახლებს ეკრანს ახალი მისიებით
+          }
+      }
+    } catch(e) { console.error(e) }
   });
 
   socket.on('getUserProfile', async ({ username }) => {
@@ -604,8 +627,20 @@ function handleTurnTransition(room, roomId) {
               const dbUser = await User.findOne({ username: p.name });
               if (dbUser) {
                   const now = new Date();
-                  
-                  if (!dbUser.dailyQuests || dbUser.dailyQuests.length === 0 || (dbUser.lastQuestGeneration && (now - new Date(dbUser.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
+                  const lastGen = dbUser.lastQuestGeneration ? new Date(dbUser.lastQuestGeneration) : null;
+                  let needsNewQuests = false;
+
+                  if (!dbUser.dailyQuests || dbUser.dailyQuests.length === 0 || !lastGen) {
+                      needsNewQuests = true;
+                  } else {
+                      // ამოწმებს კალენდარულ დღეს საქართველოს დროით
+                      const getGeoDateStr = (d) => new Date(d).toLocaleDateString('en-US', { timeZone: 'Asia/Tbilisi' });
+                      if (getGeoDateStr(now) !== getGeoDateStr(lastGen)) {
+                          needsNewQuests = true;
+                      }
+                  }
+
+                  if (needsNewQuests) {
                       const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
                       dbUser.dailyQuests = shuffled.slice(0, 3).map(q => ({
                           questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false
@@ -672,6 +707,9 @@ function handleTurnTransition(room, roomId) {
                       }
                   });
 
+                  // 🟢 აუცილებელი ხაზი: ეუბნება ბაზას, რომ შიდა მასივი შეიცვალა
+                  dbUser.markModified('dailyQuests');
+                  
                   dbUser.xp += earnedXp; dbUser.coins = (dbUser.coins || 0) + earnedCoins;
                   
                   let levelThreshold = dbUser.level * 1000;
