@@ -77,7 +77,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   }, [isMyTurn, room.turnExpiresAt]);
 
-  // ეს არის მხოლოდ საბოლოო მოგების ფეიერვერკი (თუ ამის ამოღებაც გინდა, მომწერე და ამოვიღებთ)
   useEffect(() => {
     if (room?.roundSummary?.matchWinner) {
       const isMeWinner = room.roundSummary.matchWinner === me?.name;
@@ -553,19 +552,20 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         </div>
 
+        {/* 🟢 განახლებული შეჯამების ფანჯარა */}
         {room?.roundSummary && (
           <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-            <div className={`bg-stone-900 border border-opacity-30 border-current rounded-2xl md:rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl text-center space-y-4 md:space-y-6 relative overflow-hidden ${activeTheme.accent}`}>
+            <div className={`bg-stone-900 border border-opacity-30 border-current rounded-2xl md:rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl text-center relative overflow-hidden ${activeTheme.accent}`}>
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-current/10 via-stone-900 to-stone-900"></div>
               
               <div className="relative z-10">
                 <Trophy size={36} className="mx-auto mb-3 md:mb-4 drop-shadow-lg md:w-[48px] md:h-[48px]" />
-                <h2 className="text-xl md:text-2xl font-black text-stone-100 mb-2 uppercase tracking-widest">
+                <h2 className="text-xl md:text-2xl font-black text-stone-100 mb-4 uppercase tracking-widest">
                   {room.roundSummary.matchWinner ? 'მატჩი დასრულდა' : 'რაუნდი დასრულდა'}
                 </h2>
                 
                 {room.roundSummary.matchWinner && (
-                  <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 md:mb-6 shadow-inner ring-1 ring-white/5">
+                  <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 shadow-inner ring-1 ring-white/5">
                     <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">გამარჯვებული</p>
                     <div className="text-2xl md:text-3xl font-black text-white drop-shadow-md">
                       <VipName name={room.roundSummary.matchWinner} isVip={checkIsVip(room.players.find(p=>p.name===room.roundSummary.matchWinner)?.vipUntil)} /> 🎉
@@ -573,18 +573,41 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   </div>
                 )}
 
+                {/* 🟢 ქულების დაფა (Scoreboard) */}
+                <div className="bg-stone-950/80 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/5 mb-4 shadow-inner text-left">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3 border-b border-white/10 pb-2">
+                    {room.roundSummary.matchWinner ? 'საბოლოო ანგარიში' : 'მიმდინარე ანგარიში'}
+                  </h4>
+                  <div className="space-y-2.5">
+                    {room.players.map(p => (
+                      <div key={p.id} className="flex justify-between items-center">
+                        <span className={`text-xs md:text-sm font-bold ${p.name === room.roundSummary.matchWinner ? 'text-yellow-400' : 'text-stone-200'}`}>
+                          {p.name}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm md:text-base font-black ${p.name === room.roundSummary.matchWinner ? 'text-yellow-400 drop-shadow-md' : 'text-stone-300'}`}>
+                            {p.totalScore}
+                          </span>
+                          <span className="text-[10px] text-stone-500 font-bold">/ {room.targetScore}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 🟢 რაუნდის დეტალები (ვინ რა აიღო) - ჩანს მხოლოდ რაუნდის ბოლოს */}
                 {!room.roundSummary.matchWinner && (
-                  <div className="space-y-2 md:space-y-3 bg-stone-950/80 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/5 text-[10px] md:text-sm font-medium text-stone-300 mb-4 md:mb-6 text-left shadow-inner">
-                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">ბევრი კარტი:</span> <span className="font-black text-stone-100">{room.roundSummary.cardsWinner}</span></div>
-                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">ბევრი ჯვარი:</span> <span className="font-black text-stone-100">{room.roundSummary.clubsWinner}</span></div>
-                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span className="text-stone-400">აგურის 10:</span> <span className="font-black text-stone-100">{room.roundSummary.diamond10Winner}</span></div>
-                    <div className="flex justify-between"><span className="text-stone-400">ჯვრის 2:</span> <span className="font-black text-stone-100">{room.roundSummary.club2Winner}</span></div>
+                  <div className="space-y-2 md:space-y-3 bg-stone-950/50 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/5 text-[10px] md:text-sm font-medium text-stone-400 mb-4 text-left">
+                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span>ბევრი კარტი (2ქ):</span> <span className="font-black text-stone-200">{room.roundSummary.cardsWinner}</span></div>
+                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span>ბევრი ჯვარი (1ქ):</span> <span className="font-black text-stone-200">{room.roundSummary.clubsWinner}</span></div>
+                    <div className="flex justify-between border-b border-white/5 pb-1.5 md:pb-2"><span>აგურის 10 (1ქ):</span> <span className="font-black text-stone-200">{room.roundSummary.diamond10Winner}</span></div>
+                    <div className="flex justify-between"><span>ჯვრის 2 (1ქ):</span> <span className="font-black text-stone-200">{room.roundSummary.club2Winner}</span></div>
                   </div>
                 )}
 
                 <button 
                   onClick={() => socket.emit('nextRoundReady', { roomId: room.id })}
-                  className={`w-full py-3 md:py-4 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all`}
+                  className={`w-full py-3 md:py-4 mt-2 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all`}
                 >
                   {room.readyForNextRound?.includes(socket.id) ? 'მოლოდინი...' : room.roundSummary.matchWinner ? 'ლობიში დაბრუნება' : 'შემდეგი რაუნდი'}
                 </button>
