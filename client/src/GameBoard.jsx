@@ -58,7 +58,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           const audio2 = new Audio(soundFile);
           audio2.volume = 0.3;
           audio2.play().catch(e => {});
-        }, 150);
+        }, 1);
       }
     } catch (e) {}
   };
