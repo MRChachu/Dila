@@ -73,6 +73,29 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
+// 🟢 ახალი API ადმინის გაფართოებული მოქმედებებისთვის (წაშლა/განულება)
+app.post('/api/admin/advanced-action', async (req, res) => {
+  try {
+    const { adminPass, targetUser, action } = req.body;
+    if (adminPass !== process.env.ADMIN_PASS && adminPass !== 'chachu123') { // დაცვისთვის
+        return res.status(403).json({ message: 'წვდომა აკრძალულია' });
+    }
+    
+    if (action === 'delete') {
+      await User.deleteOne({ username: targetUser });
+      return res.json({ success: true, message: 'ექაუნთი წაიშალა' });
+    } else if (action === 'reset') {
+      await User.updateOne({ username: targetUser }, { 
+        $set: { coins: 0, xp: 0, level: 1, 'stats.gamesPlayed': 0, 'stats.gamesWon': 0, 'stats.winStreak': 0, 'stats.totalPointsScored': 0 } 
+      });
+      return res.json({ success: true, message: 'სტატისტიკა განულდა' });
+    }
+    res.status(400).json({ message: 'უცნობი მოქმედება' });
+  } catch (err) {
+    res.status(500).json({ message: 'შეცდომა სერვერზე' });
+  }
+});
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ მონაცემთა ბაზა წარმატებით დაუკავშირდა'))
   .catch(err => console.error('❌ ბაზასთან კავშირის შეცდომა:', err.message));
@@ -92,6 +115,11 @@ const onlineUsersMap = {};
 
 io.on('connection', (socket) => {
   console.log(`🔌 ახალი კავშირი: ${socket.id}`);
+
+  // 🟢 ადმინის გლობალური შეტყობინების ემიტერი
+  socket.on('adminBroadcast', (message) => {
+    io.emit('systemBroadcast', message);
+  });
 
   const broadcastActiveRooms = () => {
     const activeLobbies = Object.values(rooms).filter(r => !r.gameStarted).map(r => ({
@@ -649,7 +677,6 @@ function handleTurnTransition(room, roomId) {
               if (dbUser) {
                   const isVip = dbUser.vipUntil && new Date(dbUser.vipUntil) > new Date();
                   
-                  // 🟢 VIP ეკონომიკური ბუსტი
                   const baseBet = 50; 
                   let earnedXp = isWinner ? (isVip ? 35 : 25) : (isVip ? -5 : -10);
                   let earnedCoins = isWinner ? (isVip ? 75 : 50) : (isVip ? -25 : -50);
