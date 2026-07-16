@@ -41,57 +41,36 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
   };
 
-  // 🟢 განახლებული: კარტის შრიალის რეალისტური ხმა
+  // 🟢 დავაბრუნეთ ძალიან რბილი და სასიამოვნო "პოპ" ხმები
   const playSoftSound = (isCapture = false) => {
     if (isMuted) return;
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       
-      const playCardSlap = (delay = 0) => {
-        const t = ctx.currentTime + delay;
-        
-        // 1. ქაღალდის შრიალის ხმა (White Noise Burst)
-        const bufferSize = ctx.sampleRate * 0.12; 
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        
-        const noise = ctx.createBufferSource();
-        noise.buffer = buffer;
-        
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(3000, t);
-        filter.frequency.exponentialRampToValueAtTime(800, t + 0.1);
-
-        const noiseGain = ctx.createGain();
-        noiseGain.gain.setValueAtTime(0.6, t);
-        noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-
-        noise.connect(filter);
-        filter.connect(noiseGain);
-        noiseGain.connect(ctx.destination);
-        noise.start(t);
-        
-        // 2. მაგიდაზე დაცემის მსუბუქი დარტყმის ხმა (Thump)
+      const playPop = (freq, delay = 0) => {
         const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(120, t);
-        osc.frequency.exponentialRampToValueAtTime(40, t + 0.05);
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
         
-        const oscGain = ctx.createGain();
-        oscGain.gain.setValueAtTime(0.3, t);
-        oscGain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
-
-        osc.connect(oscGain);
-        oscGain.connect(ctx.destination);
-        osc.start(t);
-        osc.stop(t + 0.05);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+        osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + delay + 0.1);
+        
+        gain.gain.setValueAtTime(0.15, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.1);
+        
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.1);
       };
 
-      playCardSlap(0); // პირველი შრიალი
       if (isCapture) {
-        playCardSlap(0.15); // მოჭრის შემთხვევაში მეორე კარტის შრიალიც ემატება
+        // მოჭრა: ორმაგი მხიარული ხმა
+        playPop(400, 0);
+        playPop(600, 0.08);
+      } else {
+        // უბრალოდ დაგდება: ერთი რბილი ხმა
+        playPop(300, 0);
       }
     } catch (e) {}
   };
