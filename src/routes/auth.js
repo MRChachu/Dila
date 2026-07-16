@@ -29,11 +29,18 @@ router.post('/register', async (req, res) => {
     const existingUser = await User.findOne({ username: caseInsensitive(username) });
     if (existingUser) return res.status(400).json({ message: 'ეს სახელი უკვე დაკავებულია!' });
 
-    const newUser = new User({ username, dateOfBirth, secretWord, password }); 
+    // 🟢 აქ დავამატეთ coins: 1000 საწყისი ბალანსისთვის
+    const newUser = new User({ 
+      username, 
+      dateOfBirth, 
+      secretWord, 
+      password, 
+      coins: 1000 
+    }); 
     await newUser.save();
 
     const { password: _, ...userData } = newUser._doc;
-    res.status(201).json({ user: userData, message: 'წარმატებით დარეგისტრირდით!' });
+    res.status(201).json({ user: userData, message: 'წარმატებით დარეგისტრირდით! დაგერიცხათ 1000 🪙' });
   } catch (err) {
     res.status(500).json({ message: 'სერვერის შეცდომა რეგისტრაციისას' });
   }
