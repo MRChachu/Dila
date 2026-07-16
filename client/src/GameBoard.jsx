@@ -470,7 +470,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               })()}
             </div>
 
-            {/* 🟢 მაგიდის განახლებული კარტები (უფრო რეალისტური) */}
+            {/* 🟢 მაგიდის განახლებული, უფრო კომპაქტური კარტები */}
             <div className="w-full md:w-[85%] max-w-2xl min-h-[11rem] md:min-h-[14rem] py-6 md:py-8 bg-stone-950/30 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 shadow-inner flex items-center justify-center px-2 md:px-4 z-10 relative">
               <div className="flex flex-wrap justify-center gap-2 md:gap-3 z-10">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
@@ -482,7 +482,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                       key={`${c.rank}-${c.suit}`} 
                       onClick={() => isMyTurn && toggleTableCard(c)}
                       style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'backwards' }}
-                      className={`relative w-14 h-20 md:w-20 md:h-32 bg-gradient-to-br from-stone-50 to-stone-300 rounded-lg md:rounded-xl shadow-xl flex flex-col justify-between p-1 md:p-1.5 select-none cursor-pointer transition-all duration-300 border border-stone-400
+                      className={`relative w-14 h-20 md:w-20 md:h-28 bg-gradient-to-br from-stone-50 to-stone-300 rounded-md md:rounded-xl shadow-xl flex flex-col justify-between p-1 md:p-1.5 select-none cursor-pointer transition-all duration-300 border border-stone-400
                         ${isSelected ? `ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')} -translate-y-2 md:-translate-y-3 shadow-2xl scale-105` : 'hover:-translate-y-1 hover:shadow-2xl'}
                         ${isBeingCaptured ? 'animate-fly-out z-50 pointer-events-none' : 'animate-in zoom-in-50 fade-in duration-500'}
                       `}
@@ -491,7 +491,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                         <span className={`text-[10px] md:text-[14px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
                         <span className={`text-[8px] md:text-[10px] ${getSuitColor(c.suit)} leading-none mt-0.5`}>{c.suit}</span>
                       </div>
-                      <span className={`text-2xl md:text-4xl self-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-sm ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                      <span className={`text-2xl md:text-3xl self-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-sm ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       <div className="flex flex-col items-center self-end rotate-180">
                         <span className={`text-[10px] md:text-[14px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
                         <span className={`text-[8px] md:text-[10px] ${getSuitColor(c.suit)} leading-none mt-0.5`}>{c.suit}</span>
@@ -545,8 +545,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </button>
             </div>
 
-            {/* 🟢 განახლებული, "მარაოს" (Fan) ეფექტით გაშლილი კარტები ხელში */}
-            <div className="flex justify-center items-end h-28 md:h-40 pt-4 pb-2 perspective-1000 w-full mt-2 md:mt-4 overflow-visible">
+            {/* 🟢 ხელის განახლებული კარტები (მოწესრიგებული მარაოს ეფექტით) */}
+            <div className="flex justify-center items-end h-24 md:h-32 pt-4 pb-2 perspective-1000 w-full mt-2 md:mt-4 overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 
@@ -555,8 +555,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 const offset = i - centerIndex;
                 
                 const rotation = offset * 8; 
-                const yPush = Math.abs(offset) * 6; 
-                const overlapMargin = i !== 0 ? '-ml-6 md:-ml-10' : ''; 
+                const yPush = Math.abs(offset) * 4; 
+                const overlapMargin = i !== 0 ? '-ml-5 md:-ml-8' : ''; 
 
                 return (
                   <div 
@@ -571,18 +571,18 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   >
                     <div 
                       onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
-                      className={`relative w-16 h-24 md:w-24 md:h-36 bg-gradient-to-br from-stone-50 to-stone-300 rounded-lg md:rounded-xl flex flex-col justify-between p-1.5 md:p-2 select-none cursor-pointer transition-all duration-300 border border-stone-400 shadow-[0_5px_15px_rgba(0,0,0,0.4)]
-                        ${isSelected ? `-translate-y-6 md:-translate-y-10 scale-110 shadow-[0_20px_40px_rgba(0,0,0,0.6)] ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-3 md:hover:-translate-y-5 hover:shadow-[0_15px_30px_rgba(0,0,0,0.6)]'}
+                      className={`relative w-14 h-20 md:w-20 md:h-28 bg-gradient-to-br from-stone-50 to-stone-300 rounded-lg md:rounded-xl flex flex-col justify-between p-1 md:p-1.5 select-none cursor-pointer transition-all duration-300 border border-stone-400 shadow-[0_5px_15px_rgba(0,0,0,0.4)]
+                        ${isSelected ? `-translate-y-5 md:-translate-y-8 scale-110 shadow-[0_20px_40px_rgba(0,0,0,0.6)] ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-2 md:hover:-translate-y-4 hover:shadow-[0_15px_30px_rgba(0,0,0,0.6)]'}
                       `}
                     >
                       <div className="flex flex-col items-center self-start">
-                        <span className={`text-[12px] md:text-[16px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
-                        <span className={`text-[10px] md:text-[12px] ${getSuitColor(c.suit)} leading-none mt-0.5`}>{c.suit}</span>
+                        <span className={`text-[11px] md:text-[14px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
+                        <span className={`text-[9px] md:text-[10px] ${getSuitColor(c.suit)} leading-none mt-0.5`}>{c.suit}</span>
                       </div>
-                      <span className={`text-3xl md:text-5xl self-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-sm ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                      <span className={`text-2xl md:text-3xl self-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-sm ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       <div className="flex flex-col items-center self-end rotate-180">
-                        <span className={`text-[12px] md:text-[16px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
-                        <span className={`text-[10px] md:text-[12px] ${getSuitColor(c.suit)} leading-none mt-0.5`}>{c.suit}</span>
+                        <span className={`text-[11px] md:text-[14px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
+                        <span className={`text-[9px] md:text-[10px] ${getSuitColor(c.suit)} leading-none mt-0.5`}>{c.suit}</span>
                       </div>
                     </div>
                   </div>
