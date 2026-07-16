@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2 } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -263,7 +263,6 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState([]); 
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   
-  // 🟢 ადმინ პანელის სთეითები
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [adminPass, setAdminPass] = useState('');
   const [adminUsers, setAdminUsers] = useState([]);
@@ -275,6 +274,36 @@ export default function App() {
 
   const [dailyReward, setDailyReward] = useState(null);
   const [vipDailyReward, setVipDailyReward] = useState(null);
+
+  // 🟢 PWA (App Install) სთეითები და ეფექტი
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallPrompt(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+      setShowInstallPrompt(false);
+    }
+  };
 
   useEffect(() => {
     roomDataRef.current = roomData;
@@ -366,7 +395,6 @@ export default function App() {
       fetchDashboardData(safeUsername);
     });
 
-    // 🟢 გლობალური შეტყობინების მიმღები
     socket.on('systemBroadcast', (msg) => {
       setSystemAlert(msg);
     });
@@ -455,7 +483,6 @@ export default function App() {
       if (res.ok) {
         setAdminUsers(data);
         
-        // 🟢 ვიღებთ სტატისტიკას Dashboard-ისთვის
         const statRes = await fetch('https://purti.onrender.com/api/admin/stats');
         if (statRes.ok) setAdminStats(await statRes.json());
       } else {
@@ -477,7 +504,6 @@ export default function App() {
     } catch (err) { console.error(err); }
   };
 
-  // 🟢 ადმინის გაფართოებული ფუნქციები (წაშლა/განულება)
   const handleAdvancedAdminAction = async (targetUser, action) => {
     if (!window.confirm(`ნამდვილად გინდა ${action === 'delete' ? 'სამუდამოდ წაშალო' : 'გაუნულო სტატისტიკა'} მოთამაშეს: ${targetUser}?`)) return;
     try {
@@ -646,7 +672,25 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 ახალი გლობალური ეკრანის ალერტი (System Broadcast) */}
+      {/* 🟢 ახალი PWA App Install Banner */}
+      {showInstallPrompt && (
+        <div className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[500] bg-stone-900 border border-cyan-500/30 p-4 rounded-2xl shadow-[0_10px_40px_rgba(6,182,212,0.2)] flex flex-col md:flex-row items-center gap-4 w-[90%] max-w-md animate-in slide-in-from-bottom-5">
+           <div className="flex items-center gap-3 w-full">
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shrink-0">
+                <Download size={24} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs md:text-sm font-black text-stone-100 uppercase tracking-wider">აპლიკაციის დაყენება</span>
+                <span className="text-[10px] md:text-xs text-stone-400 font-bold">გადმოწერე და ითამაშე უფრო სწრაფად!</span>
+              </div>
+           </div>
+           <div className="flex items-center gap-2 w-full md:w-auto mt-2 md:mt-0 shrink-0">
+             <button onClick={() => setShowInstallPrompt(false)} className="px-4 py-2.5 bg-stone-800 text-stone-400 hover:text-white text-[10px] font-black uppercase rounded-xl transition-all border border-white/5 w-full md:w-auto active:scale-95">დახურვა</button>
+             <button onClick={handleInstallApp} className="px-5 py-2.5 bg-cyan-500 text-stone-950 hover:bg-cyan-400 text-[10px] font-black uppercase rounded-xl transition-all shadow-[0_0_15px_rgba(6,182,212,0.4)] w-full md:w-auto active:scale-95">გადმოწერა</button>
+           </div>
+        </div>
+      )}
+
       {systemAlert && (
         <div className="fixed inset-0 bg-red-950/80 backdrop-blur-md z-[500] flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="bg-stone-900 border-2 border-red-500 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-[0_0_80px_rgba(239,68,68,0.5)] relative overflow-hidden">
@@ -949,7 +993,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 განახლებული ადმინ პანელი სტატისტიკით, ძებნით და Broadcast-ით */}
       {isAdminOpen && (
         <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
           <div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto custom-scrollbar relative">
@@ -966,7 +1009,6 @@ export default function App() {
               </form>
             ) : (
               <div>
-                {/* 1. ადმინის სტატისტიკის დაფა */}
                 {adminStats && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner">
@@ -984,7 +1026,6 @@ export default function App() {
                   </div>
                 )}
 
-                {/* 2. გლობალური შეტყობინების გაგზავნა */}
                 <div className="bg-red-950/20 border border-red-500/30 rounded-2xl p-4 mb-6 flex flex-col md:flex-row gap-3 items-center">
                   <Megaphone className="text-red-500 shrink-0" size={24}/>
                   <input 
@@ -1008,7 +1049,6 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* 3. ძებნა */}
                 <div className="relative mb-4">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" size={16} />
                   <input 
@@ -1035,7 +1075,6 @@ export default function App() {
                          <div className="text-blue-400">⭐ {u.xp} XP</div>
                       </div>
                       
-                      {/* 4. მოქმედებების ღილაკები */}
                       <div className="flex flex-wrap items-center gap-2">
                         <button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors border border-yellow-500/20">+500 🪙</button>
                         <button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors border border-blue-500/20">+1000 XP</button>
