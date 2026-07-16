@@ -73,11 +73,10 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
-// 🟢 ახალი API ადმინის გაფართოებული მოქმედებებისთვის (წაშლა/განულება)
 app.post('/api/admin/advanced-action', async (req, res) => {
   try {
     const { adminPass, targetUser, action } = req.body;
-    if (adminPass !== process.env.ADMIN_PASS && adminPass !== 'chachu123') { // დაცვისთვის
+    if (adminPass !== process.env.ADMIN_PASS && adminPass !== 'chachu123') { 
         return res.status(403).json({ message: 'წვდომა აკრძალულია' });
     }
     
@@ -116,7 +115,6 @@ const onlineUsersMap = {};
 io.on('connection', (socket) => {
   console.log(`🔌 ახალი კავშირი: ${socket.id}`);
 
-  // 🟢 ადმინის გლობალური შეტყობინების ემიტერი
   socket.on('adminBroadcast', (message) => {
     io.emit('systemBroadcast', message);
   });
@@ -159,9 +157,8 @@ io.on('connection', (socket) => {
           }
 
           if (needsNewQuests) {
-              const questCount = isVip ? 4 : 3; 
               const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
-              dbUser.dailyQuests = shuffled.slice(0, questCount).map(q => ({
+              dbUser.dailyQuests = shuffled.slice(0, 3).map(q => ({
                   questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false
               }));
               dbUser.lastQuestGeneration = now;
