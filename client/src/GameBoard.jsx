@@ -45,32 +45,20 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const playSoftSound = (isCapture = false) => {
     if (isMuted) return;
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // isCapture ამოწმებს მოჭრაა თუ უბრალოდ დაგდება
+      // შეგიძლია ორი სხვადასხვა ხმა გქონდეს, ან ერთი და იგივე გამოიყენო
+      const soundFile = isCapture ? '/card-drop.wav' : '/card-drop.wav'; 
+      const audio = new Audio(soundFile);
+      audio.volume = 0.4; // ხმის სიმაღლე (0-დან 1-მდე)
+      audio.play().catch(e => console.log("Audio play error:", e));
       
-      const playPop = (freq, delay = 0) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
-        osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + delay + 0.1);
-        
-        gain.gain.setValueAtTime(0.15, ctx.currentTime + delay);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.1);
-        
-        osc.start(ctx.currentTime + delay);
-        osc.stop(ctx.currentTime + delay + 0.1);
-      };
-
+      // თუ მოჭრაა, მეორე კარტის ხმაც დავამატოთ ოდნავ დაგვიანებით
       if (isCapture) {
-        // მოჭრა: ორმაგი მხიარული ხმა
-        playPop(400, 0);
-        playPop(600, 0.08);
-      } else {
-        // უბრალოდ დაგდება: ერთი რბილი ხმა
-        playPop(300, 0);
+        setTimeout(() => {
+          const audio2 = new Audio(soundFile);
+          audio2.volume = 0.3;
+          audio2.play().catch(e => {});
+        }, 150);
       }
     } catch (e) {}
   };
