@@ -41,20 +41,58 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
   };
 
+  // 🟢 განახლებული: კარტის შრიალის რეალისტური ხმა
   const playSoftSound = (isCapture = false) => {
     if (isMuted) return;
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(isCapture ? 220 : 330, ctx.currentTime);
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1);
+      
+      const playCardSlap = (delay = 0) => {
+        const t = ctx.currentTime + delay;
+        
+        // 1. ქაღალდის შრიალის ხმა (White Noise Burst)
+        const bufferSize = ctx.sampleRate * 0.12; 
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(3000, t);
+        filter.frequency.exponentialRampToValueAtTime(800, t + 0.1);
+
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.6, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        noise.start(t);
+        
+        // 2. მაგიდაზე დაცემის მსუბუქი დარტყმის ხმა (Thump)
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(120, t);
+        osc.frequency.exponentialRampToValueAtTime(40, t + 0.05);
+        
+        const oscGain = ctx.createGain();
+        oscGain.gain.setValueAtTime(0.3, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+
+        osc.connect(oscGain);
+        oscGain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.05);
+      };
+
+      playCardSlap(0); // პირველი შრიალი
+      if (isCapture) {
+        playCardSlap(0.15); // მოჭრის შემთხვევაში მეორე კარტის შრიალიც ემატება
+      }
     } catch (e) {}
   };
 
@@ -470,7 +508,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               })()}
             </div>
 
-            {/* 🟢 მაგიდის განახლებული, უფრო კომპაქტური კარტები */}
             <div className="w-full md:w-[85%] max-w-2xl min-h-[11rem] md:min-h-[14rem] py-6 md:py-8 bg-stone-950/30 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 shadow-inner flex items-center justify-center px-2 md:px-4 z-10 relative">
               <div className="flex flex-wrap justify-center gap-2 md:gap-3 z-10">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
@@ -545,7 +582,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </button>
             </div>
 
-            {/* 🟢 ხელის განახლებული კარტები (მოწესრიგებული მარაოს ეფექტით) */}
             <div className="flex justify-center items-end h-24 md:h-32 pt-4 pb-2 perspective-1000 w-full mt-2 md:mt-4 overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
