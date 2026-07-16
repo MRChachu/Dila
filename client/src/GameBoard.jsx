@@ -49,7 +49,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       // შეგიძლია ორი სხვადასხვა ხმა გქონდეს, ან ერთი და იგივე გამოიყენო
       const soundFile = isCapture ? '/card-drop.wav' : '/card-drop.wav'; 
       const audio = new Audio(soundFile);
-      audio.volume = 0.4; // ხმის სიმაღლე (0-დან 1-მდე)
+      audio.volume = 0.3; // ხმის სიმაღლე (0-დან 1-მდე)
       audio.play().catch(e => console.log("Audio play error:", e));
       
       // თუ მოჭრაა, მეორე კარტის ხმაც დავამატოთ ოდნავ დაგვიანებით
