@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2 } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -130,7 +130,6 @@ const SHOP_ITEMS = {
     { id: 'midnight', price: 2500, name: 'Midnight Gold' },
     { id: 'neon', price: 4000, name: 'Cyberpunk Neon' },
     { id: 'dark_club', price: 5000, name: 'VIP Dark Club' },
-    // 🟢 აქ დავამატეთ 2 ახალი VIP მაგიდა
     { id: 'vip_gold', price: 'VIP', name: '👑 Royal Gold', isVipExclusive: true },
     { id: 'vip_diamond', price: 'VIP', name: '💎 Diamond Lounge', isVipExclusive: true }
   ],
@@ -264,10 +263,15 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState([]); 
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   
+  // 🟢 ადმინ პანელის სთეითები
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [adminPass, setAdminPass] = useState('');
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminMessage, setAdminMessage] = useState('');
+  const [adminStats, setAdminStats] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [broadcastText, setBroadcastText] = useState('');
+  const [systemAlert, setSystemAlert] = useState(null);
 
   const [dailyReward, setDailyReward] = useState(null);
   const [vipDailyReward, setVipDailyReward] = useState(null);
@@ -357,10 +361,14 @@ export default function App() {
     socket.on('receiveUserProfile', (data) => setInspectProfile(data)); 
     socket.on('roomNotFound', () => handleResetToLobby());
 
-    // 🟢 VIP დღიური საჩუქრის მიღების ლოგიკა
     socket.on('vipBonusClaimed', (amount) => {
       setVipDailyReward(amount);
       fetchDashboardData(safeUsername);
+    });
+
+    // 🟢 გლობალური შეტყობინების მიმღები
+    socket.on('systemBroadcast', (msg) => {
+      setSystemAlert(msg);
     });
 
     const handleOnConnect = () => {
@@ -392,6 +400,7 @@ export default function App() {
     return () => {
       socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('joinError'); socket.off('activeRoomsList'); 
       socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound'); socket.off('vipBonusClaimed');
+      socket.off('systemBroadcast');
       socket.off('connect', handleOnConnect);
     };
   }, []);
@@ -436,15 +445,22 @@ export default function App() {
   };
 
   const loginAdmin = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     try {
       const res = await fetch('https://purti.onrender.com/api/auth/admin/users', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminPass })
       });
       const data = await res.json();
-      if (res.ok) setAdminUsers(data);
-      else setAdminMessage(data.message);
+      if (res.ok) {
+        setAdminUsers(data);
+        
+        // 🟢 ვიღებთ სტატისტიკას Dashboard-ისთვის
+        const statRes = await fetch('https://purti.onrender.com/api/admin/stats');
+        if (statRes.ok) setAdminStats(await statRes.json());
+      } else {
+        setAdminMessage(data.message);
+      }
     } catch (err) { setAdminMessage('შეცდომა სერვერთან კავშირისას!'); }
   };
 
@@ -456,11 +472,25 @@ export default function App() {
       });
       if (res.ok) {
          setAdminMessage(`მოთამაშე ${targetUser} წარმატებით განახლდა!`);
-         const usersRes = await fetch('https://purti.onrender.com/api/auth/admin/users', { 
-           method: 'POST', headers: { 'Content-Type': 'application/json' }, 
-           body: JSON.stringify({ adminPass }) 
-         });
-         setAdminUsers(await usersRes.json());
+         loginAdmin(); 
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  // 🟢 ადმინის გაფართოებული ფუნქციები (წაშლა/განულება)
+  const handleAdvancedAdminAction = async (targetUser, action) => {
+    if (!window.confirm(`ნამდვილად გინდა ${action === 'delete' ? 'სამუდამოდ წაშალო' : 'გაუნულო სტატისტიკა'} მოთამაშეს: ${targetUser}?`)) return;
+    try {
+      const res = await fetch('https://purti.onrender.com/api/admin/advanced-action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminPass, targetUser, action })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setToastMsg(data.message);
+        loginAdmin();
+      } else {
+        setToastMsg(data.message);
       }
     } catch (err) { console.error(err); }
   };
@@ -580,7 +610,6 @@ export default function App() {
   const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
   const myAchievements = profileData?.achievements || [];
 
-  // 🟢 2 ახალი VIP მაგიდის დიზაინი
   const themeStyles = {
     wood: { bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", overlay: "bg-black/10", accent: "text-amber-500", accentBg: "bg-amber-500", card: "bg-stone-900/80" },
     lavender: { bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)", overlay: "bg-black/10", accent: "text-violet-400", accentBg: "bg-violet-500", card: "bg-indigo-950/70" },
@@ -614,6 +643,23 @@ export default function App() {
              <CheckCircle2 size={16} className="md:w-5 md:h-5" />
           </div>
           <span className="text-stone-100 tracking-wide uppercase">{toastMsg}</span>
+        </div>
+      )}
+
+      {/* 🟢 ახალი გლობალური ეკრანის ალერტი (System Broadcast) */}
+      {systemAlert && (
+        <div className="fixed inset-0 bg-red-950/80 backdrop-blur-md z-[500] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-stone-900 border-2 border-red-500 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-[0_0_80px_rgba(239,68,68,0.5)] relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-500/20 via-stone-900 to-stone-900 z-0"></div>
+            <div className="relative z-10">
+              <Megaphone size={56} className="mx-auto text-red-500 mb-4 animate-bounce drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+              <h2 className="text-xl md:text-2xl font-black text-red-500 uppercase tracking-widest mb-4">შეტყობინება!</h2>
+              <div className="bg-stone-950/80 rounded-2xl p-4 md:p-5 border border-white/10 shadow-inner mb-6">
+                <p className="text-stone-200 font-bold text-sm md:text-base">{systemAlert}</p>
+              </div>
+              <button onClick={() => setSystemAlert(null)} className="w-full py-3 md:py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl uppercase transition-all shadow-lg active:scale-95">გასაგებია</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -773,7 +819,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* 🟢 აქ დავამატეთ VIP ექსკლუზიური მაგიდების დაყენების ლოგიკა */}
               {shopTab === 'tables' && (
                 <div className="grid grid-cols-2 gap-3 md:gap-4">
                   {SHOP_ITEMS.tables.map(item => {
@@ -904,10 +949,11 @@ export default function App() {
         </div>
       )}
 
+      {/* 🟢 განახლებული ადმინ პანელი სტატისტიკით, ძებნით და Broadcast-ით */}
       {isAdminOpen && (
         <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
-          <div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+          <div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto custom-scrollbar relative">
+            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 sticky top-0 bg-stone-900 z-10">
               <h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Control Panel</h2>
               <button onClick={() => {setIsAdminOpen(false); setAdminUsers([]); setAdminPass(''); setAdminMessage('');}} className="text-stone-500 hover:text-stone-300">{t.close}</button>
             </div>
@@ -920,10 +966,65 @@ export default function App() {
               </form>
             ) : (
               <div>
-                {adminMessage && <div className="mb-4 p-2 bg-emerald-500/20 text-emerald-400 text-xs text-center rounded-lg font-bold">{adminMessage}</div>}
+                {/* 1. ადმინის სტატისტიკის დაფა */}
+                {adminStats && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner">
+                      <span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">სულ მოთამაშე</span>
+                      <div className="text-3xl font-black text-stone-100">{adminStats.totalUsers}</div>
+                    </div>
+                    <div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner">
+                      <span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ჯამური თამაშები</span>
+                      <div className="text-3xl font-black text-blue-400">{adminStats.totalGamesPlayed}</div>
+                    </div>
+                    <div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner">
+                      <span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ეკონომიკა (ქოინები)</span>
+                      <div className="text-3xl font-black text-yellow-500">{adminStats.totalCoins} 🪙</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. გლობალური შეტყობინების გაგზავნა */}
+                <div className="bg-red-950/20 border border-red-500/30 rounded-2xl p-4 mb-6 flex flex-col md:flex-row gap-3 items-center">
+                  <Megaphone className="text-red-500 shrink-0" size={24}/>
+                  <input 
+                    type="text" 
+                    placeholder="დაწერე გლობალური შეტყობინება ყველასთვის..." 
+                    value={broadcastText}
+                    onChange={(e) => setBroadcastText(e.target.value)}
+                    className="flex-1 bg-stone-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-stone-100 outline-none"
+                  />
+                  <button 
+                    onClick={() => { 
+                      if(broadcastText.trim()) {
+                        socket.emit('adminBroadcast', broadcastText.trim()); 
+                        setBroadcastText(''); 
+                        setToastMsg('გლობალური შეტყობინება გაიგზავნა!'); 
+                      }
+                    }}
+                    className="w-full md:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase rounded-xl transition-all shadow-md shrink-0"
+                  >
+                    გაგზავნა
+                  </button>
+                </div>
+
+                {/* 3. ძებნა */}
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" size={16} />
+                  <input 
+                    type="text" 
+                    placeholder="მოძებნე მოთამაშე სახელით..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-stone-950 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-stone-100 outline-none"
+                  />
+                </div>
+
+                {adminMessage && <div className="mb-4 p-2 bg-emerald-500/20 text-emerald-400 text-xs text-center rounded-lg font-bold border border-emerald-500/30">{adminMessage}</div>}
+                
                 <div className="grid gap-3">
-                  {adminUsers.map((u, i) => (
-                    <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4`}>
+                  {adminUsers.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase())).map((u, i) => (
+                    <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4 transition-all hover:bg-stone-800/40`}>
                       <div className="min-w-[150px]">
                         <div className="text-sm font-black text-stone-100">{u.username}</div>
                         <div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">{u.password}</span></div>
@@ -933,17 +1034,27 @@ export default function App() {
                          <div className="text-yellow-500">🪙 {u.coins}</div>
                          <div className="text-blue-400">⭐ {u.xp} XP</div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors">+500 🪙</button>
-                        <button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors">+1000 XP</button>
+                      
+                      {/* 4. მოქმედებების ღილაკები */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors border border-yellow-500/20">+500 🪙</button>
+                        <button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors border border-blue-500/20">+1000 XP</button>
+                        
+                        <button onClick={() => handleAdvancedAdminAction(u.username, 'reset')} className="px-3 py-1.5 bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 rounded-lg text-[10px] font-black transition-colors border border-orange-500/20" title="სტატისტიკის განულება">RESET</button>
+                        
                         {u.isBanned ? (
-                          <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors">UNBAN</button>
+                          <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors shadow-md">UNBAN</button>
                         ) : (
-                          <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors">BAN</button>
+                          <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors shadow-md">BAN</button>
                         )}
+
+                        <button onClick={() => handleAdvancedAdminAction(u.username, 'delete')} className="p-1.5 bg-red-950 text-red-500 hover:bg-red-900 rounded-lg transition-colors border border-red-500/30" title="ექაუნთის წაშლა"><Trash2 size={14}/></button>
                       </div>
                     </div>
                   ))}
+                  {adminUsers.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                    <div className="text-center py-6 text-stone-500 text-xs font-bold uppercase">მოთამაშე ვერ მოიძებნა</div>
+                  )}
                 </div>
               </div>
             )}
@@ -1467,7 +1578,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 ახალი VIP ექსკლუზიური ყოველდღიური საჩუქრის ანიმაცია */}
       {vipDailyReward && (
         <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className={`bg-stone-900 border-2 border-yellow-400 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(250,204,21,0.2)] transform transition-all relative overflow-hidden`}>
