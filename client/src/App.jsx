@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import DamkaBoard from './DamkaBoard'; // 🟢 შემოვიტანეთ შაშის დაფა
+import DamkaBoard from './DamkaBoard';
 import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
@@ -237,6 +237,9 @@ export default function App() {
 
   const [onlineUser, setOnlineUser] = useState([]);
   const [inviteAlert, setInviteAlert] = useState(null);
+  
+  // 🟢 დამატებულია მოწვევის სამიზნე სთეითი ახალი ფანჯრისთვის
+  const [inviteTarget, setInviteTarget] = useState(null);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -253,7 +256,6 @@ export default function App() {
   const [selectedRoomIdForJoin, setSelectedRoomIdForJoin] = useState('');
   const [joinPasswordInput, setJoinPasswordInput] = useState('');
 
-  // 🟢 დამატებულია თამაშის ტიპის არჩევა (phurti ან damka)
   const [mGameType, setMGameType] = useState('phurti');
   const [mTargetScore, setMTargetScore] = useState(11);
   const [mMaxPlayers, setMMaxPlayers] = useState(4);
@@ -538,12 +540,10 @@ export default function App() {
     setIsPasswordModalOpen(false); setJoinPasswordInput('');
   };
 
-  // 🟢 განახლდა ოთახის შექმნის გაგზავნა
   const handleConfirmCreateRoom = (e) => {
     e.preventDefault();
     const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
     
-    // დამკას შემთხვევაში პარამეტრები ფიქსირებულია (2 მოთამაშე, ბოტები არა)
     const finalMaxPlayers = mGameType === 'damka' ? 2 : mMaxPlayers;
     const finalBots = mGameType === 'damka' ? false : mAllowBots;
 
@@ -563,17 +563,55 @@ export default function App() {
     setIsCreateModalOpen(false); setMRoomPassword('');
   };
 
-  const handleSendInvite = (targetSocketId) => {
+  // 🟢 მოწვევის ღილაკზე დაჭერის ლოგიკა
+  const handleSendInviteClick = (targetSocketId, targetName) => {
     if (inRoom && roomData) {
+      // უკვე ოთახშია, ვაგზავნით მიმდინარე ოთახის მონაცემებს
       socket.emit('sendInvite', { targetSocketId, roomId: roomData.id, password: roomData.password, fromName: safeUsername, gameType: roomData.gameType });
+      setToastMsg('მოწვევა გაიგზავნა!');
     } else {
-      const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
-      socket.emit('joinRoom', { action: 'create', roomId: generatedId, playerName: safeUsername, roomPassword: null, maxPlayers: 4, targetScore: 11, allowBots: false, isRanked: true, gameType: 'phurti' });
-      setInRoom(true);
-      localStorage.setItem('phurti_roomId', generatedId); 
-      localStorage.setItem('phurti_inRoom', 'true');
-      setTimeout(() => { socket.emit('sendInvite', { targetSocketId, roomId: generatedId, password: null, fromName: safeUsername, gameType: 'phurti' }); }, 300);
+      // ოთახში არ არის, ვხსნით თამაშის არჩევის ფანჯარას
+      setInviteTarget({ socketId: targetSocketId, name: targetName });
     }
+  };
+
+  // 🟢 თამაშის არჩევის შემდეგ მოწვევის გაგზავნა
+  const handleConfirmGameInvite = (selectedGameType) => {
+    if (!inviteTarget) return;
+
+    const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
+    const isDamka = selectedGameType === 'damka';
+
+    // 1. ვქმნით ოთახს
+    socket.emit('joinRoom', { 
+      action: 'create', 
+      roomId: generatedId, 
+      playerName: safeUsername, 
+      roomPassword: null, 
+      maxPlayers: isDamka ? 2 : 4, 
+      targetScore: 11, 
+      allowBots: false, 
+      isRanked: !isDamka,
+      gameType: selectedGameType 
+    });
+    
+    setInRoom(true);
+    localStorage.setItem('phurti_roomId', generatedId); 
+    localStorage.setItem('phurti_inRoom', 'true');
+    
+    // 2. ველოდებით ცოტა ხანს და ვაგზავნით მოწვევას (რომ სერვერმა მოასწროს ოთახის შექმნა)
+    setTimeout(() => { 
+      socket.emit('sendInvite', { 
+        targetSocketId: inviteTarget.socketId, 
+        roomId: generatedId, 
+        password: null, 
+        fromName: safeUsername, 
+        gameType: selectedGameType 
+      }); 
+      setToastMsg('მოწვევა გაიგზავნა!');
+    }, 300);
+    
+    setInviteTarget(null); // ვხურავთ მოდალს
   };
 
   const handleSendFriendReq = async (targetName) => {
@@ -685,6 +723,35 @@ export default function App() {
              <CheckCircle2 size={16} className="md:w-5 md:h-5" />
           </div>
           <span className="text-stone-100 tracking-wide uppercase">{toastMsg}</span>
+        </div>
+      )}
+
+      {/* 🟢 მოწვევის თამაშის არჩევის მოდალი */}
+      {inviteTarget && (
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[150] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 shadow-2xl font-sans relative text-center`}>
+            <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} uppercase tracking-wider mb-2`}>
+              აირჩიე თამაში
+            </h3>
+            <p className="text-xs text-stone-400 font-bold mb-4">
+              იწვევთ მოთამაშეს: <span className="text-stone-200">{inviteTarget.name}</span>
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => handleConfirmGameInvite('phurti')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group">
+                 <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-200">ფურთი</span>
+              </button>
+              <button onClick={() => handleConfirmGameInvite('damka')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group">
+                 <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">♟️</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-200">შაში</span>
+              </button>
+            </div>
+
+            <button onClick={() => setInviteTarget(null)} className="w-full mt-4 py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase">
+              გაუქმება
+            </button>
+          </div>
         </div>
       )}
 
@@ -1322,7 +1389,7 @@ export default function App() {
                               {!profileData?.friends?.includes(u.username) && (
                                 <button onClick={() => handleSendFriendReq(u.username)} title="მეგობრებში დამატება" className={`p-1.5 md:p-2 rounded-lg bg-stone-800 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95`}><UserPlus size={12} /></button>
                               )}
-                              <button onClick={() => handleSendInvite(u.socketId)} title="თამაშში მოწვევა" className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}>
+                              <button onClick={() => handleSendInviteClick(u.socketId, u.username)} title="თამაშში მოწვევა" className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}>
                                 <Swords size={12} /> {t.invite}
                               </button>
                             </div>
@@ -1342,7 +1409,7 @@ export default function App() {
                                 <span className={`font-bold truncate max-w-[80px] hover:underline ${isOnline ? 'text-stone-200' : 'text-stone-500'}`}>{friendName}</span>
                               </div>
                               {isOnline && (
-                                <button onClick={() => handleSendInvite(isOnline.socketId)} className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}>
+                                <button onClick={() => handleSendInviteClick(isOnline.socketId, friendName)} className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}>
                                   <Swords size={12} /> {t.invite}
                                 </button>
                               )}
@@ -1559,7 +1626,6 @@ export default function App() {
                     </div>
                   ) : (
                     <>
-                      {/* 🟢 აქ ირჩევა რომელი დაფა გამოჩნდეს */}
                       {roomData.gameType === 'damka' ? (
                          <DamkaBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} checkIsVip={checkIsVip} VipName={VipName} />
                       ) : (
@@ -1574,7 +1640,6 @@ export default function App() {
         </main>
       </div>
 
-      {/* 🟢 განახლებული შექმნის მოდალი თამაშის არჩევით */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-2xl font-sans relative`}>
