@@ -208,6 +208,35 @@ export const VipName = ({ name, isVip, className = '' }) => {
   return <span className={className}>{name}</span>;
 };
 
+// 🟢 ულამაზესი 3D შაშის ქვის კომპონენტი მენიუებისთვის
+export const DamkaIcon = ({ type = 'red', size = 'md', className = '' }) => {
+  const dimensions = {
+    sm: 'w-3.5 h-3.5',
+    md: 'w-5 h-5',
+    lg: 'w-10 h-10',
+    xl: 'w-16 h-16'
+  }[size];
+
+  const crownSizes = { sm: 6, md: 10, lg: 20, xl: 32 }[size];
+  const innerBorderW = size === 'sm' ? 'border-[0.5px]' : size === 'xl' ? 'border-2' : 'border-[1px]';
+  const outerBorderW = size === 'sm' ? 'border-[1px]' : size === 'xl' ? 'border-[3px]' : 'border-[2px]';
+
+  const colors = type === 'red' 
+    ? 'bg-gradient-to-br from-red-500 to-red-800 border-red-950 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.4),0_2px_4px_rgba(0,0,0,0.6)]'
+    : 'bg-gradient-to-br from-stone-100 to-stone-300 border-stone-400 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.6)]';
+
+  const innerBorder = type === 'red' ? 'border-red-950' : 'border-stone-400';
+  const crownColor = type === 'red' ? 'text-amber-400' : 'text-amber-500';
+
+  return (
+    <div className={`${dimensions} ${outerBorderW} rounded-full flex items-center justify-center shrink-0 ${colors} ${className}`}>
+      <div className={`w-[65%] h-[65%] rounded-full ${innerBorderW} flex items-center justify-center opacity-80 ${innerBorder}`}>
+        <Crown size={crownSizes} strokeWidth={3} className={`${crownColor} drop-shadow-md`} />
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [userState, setUserState] = useState(() => {
     const savedUser = localStorage.getItem('phurti_user');
@@ -455,14 +484,6 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [toastMsg]);
-
-  const getLeague = (xp = 0) => {
-    if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
-    if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
-    if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' };
-    if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' };
-    return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
-  };
 
   const loadLeaderboard = async () => {
     try {
@@ -734,11 +755,10 @@ export default function App() {
                  <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span>
                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-200">ფურთი</span>
               </button>
-              {/* 🟢 გასწორდა: მოწვევის არჩევაში წითელი და თეთრი ქვები */}
               <button onClick={() => handleConfirmGameInvite('damka')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group">
-                 <div className="flex -space-x-2 group-hover:scale-110 transition-transform drop-shadow-md">
-                     <span className="text-3xl z-10 animate-bounce">🔴</span>
-                     <span className="text-3xl animate-bounce delay-100">⚪</span>
+                 <div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2">
+                     <DamkaIcon type="red" size="lg" className="z-10 animate-bounce" />
+                     <DamkaIcon type="white" size="lg" className="mt-2 animate-bounce delay-100" />
                  </div>
                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-200">შაში</span>
               </button>
@@ -796,9 +816,8 @@ export default function App() {
             <p className="text-sm font-bold text-stone-400 mb-1">
               <span className="font-black">{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})
             </p>
-            <div className="bg-stone-950 px-3 py-1 rounded-md text-[10px] text-stone-500 uppercase font-black tracking-widest border border-white/5 inline-block">
-               {/* 🟢 გასწორდა: მოწვევის სიგნალი */}
-               {inviteAlert.gameType === 'damka' ? '🔴 შაში' : '🃏 ფურთი'}
+            <div className="bg-stone-950 px-3 py-1 rounded-md text-[10px] text-stone-500 uppercase font-black tracking-widest border border-white/5 inline-flex items-center gap-1.5 justify-center">
+               {inviteAlert.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}
             </div>
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5 mt-4">
               <button onClick={() => { 
@@ -1200,9 +1219,8 @@ export default function App() {
                             <span className={`font-black text-xs md:text-sm uppercase tracking-wider flex items-center gap-1.5 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
                                {isWin ? `🏆 ${t.wins}` : '💔'}
                             </span>
-                            {/* 🟢 გასწორდა: ისტორიის ტეგში */}
-                            <span className="text-[8px] bg-stone-950 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md font-black uppercase">
-                              {game.gameType === 'damka' ? '🔴 შაში' : '🃏 ფურთი'}
+                            <span className="text-[8px] bg-stone-950 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md font-black uppercase flex items-center gap-1">
+                              {game.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}
                             </span>
                           </div>
                           <span className="text-[9px] md:text-[10px] text-stone-400 font-bold bg-stone-950/50 px-2 py-1 rounded-lg">
@@ -1527,9 +1545,8 @@ export default function App() {
                                  <span className="text-xs">{room.hostAvatar || '😎'}</span> 
                                  <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> 
                                  {room.isPrivate && <Lock size={10} className="text-stone-500" />}
-                                 {/* 🟢 გასწორდა: ოთახების სიაში წითელი რგოლი */}
                                  <span className="text-[8px] bg-stone-900 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md uppercase ml-1 shadow-sm flex items-center gap-1">
-                                   {room.gameType === 'damka' ? '🔴 შაში' : '🃏 ფურთი'}
+                                   {room.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}
                                  </span>
                                </div>
                                <div className="flex gap-1.5 items-center">
@@ -1559,9 +1576,8 @@ export default function App() {
                         <div className="border-b border-white/10 pb-3 md:pb-4 flex justify-between items-start">
                           <div className="flex flex-col gap-1">
                              <h3 className={`text-lg md:text-xl font-black ${activeTheme.accent} font-mono`}>ROOM #{roomData.id}</h3>
-                             {/* 🟢 გასწორდა: ოთახის მოლოდინის სათაურში */}
                              <span className="text-[10px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400 w-max shadow-inner flex items-center gap-1.5">
-                               {roomData.gameType === 'damka' ? '🔴 შაში (Damka)' : '🃏 ფურთი (Phurti)'}
+                               {roomData.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში (Damka)</> : '🃏 ფურთი (Phurti)'}
                              </span>
                           </div>
                           <span className="text-[9px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400">{roomData.hostTheme || 'wood'} Theme</span>
@@ -1617,10 +1633,9 @@ export default function App() {
                           </>
                         ) : (
                            <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-8">
-                              {/* 🟢 გასწორდა: ცარიელი ოთახის დიდი ლოგო */}
-                              <div className="flex gap-2 text-6xl drop-shadow-md mb-2">
-                                  <span className="animate-bounce">🔴</span>
-                                  <span className="animate-bounce delay-100">⚪</span>
+                              <div className="flex -space-x-4 mb-4">
+                                  <DamkaIcon type="red" size="xl" className="z-10 animate-bounce" />
+                                  <DamkaIcon type="white" size="xl" className="mt-4 animate-bounce delay-100" />
                               </div>
                               <h4 className="text-lg font-black text-stone-200 uppercase tracking-widest">კლასიკური შაში</h4>
                               <p className="text-xs font-bold text-stone-400 max-w-xs">შაში ითამაშება მხოლოდ 2 მოთამაშეზე. ბოტები და რეიტინგული სისტემა ამ ეტაპზე გამორთულია.</p>
@@ -1631,7 +1646,7 @@ export default function App() {
                   ) : (
                     <>
                       {roomData.gameType === 'damka' ? (
-                         <DamkaBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} checkIsVip={checkIsVip} VipName={VipName} />
+                         <DamkaBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} checkIsVip={checkIsVip} VipName={VipName} DamkaIcon={DamkaIcon} />
                       ) : (
                          <GameBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} checkIsVip={checkIsVip} VipName={VipName} />
                       )}
@@ -1654,11 +1669,10 @@ export default function App() {
                  <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span>
                  <span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-300'}`}>ფურთი</span>
               </button>
-              {/* 🟢 გასწორდა: თამაშის შექმნის მენიუში */}
               <button type="button" onClick={() => setMGameType('damka')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}>
-                 <div className="flex -space-x-2 group-hover:scale-110 transition-transform drop-shadow-md">
-                     <span className="text-3xl z-10">🔴</span>
-                     <span className="text-3xl">⚪</span>
+                 <div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2">
+                     <DamkaIcon type="red" size="lg" className="z-10" />
+                     <DamkaIcon type="white" size="lg" className="mt-2" />
                  </div>
                  <span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-300'}`}>შაში (დამკა)</span>
               </button>
@@ -1700,8 +1714,7 @@ export default function App() {
               </>
             ) : (
               <div className="bg-stone-950/60 border border-white/5 rounded-xl p-4 text-center mt-2 shadow-inner">
-                 {/* 🟢 გასწორდა: ტექსტის ინდიკატორი */}
-                 <p className="text-[10px] md:text-xs text-stone-400 font-bold leading-relaxed"><span className="text-sm">🔴</span> კლასიკური შაში ითამაშება მხოლოდ 2 მოთამაშეზე. ბოტები და რეიტინგული სისტემა ამ ეტაპზე გამორთულია.</p>
+                 <p className="text-[10px] md:text-xs text-stone-400 font-bold leading-relaxed flex items-center justify-center gap-2"><DamkaIcon type="red" size="sm" /> კლასიკური შაში ითამაშება მხოლოდ 2 მოთამაშეზე. ბოტები და რეიტინგული სისტემა ამ ეტაპზე გამორთულია.</p>
               </div>
             )}
 
