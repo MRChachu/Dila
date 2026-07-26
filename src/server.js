@@ -11,6 +11,7 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 const User = require('./models/User');
 const { createDeck, isValidCapture, calculateRoundScores, getBestMove } = require('./gameLogic');
 const { createDamkaBoard, validateDamkaMove } = require('./damkaLogic'); // 🟢 შემოვიტანეთ დამკას ლოგიკა
+const { createDamkaBoard, validateDamkaMove, hasCaptureMoves } = require('./damkaLogic');
 
 const ALL_DAILY_QUESTS = [
   { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 15 },
@@ -597,28 +598,35 @@ io.on('connection', (socket) => {
     const playerIndex = room.players.findIndex(p => p.id === socket.id);
     if (room.currentTurn !== playerIndex) return socket.emit('error', 'ახლა შენი სვლა არ არის!');
     
-    // სვლის ვალიდაცია
+    // 🟢 მრავალჯერადი მოჭრის შეზღუდვა: უნდა იაროს მხოლოდ იმ ქვით!
+    if (room.multiCapturePiece) {
+        if (from.r !== room.multiCapturePiece.r || from.c !== room.multiCapturePiece.c) {
+            return socket.emit('error', 'უნდა გააგრძელო მოჭრა იმავე ქვით!');
+        }
+    }
+    
     const validation = validateDamkaMove(room.damkaBoard, playerIndex, from, to);
     
     if (!validation.valid) {
         return socket.emit('error', 'არასწორი სვლა!');
     }
     
-    // ვანაცვლებთ ქვას ახალ უჯრაზე
+    // 🟢 თუ მრავალჯერადი მოჭრის პროცესშია, სხვა სვლას (უბრალოდ გადაადგილებას) ვერ გააკეთებს
+    if (room.multiCapturePiece && !validation.isCapture) {
+        return socket.emit('error', 'სავალდებულოა მოჭრის გაგრძელება!');
+    }
+    
     const piece = room.damkaBoard[from.r][from.c];
     piece.isKing = validation.becomesKing;
     room.damkaBoard[to.r][to.c] = piece;
     room.damkaBoard[from.r][from.c] = null;
     
-    // თუ მოჭრა, ვაშორებთ მოწინააღმდეგის ქვას დაფიდან
     if (validation.isCapture && validation.capturedPos) {
         room.damkaBoard[validation.capturedPos.r][validation.capturedPos.c] = null;
     }
     
-    // ვამოწმებთ, ხომ არ მოიგო ვინმემ (ქვა ხომ არ გაუთავდა მეორეს)
     let p0Pieces = 0;
     let p1Pieces = 0;
-    
     for(let r=0; r<8; r++) {
         for(let c=0; c<8; c++) {
             const p = room.damkaBoard[r][c];
@@ -631,70 +639,37 @@ io.on('connection', (socket) => {
         room.roundSummary = {
             matchWinner: p0Pieces === 0 ? room.players[1].name : room.players[0].name
         };
-        // აქ შეგიძლია სამომავლოდ ქოინების/XP დარიცხვის ლოგიკაც დაამატო, როგორც ფურთში გვაქვს
     } else {
-        // რიგის გადაცემა მეორე მოთამაშეზე
-        // (ამ ვერსიაში გამარტივებულია და ერთ მოჭრაზე ეგრევე გადადის რიგი)
-        room.currentTurn = (room.currentTurn + 1) % 2;
+        // 🟢 ვამოწმებთ, აქვს თუ არა ამ ქვის მეტი მოჭრის საშუალება
+        let canMultiCapture = false;
+        if (validation.isCapture) {
+            canMultiCapture = hasCaptureMoves(room.damkaBoard, playerIndex, to.r, to.c);
+        }
         
-        if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
-        room.turnExpiresAt = Date.now() + 30000;
-        roomTimers[roomId] = setTimeout(() => {
-           // თუ დრო გავიდა, რიგი უბრალოდ გადადის
-           if (rooms[roomId] && rooms[roomId].gameStarted) {
-               rooms[roomId].currentTurn = (rooms[roomId].currentTurn + 1) % 2;
-               rooms[roomId].turnExpiresAt = Date.now() + 30000;
-               io.to(roomId).emit('gameUpdated', rooms[roomId]);
-           }
-        }, 30000);
+        if (canMultiCapture) {
+            room.multiCapturePiece = { r: to.r, c: to.c }; // ვიმახსოვრებთ ქვას
+            if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
+            room.turnExpiresAt = Date.now() + 30000;
+            // რიგს არ ვცვლით!
+        } else {
+            room.multiCapturePiece = null;
+            room.currentTurn = (room.currentTurn + 1) % 2;
+            if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
+            room.turnExpiresAt = Date.now() + 30000;
+            
+            // ტაიმერი შემდეგი მოთამაშისთვის
+            roomTimers[roomId] = setTimeout(() => {
+               if (rooms[roomId] && rooms[roomId].gameStarted) {
+                   rooms[roomId].currentTurn = (rooms[roomId].currentTurn + 1) % 2;
+                   rooms[roomId].multiCapturePiece = null;
+                   rooms[roomId].turnExpiresAt = Date.now() + 30000;
+                   io.to(roomId).emit('gameUpdated', rooms[roomId]);
+               }
+            }, 30000);
+        }
     }
     
     io.to(roomId).emit('gameUpdated', room);
-  });
-
-  socket.on('nextRoundReady', ({ roomId }) => {
-    const room = rooms[roomId];
-    if (!room || !room.roundSummary) return;
-    if (!room.readyForNextRound) room.readyForNextRound = [];
-    if (room.readyForNextRound.includes(socket.id)) return;
-    room.readyForNextRound.push(socket.id);
-
-    const realPlayers = room.players.filter(p => !p.isBot);
-    const allRealReady = realPlayers.every(p => room.readyForNextRound.includes(p.id));
-
-    if (allRealReady) {
-      if (room.roundSummary.matchWinner) {
-        room.gameStarted = false; room.deck = []; room.tableCards = []; room.roundSummary = null; room.lastAction = null; room.readyForNextRound = []; room.lastCapturerId = null;
-        room.damkaBoard = null;
-        room.dealerIndex = 0; 
-        room.players = room.players.filter(p => !p.isBot);
-        room.players.forEach(p => { p.cards = []; p.captured = []; p.totalScore = 0; p.achievementsEarned = []; });
-        io.to(roomId).emit('roomUpdated', room);
-        broadcastActiveRooms();
-      } else {
-        if (room.gameType === 'phurti') {
-          room.deck = createDeck(); room.tableCards = [];
-          while (room.tableCards.length < 4) {
-            let card = room.deck.shift();
-            if (card.rank === 'J') { room.deck.push(card); } else { room.tableCards.push(card); }
-          }
-          room.players.forEach(p => { p.cards = room.deck.splice(0, 4); p.captured = []; });
-          
-          if (room.dealerIndex === undefined) room.dealerIndex = 0;
-          room.dealerIndex = (room.dealerIndex + 1) % room.players.length;
-          room.currentTurn = room.dealerIndex; 
-        } else {
-           // თუ დამკაა, ახალი რაუნდი უბრალოდ ხელახლა იწყებს დაფას
-           room.damkaBoard = createDamkaBoard();
-           room.currentTurn = 0;
-        }
-
-        room.lastAction = null; room.roundSummary = null; room.readyForNextRound = []; room.lastCapturerId = null; 
-        startTurnTimer(room, roomId);
-        io.to(roomId).emit('gameStarted', room);
-        if (room.gameType === 'phurti') checkAndTriggerBotTurn(room, roomId);
-      }
-    } else { io.to(roomId).emit('gameUpdated', room); }
   });
 
   socket.on('disconnect', () => {
