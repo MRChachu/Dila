@@ -193,6 +193,15 @@ const translations = {
   }
 };
 
+// 🟢 ფუნქცია გამოტანილია გლობალურად
+export const getLeague = (xp = 0) => {
+  if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
+  if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
+  if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' };
+  if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' };
+  return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
+};
+
 export const checkIsVip = (vipDate) => {
   return vipDate && new Date(vipDate) > new Date();
 };
@@ -208,7 +217,6 @@ export const VipName = ({ name, isVip, className = '' }) => {
   return <span className={className}>{name}</span>;
 };
 
-// 🟢 ულამაზესი 3D შაშის ქვის კომპონენტი მენიუებისთვის
 export const DamkaIcon = ({ type = 'red', size = 'md', className = '' }) => {
   const dimensions = {
     sm: 'w-3.5 h-3.5',
@@ -484,14 +492,6 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [toastMsg]);
-
-  const getLeague = (xp = 0) => {
-    if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
-    if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
-    if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' };
-    if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' };
-    return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
-  };
 
   const loadLeaderboard = async () => {
     try {

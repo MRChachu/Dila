@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users, Lock, X, Flag } from 'lucide-react'; // 🟢 დაემატა Flag
+import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users, Lock, X, Flag } from 'lucide-react';
+import { getLeague } from './App'; // 🟢 ვუკავშირდებით გლობალურ ფუნქციას
 
 export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName }) {
   const [selectedCardFromHand, setSelectedCardFromHand] = useState(null);
@@ -12,7 +13,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   
   const [mobileModal, setMobileModal] = useState(null); 
   const [unreadChat, setUnreadChat] = useState(false);
-  const [showSurrenderModal, setShowSurrenderModal] = useState(false); // 🟢 დანებების მოდალის სთეითი
+  const [showSurrenderModal, setShowSurrenderModal] = useState(false); 
 
   const chatRef = useRef(null);
 
@@ -33,22 +34,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     "ბოდიში 😅",
     "კარგი თამაში იყო 🤝"
   ];
-
-  const getLeague = (xp = 0) => {
-    if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
-    if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
-    if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' };
-    if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' };
-    return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
-  };
-
-  const getLeague = (xp = 0) => {
-    if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
-    if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
-    if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' };
-    if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' };
-    return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
-  };
 
   const playSoftSound = (isCapture = false) => {
     if (isMuted) return;
@@ -349,7 +334,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           <div className="flex items-center gap-2">
             <span className={`text-[10px] md:text-xs font-black tracking-widest font-mono ${activeTheme.accent} hidden sm:block`}>ROOM: {room.id}</span>
             
-            {/* 🟢 დანებების ღილაკი */}
             {!room.roundSummary && me && !me.isBot && (
                <button onClick={() => setShowSurrenderModal(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-[9px] md:text-[10px] font-black transition-colors border border-white/10 active:scale-95 shadow-sm">
                  <Flag size={12} /> <span className="hidden sm:block">დანებება</span>
@@ -608,7 +592,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         </div>
 
-        {/* 🟢 დანებების დადასტურების მოდალი */}
         {showSurrenderModal && (
           <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[250] flex items-center justify-center p-4 animate-in fade-in duration-200 rounded-3xl">
             <div className={`bg-stone-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl text-center space-y-5`}>
@@ -639,7 +622,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 
                 {room.roundSummary.matchWinner && (
                   <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 md:mb-6 shadow-inner ring-1 ring-white/5 relative">
-                    {/* 🟢 შეტყობინება, თუ ვინმე დანებდა */}
                     {room.roundSummary.surrendered && (
                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rose-600 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase shadow-md whitespace-nowrap">
                          {room.roundSummary.surrendered} დანებდა 🏳️
