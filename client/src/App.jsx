@@ -177,7 +177,7 @@ const translations = {
     opponent: "Versus", score: "Score"
   },
   ru: {
-    top10: "Топ 10", shop: "Магазин", admin: "Админ", settings: "Настройки",
+    top10: "Топ 10", Магазин: "Shop", admin: "Админ", settings: "Настройки",
     xpProgress: "Прогресс XP", matches: "Матчи", wins: "Победы", winRate: "Победы %",
     myHistory: "📜 Моя история", achievements: "Достижения",
     online: "Онлайн", friends: "Друзья", requests: "Запросы", noPlayers: "Нет других игроков",
@@ -193,7 +193,6 @@ const translations = {
   }
 };
 
-// 🟢 ფუნქცია გამოტანილია გლობალურად
 export const getLeague = (xp = 0) => {
   if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
   if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
@@ -573,7 +572,6 @@ export default function App() {
     const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
     
     const finalMaxPlayers = mGameType === 'damka' ? 2 : mMaxPlayers;
-    const finalBots = mGameType === 'damka' ? false : mAllowBots;
 
     socket.emit('joinRoom', { 
       action: 'create', 
@@ -581,11 +579,12 @@ export default function App() {
       playerName: safeUsername, 
       roomPassword: mRoomPassword ? mRoomPassword.trim() : null, 
       maxPlayers: finalMaxPlayers, 
-      targetScore: mTargetScore, 
-      allowBots: finalBots, 
-      isRanked: mIsRanked,
+      targetScore: mGameType === 'damka' ? 12 : mTargetScore, 
+      allowBots: mAllowBots, // 🟢 აქ ახლა სწორად იგზავნება ბოტების ჩართვა/გამორთვა
+      isRanked: mGameType === 'damka' ? false : mIsRanked, 
       gameType: mGameType 
     });
+    
     setInRoom(true);
     localStorage.setItem('phurti_roomId', generatedId); localStorage.setItem('phurti_inRoom', 'true');
     setIsCreateModalOpen(false); setMRoomPassword('');
@@ -1612,15 +1611,23 @@ export default function App() {
 
                       <div className={`${activeTheme.card} backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-6 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
                         
+                        <div className="space-y-2 md:space-y-2.5">
+                          <div className="grid grid-cols-2 gap-2 md:gap-2.5">
+                            <button disabled={!isHost || roomData.gameType === 'damka'} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: true })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.isRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'} ${roomData.gameType === 'damka' ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
+                            <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: false })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!roomData.isRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2 md:space-y-2.5 mt-2">
+                          <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">🤖 ბოტები</label>
+                          <div className="grid grid-cols-2 gap-2 md:gap-2.5">
+                            <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: true, isRanked: false })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.allowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🤖 ჩართვა</button>
+                            <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!roomData.allowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🤖 გამორთვა</button>
+                          </div>
+                        </div>
+
                         {roomData.gameType === 'phurti' ? (
                           <>
-                            <div className="space-y-2 md:space-y-2.5">
-                              <div className="grid grid-cols-2 gap-2 md:gap-2.5">
-                                <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: true })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.isRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🏆 {t.ranked}</button>
-                                <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: false })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!roomData.isRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
-                              </div>
-                            </div>
-
                             <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
                               <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">{t.targetScore}</label>
                               <div className="grid grid-cols-2 gap-2 md:gap-2.5">
@@ -1640,13 +1647,12 @@ export default function App() {
                             </div>
                           </>
                         ) : (
-                           <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-8">
-                              <div className="flex -space-x-4 mb-4">
-                                  <DamkaIcon type="red" size="xl" className="z-10 animate-bounce" />
-                                  <DamkaIcon type="white" size="xl" className="mt-4 animate-bounce delay-100" />
+                           <div className="flex flex-col items-center justify-center py-4 mt-2 bg-stone-950/40 rounded-xl border border-white/5 shadow-inner">
+                              <div className="flex -space-x-4 mb-3">
+                                  <DamkaIcon type="red" size="lg" className="z-10" />
+                                  <DamkaIcon type="white" size="lg" className="mt-4" />
                               </div>
-                              <h4 className="text-lg font-black text-stone-200 uppercase tracking-widest">კლასიკური შაში</h4>
-                              <p className="text-xs font-bold text-stone-400 max-w-xs">შაში ითამაშება მხოლოდ 2 მოთამაშეზე. ბოტები და რეიტინგული სისტემა ამ ეტაპზე გამორთულია.</p>
+                              <p className="text-[10px] font-bold text-stone-400 max-w-xs text-center px-4">შაში ითამაშება მხოლოდ 2 მოთამაშეზე. {roomData.allowBots ? 'ბოტები ჩართულია.' : 'ბოტები გამორთულია.'}</p>
                            </div>
                         )}
                       </div>
@@ -1686,24 +1692,25 @@ export default function App() {
               </button>
             </div>
 
-            {mGameType === 'phurti' ? (
+            <div className="space-y-2 md:space-y-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" disabled={mAllowBots || mGameType === 'damka'} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots || mGameType === 'damka' ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
+                <button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
+              </div>
+              {mGameType === 'damka' && <p className="text-[9px] text-stone-500 font-bold text-center pt-1">შაში ითამაშება მხოლოდ გასართობ რეჟიმში (Casual)</p>}
+            </div>
+
+            <div className="space-y-2 md:space-y-2.5">
+              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🤖 {t.bots}</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => { setMAllowBots(true); setMIsRanked(false); }} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mAllowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.on}</button>
+                <button type="button" onClick={() => setMAllowBots(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mAllowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.off}</button>
+              </div>
+            </div>
+
+            {mGameType === 'phurti' && (
               <>
-                <div className="space-y-2 md:space-y-2.5">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" disabled={mAllowBots} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
-                    <button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 md:space-y-2.5">
-                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🤖 {t.bots}</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => { setMAllowBots(true); setMIsRanked(false); }} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mAllowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.on}</button>
-                    <button type="button" onClick={() => setMAllowBots(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mAllowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.off}</button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 md:space-y-2.5">
+                <div className="space-y-2 md:space-y-2.5 mt-2">
                   <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.targetScore}</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[11, 21].map(sc => (
@@ -1720,13 +1727,9 @@ export default function App() {
                   </div>
                 </div>
               </>
-            ) : (
-              <div className="bg-stone-950/60 border border-white/5 rounded-xl p-4 text-center mt-2 shadow-inner">
-                 <p className="text-[10px] md:text-xs text-stone-400 font-bold leading-relaxed flex items-center justify-center gap-2"><DamkaIcon type="red" size="sm" /> კლასიკური შაში ითამაშება მხოლოდ 2 მოთამაშეზე. ბოტები და რეიტინგული სისტემა ამ ეტაპზე გამორთულია.</p>
-              </div>
             )}
 
-            <div className="space-y-1.5 md:space-y-2">
+            <div className="space-y-1.5 md:space-y-2 mt-2">
               <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.password}</label>
               <input type="password" value={mRoomPassword} onChange={(e) => setMRoomPassword(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none placeholder-stone-700 shadow-inner`} placeholder="••••••••" />
             </div>
