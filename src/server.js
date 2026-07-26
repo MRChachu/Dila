@@ -10,7 +10,7 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const User = require('./models/User');
 const { createDeck, isValidCapture, calculateRoundScores, getBestMove } = require('./gameLogic');
-const { createDamkaBoard } = require('./damkaLogic'); // 🟢 შემოვიტანეთ დამკას ლოგიკა
+const { createDamkaBoard, validateDamkaMove } = require('./damkaLogic'); // 🟢 შემოვიტანეთ დამკას ლოგიკა
 
 const ALL_DAILY_QUESTS = [
   { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 15 },
@@ -588,6 +588,68 @@ io.on('connection', (socket) => {
       room.lastAction = { playerName: player.name, isVip: player.vipUntil, cardFromHand, cardsFromTable: [], type: 'DISCARD' };
     }
     handleTurnTransition(room, roomId);
+  });
+
+  socket.on('playDamkaMove', ({ roomId, from, to }) => {
+    const room = rooms[roomId];
+    if (!room || room.gameType !== 'damka' || !room.gameStarted) return;
+    
+    const playerIndex = room.players.findIndex(p => p.id === socket.id);
+    if (room.currentTurn !== playerIndex) return socket.emit('error', 'ახლა შენი სვლა არ არის!');
+    
+    // სვლის ვალიდაცია
+    const validation = validateDamkaMove(room.damkaBoard, playerIndex, from, to);
+    
+    if (!validation.valid) {
+        return socket.emit('error', 'არასწორი სვლა!');
+    }
+    
+    // ვანაცვლებთ ქვას ახალ უჯრაზე
+    const piece = room.damkaBoard[from.r][from.c];
+    piece.isKing = validation.becomesKing;
+    room.damkaBoard[to.r][to.c] = piece;
+    room.damkaBoard[from.r][from.c] = null;
+    
+    // თუ მოჭრა, ვაშორებთ მოწინააღმდეგის ქვას დაფიდან
+    if (validation.isCapture && validation.capturedPos) {
+        room.damkaBoard[validation.capturedPos.r][validation.capturedPos.c] = null;
+    }
+    
+    // ვამოწმებთ, ხომ არ მოიგო ვინმემ (ქვა ხომ არ გაუთავდა მეორეს)
+    let p0Pieces = 0;
+    let p1Pieces = 0;
+    
+    for(let r=0; r<8; r++) {
+        for(let c=0; c<8; c++) {
+            const p = room.damkaBoard[r][c];
+            if(p && p.player === 0) p0Pieces++;
+            if(p && p.player === 1) p1Pieces++;
+        }
+    }
+    
+    if (p0Pieces === 0 || p1Pieces === 0) {
+        room.roundSummary = {
+            matchWinner: p0Pieces === 0 ? room.players[1].name : room.players[0].name
+        };
+        // აქ შეგიძლია სამომავლოდ ქოინების/XP დარიცხვის ლოგიკაც დაამატო, როგორც ფურთში გვაქვს
+    } else {
+        // რიგის გადაცემა მეორე მოთამაშეზე
+        // (ამ ვერსიაში გამარტივებულია და ერთ მოჭრაზე ეგრევე გადადის რიგი)
+        room.currentTurn = (room.currentTurn + 1) % 2;
+        
+        if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
+        room.turnExpiresAt = Date.now() + 30000;
+        roomTimers[roomId] = setTimeout(() => {
+           // თუ დრო გავიდა, რიგი უბრალოდ გადადის
+           if (rooms[roomId] && rooms[roomId].gameStarted) {
+               rooms[roomId].currentTurn = (rooms[roomId].currentTurn + 1) % 2;
+               rooms[roomId].turnExpiresAt = Date.now() + 30000;
+               io.to(roomId).emit('gameUpdated', rooms[roomId]);
+           }
+        }, 30000);
+    }
+    
+    io.to(roomId).emit('gameUpdated', room);
   });
 
   socket.on('nextRoundReady', ({ roomId }) => {
