@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users, Lock, X } from 'lucide-react';
+import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users, Lock, X, Flag } from 'lucide-react'; // 🟢 დაემატა Flag
 
 export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName }) {
   const [selectedCardFromHand, setSelectedCardFromHand] = useState(null);
@@ -12,6 +12,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   
   const [mobileModal, setMobileModal] = useState(null); 
   const [unreadChat, setUnreadChat] = useState(false);
+  const [showSurrenderModal, setShowSurrenderModal] = useState(false); // 🟢 დანებების მოდალის სთეითი
 
   const chatRef = useRef(null);
 
@@ -41,18 +42,14 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
   };
 
-  // 🟢 დავაბრუნეთ ძალიან რბილი და სასიამოვნო "პოპ" ხმები
   const playSoftSound = (isCapture = false) => {
     if (isMuted) return;
     try {
-      // isCapture ამოწმებს მოჭრაა თუ უბრალოდ დაგდება
-      // შეგიძლია ორი სხვადასხვა ხმა გქონდეს, ან ერთი და იგივე გამოიყენო
       const soundFile = isCapture ? '/card-drop.wav' : '/card-drop.wav'; 
       const audio = new Audio(soundFile);
-      audio.volume = 0.3; // ხმის სიმაღლე (0-დან 1-მდე)
+      audio.volume = 0.3; 
       audio.play().catch(e => console.log("Audio play error:", e));
       
-      // თუ მოჭრაა, მეორე კარტის ხმაც დავამატოთ ოდნავ დაგვიანებით
       if (isCapture) {
         setTimeout(() => {
           const audio2 = new Audio(soundFile);
@@ -343,6 +340,14 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           
           <div className="flex items-center gap-2">
             <span className={`text-[10px] md:text-xs font-black tracking-widest font-mono ${activeTheme.accent} hidden sm:block`}>ROOM: {room.id}</span>
+            
+            {/* 🟢 დანებების ღილაკი */}
+            {!room.roundSummary && me && !me.isBot && (
+               <button onClick={() => setShowSurrenderModal(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-[9px] md:text-[10px] font-black transition-colors border border-white/10 active:scale-95 shadow-sm">
+                 <Flag size={12} /> <span className="hidden sm:block">დანებება</span>
+               </button>
+            )}
+
             <button onClick={onLeave} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-[9px] md:text-[10px] font-black transition-colors border border-rose-500/20 active:scale-95">
               <LogOut size={12} /> <span className="hidden sm:block">LEAVE</span>
             </button>
@@ -595,6 +600,24 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         </div>
 
+        {/* 🟢 დანებების დადასტურების მოდალი */}
+        {showSurrenderModal && (
+          <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[250] flex items-center justify-center p-4 animate-in fade-in duration-200 rounded-3xl">
+            <div className={`bg-stone-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl text-center space-y-5`}>
+              <Flag size={40} className="mx-auto text-rose-500 mb-2 drop-shadow-lg" />
+              <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">ნამდვილად ნებდები?</h3>
+              <p className="text-xs text-stone-400 font-bold">მატჩი დასრულდება და მოწინააღმდეგე გამარჯვებულად გამოცხადდება.</p>
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <button onClick={() => setShowSurrenderModal(false)} className="py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md uppercase">არა</button>
+                <button onClick={() => { 
+                  socket.emit('surrender', { roomId: room.id }); 
+                  setShowSurrenderModal(false); 
+                }} className="py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg uppercase">კი, ვნებდები</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {room?.roundSummary && (
           <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
             <div className={`bg-stone-900 border border-opacity-30 border-current rounded-2xl md:rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl text-center space-y-4 md:space-y-6 relative overflow-hidden ${activeTheme.accent}`}>
@@ -607,7 +630,13 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 </h2>
                 
                 {room.roundSummary.matchWinner && (
-                  <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 md:mb-6 shadow-inner ring-1 ring-white/5">
+                  <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 md:mb-6 shadow-inner ring-1 ring-white/5 relative">
+                    {/* 🟢 შეტყობინება, თუ ვინმე დანებდა */}
+                    {room.roundSummary.surrendered && (
+                       <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rose-600 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase shadow-md whitespace-nowrap">
+                         {room.roundSummary.surrendered} დანებდა 🏳️
+                       </span>
+                    )}
                     <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">გამარჯვებული</p>
                     <div className="text-2xl md:text-3xl font-black text-white drop-shadow-md">
                       <VipName name={room.roundSummary.matchWinner} isVip={checkIsVip(room.players.find(p=>p.name===room.roundSummary.matchWinner)?.vipUntil)} /> 🎉

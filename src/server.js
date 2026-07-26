@@ -10,7 +10,7 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const User = require('./models/User');
 const { createDeck, isValidCapture, calculateRoundScores, getBestMove } = require('./gameLogic');
-const { createDamkaBoard, validateDamkaMove, hasCaptureMoves } = require('./damkaLogic');
+const { createDamkaBoard, validateDamkaMove, hasCaptureMoves, hasAnyValidMoves } = require('./damkaLogic');
 
 const ALL_DAILY_QUESTS = [
   { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 15 },
@@ -629,16 +629,56 @@ io.on('connection', (socket) => {
         }
     }
     
-    if (p0Pieces === 0 || p1Pieces === 0) {
-        room.roundSummary = {
-            matchWinner: p0Pieces === 0 ? room.players[1].name : room.players[0].name
-        };
+    let matchIsOver = false;
+    let winnerName = null;
+
+    if (p0Pieces === 0) { 
+        matchIsOver = true; 
+        winnerName = room.players[1].name; 
+    } else if (p1Pieces === 0) { 
+        matchIsOver = true; 
+        winnerName = room.players[0].name; 
+    } else {
+        let canMultiCapture = false;
+        if (validation.isCapture) {
+            canMultiCapture = hasCaptureMoves(room.damkaBoard, playerIndex, to.r, to.c);
+        }
         
-        // 🟢 შაშის გამარჯვებულის დაჯილდოება (XP, ქოინები, ისტორია)
+        if (canMultiCapture) {
+            room.multiCapturePiece = { r: to.r, c: to.c }; 
+            if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
+            room.turnExpiresAt = Date.now() + 30000;
+        } else {
+            room.multiCapturePiece = null;
+            const nextTurn = (room.currentTurn + 1) % 2;
+            
+            if (!hasAnyValidMoves(room.damkaBoard, nextTurn)) {
+                matchIsOver = true;
+                winnerName = room.players[room.currentTurn].name; 
+            } else {
+                room.currentTurn = nextTurn;
+                if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
+                room.turnExpiresAt = Date.now() + 30000;
+                
+                roomTimers[roomId] = setTimeout(() => {
+                   if (rooms[roomId] && rooms[roomId].gameStarted) {
+                       rooms[roomId].currentTurn = (rooms[roomId].currentTurn + 1) % 2;
+                       rooms[roomId].multiCapturePiece = null;
+                       rooms[roomId].turnExpiresAt = Date.now() + 30000;
+                       io.to(roomId).emit('gameUpdated', rooms[roomId]);
+                   }
+                }, 30000);
+            }
+        }
+    }
+    
+    if (matchIsOver) {
+        room.roundSummary = { matchWinner: winnerName };
+        
         room.players.forEach(async (p) => {
             if (p.isBot) return; 
             try {
-                const isWinner = p.name === room.roundSummary.matchWinner;
+                const isWinner = p.name === winnerName;
                 const dbUser = await User.findOne({ username: p.name });
                 
                 if (dbUser) {
@@ -685,34 +725,103 @@ io.on('connection', (socket) => {
                 }
             } catch (dbErr) { console.error(dbErr.message); }
         });
-
-    } else {
-        let canMultiCapture = false;
-        if (validation.isCapture) {
-            canMultiCapture = hasCaptureMoves(room.damkaBoard, playerIndex, to.r, to.c);
-        }
-        
-        if (canMultiCapture) {
-            room.multiCapturePiece = { r: to.r, c: to.c }; 
-            if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
-            room.turnExpiresAt = Date.now() + 30000;
-        } else {
-            room.multiCapturePiece = null;
-            room.currentTurn = (room.currentTurn + 1) % 2;
-            if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
-            room.turnExpiresAt = Date.now() + 30000;
-            
-            roomTimers[roomId] = setTimeout(() => {
-               if (rooms[roomId] && rooms[roomId].gameStarted) {
-                   rooms[roomId].currentTurn = (rooms[roomId].currentTurn + 1) % 2;
-                   rooms[roomId].multiCapturePiece = null;
-                   rooms[roomId].turnExpiresAt = Date.now() + 30000;
-                   io.to(roomId).emit('gameUpdated', rooms[roomId]);
-               }
-            }, 30000);
-        }
     }
     
+    io.to(roomId).emit('gameUpdated', room);
+  });
+
+  // 🟢 დანებების ფუნქცია
+  socket.on('surrender', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room || !room.gameStarted) return;
+
+    const surrendererIndex = room.players.findIndex(p => p.id === socket.id);
+    if (surrendererIndex === -1) return;
+    const surrenderer = room.players[surrendererIndex];
+
+    let winnerName = null;
+
+    if (room.gameType === 'damka') {
+        const winner = room.players.find(p => p.id !== socket.id && !p.isBot);
+        winnerName = winner ? winner.name : room.players[0].name;
+    } else {
+        let maxScore = -1;
+        room.players.forEach(p => {
+            if (p.id !== socket.id && !p.isBot && p.totalScore > maxScore) {
+                maxScore = p.totalScore;
+                winnerName = p.name;
+            }
+        });
+        if (!winnerName) {
+            const alt = room.players.find(p => p.id !== socket.id && !p.isBot);
+            winnerName = alt ? alt.name : room.players[0].name;
+        }
+    }
+
+    room.roundSummary = { 
+        matchWinner: winnerName,
+        surrendered: surrenderer.name 
+    };
+
+    if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
+
+    room.players.forEach(async (p) => {
+        if (p.isBot) return; 
+        try {
+            const isWinner = p.name === winnerName;
+            const dbUser = await User.findOne({ username: p.name });
+            
+            if (dbUser) {
+                const isVip = dbUser.vipUntil && new Date(dbUser.vipUntil) > new Date();
+                
+                let earnedXp = isWinner ? (isVip ? 35 : 25) : (isVip ? -5 : -10);
+                let earnedCoins = isWinner ? (isVip ? 75 : 50) : (isVip ? -25 : -50);
+                
+                // დანებების შემთხვევაში დამატებითი მინუსი
+                if (p.name === surrenderer.name) {
+                    earnedXp -= 10;
+                    earnedCoins -= 20;
+                }
+                
+                if (isWinner) { 
+                    dbUser.stats.gamesWon += 1;
+                    dbUser.stats.winStreak = (dbUser.stats.winStreak || 0) + 1; 
+                    
+                    if (dbUser.stats.winStreak >= 10 && !dbUser.achievements.includes('legionnaire')) dbUser.achievements.push('legionnaire');
+                    if (!dbUser.achievements.includes('first_win')) dbUser.achievements.push('first_win');
+                    if (dbUser.stats.gamesWon >= 100 && !dbUser.achievements.includes('veteran')) dbUser.achievements.push('veteran');
+                } else {
+                    dbUser.stats.winStreak = 0; 
+                }
+                
+                dbUser.xp = Math.max(0, dbUser.xp + earnedXp);
+                dbUser.coins = Math.max(0, (dbUser.coins || 0) + earnedCoins);
+                
+                let levelThreshold = dbUser.level * 1000;
+                while (dbUser.xp >= levelThreshold) {
+                    dbUser.xp -= levelThreshold; dbUser.level += 1;
+                    levelThreshold = dbUser.level * 1000;
+                }
+
+                dbUser.stats.gamesPlayed += 1;
+                
+                const opponentNames = room.players.filter(op => op.id !== p.id).map(op => op.name);
+                dbUser.gameHistory.unshift({ 
+                    roomId: room.id, 
+                    targetScore: room.targetScore || 11, 
+                    myFinalScore: p.totalScore || 0, 
+                    isWinner: isWinner, 
+                    playedAt: new Date(),
+                    opponents: opponentNames,
+                    gameType: room.gameType
+                });
+                
+                if (dbUser.gameHistory.length > 30) dbUser.gameHistory.pop(); 
+                await dbUser.save();
+            }
+        } catch (dbErr) { console.error(dbErr.message); }
+    });
+
     io.to(roomId).emit('gameUpdated', room);
   });
 

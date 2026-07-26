@@ -58,7 +58,6 @@ function hasCaptureMoves(board, playerIndex, r, c) {
     return false;
 }
 
-// 🟢 ამოწმებს მოთამაშის ნებისმიერ ქვას ხომ არ აქვს მოჭრის საშუალება
 function playerHasAnyCapture(board, playerIndex) {
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
@@ -68,6 +67,36 @@ function playerHasAnyCapture(board, playerIndex) {
         }
     }
     return false;
+}
+
+// 🟢 ახალი ლოგიკა: ამოწმებს დარჩა თუ არა რაიმე სვლა მოთამაშეს
+function hasAnyValidMoves(board, playerIndex) {
+    // თუ რომელიმე ქვით მოჭრა შეუძლია, სვლა აშკარად აქვს
+    if (playerHasAnyCapture(board, playerIndex)) return true;
+
+    // ვამოწმებთ ჩვეულებრივ სვლებს
+    const forwardDir = playerIndex === 0 ? -1 : 1;
+    
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = board[r][c];
+            if (piece && piece.player === playerIndex) {
+                // დამკა ამოწმებს ოთხივე დიაგონალს, ჩვეულებრივი ქვა - მხოლოდ 2 წინას
+                const dirs = piece.isKing 
+                    ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] 
+                    : [[forwardDir, 1], [forwardDir, -1]];
+                
+                for (let [dRow, dCol] of dirs) {
+                    const newR = r + dRow;
+                    const newC = c + dCol;
+                    if (isValidPos(newR, newC) && board[newR][newC] === null) {
+                        return true; // იპოვა ცარიელი უჯრა, ე.ი. სვლა აქვს!
+                    }
+                }
+            }
+        }
+    }
+    return false; // ვერცერთი ქვით ვერ ივლის, ჩაკეტილია
 }
 
 function validateDamkaMove(board, playerIndex, from, to) {
@@ -126,7 +155,6 @@ function validateDamkaMove(board, playerIndex, from, to) {
         }
     }
 
-    // 🟢 აქ მოწმდება აუცილებელი მოჭრის წესი!
     if (!isCapture) {
         if (playerHasAnyCapture(board, playerIndex)) {
             return { valid: false, error: 'აუცილებელია მოჭრა!' };
@@ -145,5 +173,6 @@ function validateDamkaMove(board, playerIndex, from, to) {
 module.exports = {
     createDamkaBoard,
     validateDamkaMove,
-    hasCaptureMoves
+    hasCaptureMoves,
+    hasAnyValidMoves // 🟢 დავამატეთ ექსპორტში
 };
