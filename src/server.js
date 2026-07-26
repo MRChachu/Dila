@@ -10,7 +10,7 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const User = require('./models/User');
 const { createDeck, isValidCapture, calculateRoundScores, getBestMove } = require('./gameLogic');
-const { createDamkaBoard, validateDamkaMove, hasCaptureMoves } = require('./damkaLogic'); // 🟢 გასწორდა: დარჩა მხოლოდ ერთი სრული იმპორტი
+const { createDamkaBoard, validateDamkaMove, hasCaptureMoves } = require('./damkaLogic'); // 🟢 გასწორებული იმპორტი
 
 const ALL_DAILY_QUESTS = [
   { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 15 },
@@ -603,7 +603,8 @@ io.on('connection', (socket) => {
     const validation = validateDamkaMove(room.damkaBoard, playerIndex, from, to);
     
     if (!validation.valid) {
-        return socket.emit('error', 'არასწორი სვლა!');
+        // 🟢 ვაგზავნით კონკრეტულ შეცდომას კლიენტთან
+        return socket.emit('error', validation.error || 'არასწორი სვლა!');
     }
     
     if (room.multiCapturePiece && !validation.isCapture) {
