@@ -1,7 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users, Lock, X, Flag } from 'lucide-react';
-import { getLeague } from './App'; // 🟢 ვუკავშირდებით გლობალურ ფუნქციას
+
+// 🟢 აქ დავამატეთ getLeague ფუნქცია გლობალურად, რათა ავირიდოთ ერორი
+const getLeague = (xp = 0) => {
+  if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
+  if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
+  if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' };
+  if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' };
+  return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
+};
 
 export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName }) {
   const [selectedCardFromHand, setSelectedCardFromHand] = useState(null);
@@ -592,6 +600,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         </div>
 
+        {/* 🟢 დანებების დადასტურების მოდალი */}
         {showSurrenderModal && (
           <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[250] flex items-center justify-center p-4 animate-in fade-in duration-200 rounded-3xl">
             <div className={`bg-stone-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl text-center space-y-5`}>
@@ -622,6 +631,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 
                 {room.roundSummary.matchWinner && (
                   <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 md:mb-6 shadow-inner ring-1 ring-white/5 relative">
+                    {/* 🟢 შეტყობინება, თუ ვინმე დანებდა */}
                     {room.roundSummary.surrendered && (
                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rose-600 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase shadow-md whitespace-nowrap">
                          {room.roundSummary.surrendered} დანებდა 🏳️
@@ -634,8 +644,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   </div>
                 )}
 
-                {room.roundSummary.matchWinner && (room.betAmount > 0 || room.bet > 0 || room.isRanked) && (() => {
-                  const baseBet = 50;
+                {room.roundSummary.matchWinner && room.isRanked && (() => {
+                  const isMeWinner = room.roundSummary.matchWinner === me?.name;
                   const winXp = amIVip ? 35 : 25;
                   const loseXp = amIVip ? 5 : 10;
                   const winCoins = amIVip ? 75 : 50;
@@ -645,15 +655,15 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                     <div className="bg-stone-950/80 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-4 mb-4 md:mb-6 shadow-inner flex justify-around items-center ring-1 ring-white/5">
                       <div className="flex flex-col items-center">
                         <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-1">XP</span>
-                        <span className={`text-base md:text-lg font-black ${room.roundSummary.matchWinner === me?.name ? 'text-green-400' : 'text-rose-400'} drop-shadow-md`}>
-                          {room.roundSummary.matchWinner === me?.name ? `↑ +${winXp}` : `↓ -${loseXp}`}
+                        <span className={`text-base md:text-lg font-black ${isMeWinner ? 'text-green-400' : 'text-rose-400'} drop-shadow-md`}>
+                          {isMeWinner ? `↑ +${winXp}` : `↓ -${loseXp}`}
                         </span>
                       </div>
                       <div className="w-px h-8 bg-white/10"></div>
                       <div className="flex flex-col items-center">
                         <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-1">ქოინები</span>
-                        <span className={`text-base md:text-lg font-black ${room.roundSummary.matchWinner === me?.name ? 'text-yellow-400' : 'text-rose-400'} drop-shadow-md`}>
-                          {room.roundSummary.matchWinner === me?.name ? `+${winCoins}` : `-${loseCoins}`} 🪙
+                        <span className={`text-base md:text-lg font-black ${isMeWinner ? 'text-yellow-400' : 'text-rose-400'} drop-shadow-md`}>
+                          {isMeWinner ? `+${winCoins}` : `-${loseCoins}`} 🪙
                         </span>
                       </div>
                     </div>

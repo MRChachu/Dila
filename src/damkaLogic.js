@@ -69,19 +69,14 @@ function playerHasAnyCapture(board, playerIndex) {
     return false;
 }
 
-// 🟢 ახალი ლოგიკა: ამოწმებს დარჩა თუ არა რაიმე სვლა მოთამაშეს
 function hasAnyValidMoves(board, playerIndex) {
-    // თუ რომელიმე ქვით მოჭრა შეუძლია, სვლა აშკარად აქვს
     if (playerHasAnyCapture(board, playerIndex)) return true;
 
-    // ვამოწმებთ ჩვეულებრივ სვლებს
     const forwardDir = playerIndex === 0 ? -1 : 1;
-    
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
             const piece = board[r][c];
             if (piece && piece.player === playerIndex) {
-                // დამკა ამოწმებს ოთხივე დიაგონალს, ჩვეულებრივი ქვა - მხოლოდ 2 წინას
                 const dirs = piece.isKing 
                     ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] 
                     : [[forwardDir, 1], [forwardDir, -1]];
@@ -90,13 +85,13 @@ function hasAnyValidMoves(board, playerIndex) {
                     const newR = r + dRow;
                     const newC = c + dCol;
                     if (isValidPos(newR, newC) && board[newR][newC] === null) {
-                        return true; // იპოვა ცარიელი უჯრა, ე.ი. სვლა აქვს!
+                        return true;
                     }
                 }
             }
         }
     }
-    return false; // ვერცერთი ქვით ვერ ივლის, ჩაკეტილია
+    return false;
 }
 
 function validateDamkaMove(board, playerIndex, from, to) {
@@ -170,9 +165,59 @@ function validateDamkaMove(board, playerIndex, from, to) {
     return { valid: true, isCapture, capturedPos, becomesKing };
 }
 
+// 🤖 რობოტის ავტომატური სვლის გენერატორი
+function getBotDamkaMove(board, playerIndex, multiCapturePiece) {
+    let possibleMoves = [];
+    const mustCapture = playerHasAnyCapture(board, playerIndex);
+
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if (multiCapturePiece && (r !== multiCapturePiece.r || c !== multiCapturePiece.c)) continue;
+
+            const piece = board[r][c];
+            if (piece && piece.player === playerIndex) {
+                const destinations = [];
+                if (piece.isKing) {
+                    const dirs = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+                    for (let [dr, dc] of dirs) {
+                        for(let step = 1; step < 8; step++) {
+                            destinations.push({r: r + dr*step, c: c + dc*step});
+                        }
+                    }
+                } else {
+                    const dir = playerIndex === 0 ? -1 : 1;
+                    destinations.push({r: r+dir, c: c-1}, {r: r+dir, c: c+1});
+                    destinations.push({r: r+2*dir, c: c-2}, {r: r+2*dir, c: c+2});
+                }
+
+                for (let dest of destinations) {
+                    if (isValidPos(dest.r, dest.c)) {
+                        const val = validateDamkaMove(board, playerIndex, {r, c}, dest);
+                        if (val.valid) {
+                            possibleMoves.push({ from: {r, c}, to: dest, isCapture: val.isCapture });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (possibleMoves.length === 0) return null;
+    
+    // თუ მოჭრა შეუძლია, პრიორიტეტს მოჭრას ანიჭებს
+    const captures = possibleMoves.filter(m => m.isCapture);
+    if (captures.length > 0) {
+        return captures[Math.floor(Math.random() * captures.length)];
+    }
+    
+    // წინააღმდეგ შემთხვევაში ირჩევს ნებისმიერ დასაშვებ სვლას
+    return possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+}
+
 module.exports = {
     createDamkaBoard,
     validateDamkaMove,
     hasCaptureMoves,
-    hasAnyValidMoves // 🟢 დავამატეთ ექსპორტში
+    hasAnyValidMoves,
+    getBotDamkaMove
 };
