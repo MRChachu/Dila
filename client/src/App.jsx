@@ -238,7 +238,6 @@ export default function App() {
   const [onlineUser, setOnlineUser] = useState([]);
   const [inviteAlert, setInviteAlert] = useState(null);
   
-  // 🟢 დამატებულია მოწვევის სამიზნე სთეითი ახალი ფანჯრისთვის
   const [inviteTarget, setInviteTarget] = useState(null);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -563,26 +562,21 @@ export default function App() {
     setIsCreateModalOpen(false); setMRoomPassword('');
   };
 
-  // 🟢 მოწვევის ღილაკზე დაჭერის ლოგიკა
   const handleSendInviteClick = (targetSocketId, targetName) => {
     if (inRoom && roomData) {
-      // უკვე ოთახშია, ვაგზავნით მიმდინარე ოთახის მონაცემებს
       socket.emit('sendInvite', { targetSocketId, roomId: roomData.id, password: roomData.password, fromName: safeUsername, gameType: roomData.gameType });
       setToastMsg('მოწვევა გაიგზავნა!');
     } else {
-      // ოთახში არ არის, ვხსნით თამაშის არჩევის ფანჯარას
       setInviteTarget({ socketId: targetSocketId, name: targetName });
     }
   };
 
-  // 🟢 თამაშის არჩევის შემდეგ მოწვევის გაგზავნა
   const handleConfirmGameInvite = (selectedGameType) => {
     if (!inviteTarget) return;
 
     const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
     const isDamka = selectedGameType === 'damka';
 
-    // 1. ვქმნით ოთახს
     socket.emit('joinRoom', { 
       action: 'create', 
       roomId: generatedId, 
@@ -599,7 +593,6 @@ export default function App() {
     localStorage.setItem('phurti_roomId', generatedId); 
     localStorage.setItem('phurti_inRoom', 'true');
     
-    // 2. ველოდებით ცოტა ხანს და ვაგზავნით მოწვევას (რომ სერვერმა მოასწროს ოთახის შექმნა)
     setTimeout(() => { 
       socket.emit('sendInvite', { 
         targetSocketId: inviteTarget.socketId, 
@@ -611,7 +604,7 @@ export default function App() {
       setToastMsg('მოწვევა გაიგზავნა!');
     }, 300);
     
-    setInviteTarget(null); // ვხურავთ მოდალს
+    setInviteTarget(null);
   };
 
   const handleSendFriendReq = async (targetName) => {
@@ -726,7 +719,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 მოწვევის თამაშის არჩევის მოდალი */}
       {inviteTarget && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[150] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 shadow-2xl font-sans relative text-center`}>
@@ -742,8 +734,12 @@ export default function App() {
                  <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span>
                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-200">ფურთი</span>
               </button>
+              {/* 🟢 გასწორდა: მოწვევის არჩევაში წითელი და თეთრი ქვები */}
               <button onClick={() => handleConfirmGameInvite('damka')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group">
-                 <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">♟️</span>
+                 <div className="flex -space-x-2 group-hover:scale-110 transition-transform drop-shadow-md">
+                     <span className="text-3xl z-10 animate-bounce">🔴</span>
+                     <span className="text-3xl animate-bounce delay-100">⚪</span>
+                 </div>
                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-200">შაში</span>
               </button>
             </div>
@@ -801,7 +797,8 @@ export default function App() {
               <span className="font-black">{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})
             </p>
             <div className="bg-stone-950 px-3 py-1 rounded-md text-[10px] text-stone-500 uppercase font-black tracking-widest border border-white/5 inline-block">
-               {inviteAlert.gameType === 'damka' ? '♟️ შაში' : '🃏 ფურთი'}
+               {/* 🟢 გასწორდა: მოწვევის სიგნალი */}
+               {inviteAlert.gameType === 'damka' ? '🔴 შაში' : '🃏 ფურთი'}
             </div>
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5 mt-4">
               <button onClick={() => { 
@@ -983,7 +980,7 @@ export default function App() {
                       obsidian: 'bg-stone-950 border-stone-700',
                       cyber: 'bg-fuchsia-900 border-fuchsia-400 shadow-[0_0_10px_rgba(232,121,249,0.5)]',
                       royal: 'bg-purple-900 border-yellow-500',
-                      hacker: 'bg-black border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)] text-green-500'
+                      hacker: 'bg-black border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]'
                     };
                     const cardStyle = shopCardStyles[item.id] || shopCardStyles.classic;
 
@@ -1203,8 +1200,9 @@ export default function App() {
                             <span className={`font-black text-xs md:text-sm uppercase tracking-wider flex items-center gap-1.5 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
                                {isWin ? `🏆 ${t.wins}` : '💔'}
                             </span>
+                            {/* 🟢 გასწორდა: ისტორიის ტეგში */}
                             <span className="text-[8px] bg-stone-950 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md font-black uppercase">
-                              {game.gameType === 'damka' ? '♟️ შაში' : '🃏 ფურთი'}
+                              {game.gameType === 'damka' ? '🔴 შაში' : '🃏 ფურთი'}
                             </span>
                           </div>
                           <span className="text-[9px] md:text-[10px] text-stone-400 font-bold bg-stone-950/50 px-2 py-1 rounded-lg">
@@ -1529,8 +1527,9 @@ export default function App() {
                                  <span className="text-xs">{room.hostAvatar || '😎'}</span> 
                                  <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> 
                                  {room.isPrivate && <Lock size={10} className="text-stone-500" />}
-                                 <span className="text-[8px] bg-stone-900 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md uppercase ml-1 shadow-sm">
-                                   {room.gameType === 'damka' ? '♟️ შაში' : '🃏 ფურთი'}
+                                 {/* 🟢 გასწორდა: ოთახების სიაში წითელი რგოლი */}
+                                 <span className="text-[8px] bg-stone-900 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md uppercase ml-1 shadow-sm flex items-center gap-1">
+                                   {room.gameType === 'damka' ? '🔴 შაში' : '🃏 ფურთი'}
                                  </span>
                                </div>
                                <div className="flex gap-1.5 items-center">
@@ -1560,8 +1559,9 @@ export default function App() {
                         <div className="border-b border-white/10 pb-3 md:pb-4 flex justify-between items-start">
                           <div className="flex flex-col gap-1">
                              <h3 className={`text-lg md:text-xl font-black ${activeTheme.accent} font-mono`}>ROOM #{roomData.id}</h3>
-                             <span className="text-[10px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400 w-max shadow-inner">
-                               {roomData.gameType === 'damka' ? '♟️ შაში (Damka)' : '🃏 ფურთი (Phurti)'}
+                             {/* 🟢 გასწორდა: ოთახის მოლოდინის სათაურში */}
+                             <span className="text-[10px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400 w-max shadow-inner flex items-center gap-1.5">
+                               {roomData.gameType === 'damka' ? '🔴 შაში (Damka)' : '🃏 ფურთი (Phurti)'}
                              </span>
                           </div>
                           <span className="text-[9px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400">{roomData.hostTheme || 'wood'} Theme</span>
@@ -1617,7 +1617,11 @@ export default function App() {
                           </>
                         ) : (
                            <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-8">
-                              <span className="text-6xl drop-shadow-md">♟️</span>
+                              {/* 🟢 გასწორდა: ცარიელი ოთახის დიდი ლოგო */}
+                              <div className="flex gap-2 text-6xl drop-shadow-md mb-2">
+                                  <span className="animate-bounce">🔴</span>
+                                  <span className="animate-bounce delay-100">⚪</span>
+                              </div>
                               <h4 className="text-lg font-black text-stone-200 uppercase tracking-widest">კლასიკური შაში</h4>
                               <p className="text-xs font-bold text-stone-400 max-w-xs">შაში ითამაშება მხოლოდ 2 მოთამაშეზე. ბოტები და რეიტინგული სისტემა ამ ეტაპზე გამორთულია.</p>
                            </div>
@@ -1647,11 +1651,15 @@ export default function App() {
             
             <div className="grid grid-cols-2 gap-3 mt-4">
               <button type="button" onClick={() => setMGameType('phurti')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'phurti' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}>
-                 <span className="text-3xl drop-shadow-md">🃏</span>
+                 <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span>
                  <span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-300'}`}>ფურთი</span>
               </button>
+              {/* 🟢 გასწორდა: თამაშის შექმნის მენიუში */}
               <button type="button" onClick={() => setMGameType('damka')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}>
-                 <span className="text-3xl drop-shadow-md">♟️</span>
+                 <div className="flex -space-x-2 group-hover:scale-110 transition-transform drop-shadow-md">
+                     <span className="text-3xl z-10">🔴</span>
+                     <span className="text-3xl">⚪</span>
+                 </div>
                  <span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-300'}`}>შაში (დამკა)</span>
               </button>
             </div>
@@ -1692,7 +1700,8 @@ export default function App() {
               </>
             ) : (
               <div className="bg-stone-950/60 border border-white/5 rounded-xl p-4 text-center mt-2 shadow-inner">
-                 <p className="text-[10px] md:text-xs text-stone-400 font-bold leading-relaxed">♟️ კლასიკური შაში ითამაშება მხოლოდ 2 მოთამაშეზე. ბოტები და რეიტინგული სისტემა ამ ეტაპზე გამორთულია.</p>
+                 {/* 🟢 გასწორდა: ტექსტის ინდიკატორი */}
+                 <p className="text-[10px] md:text-xs text-stone-400 font-bold leading-relaxed"><span className="text-sm">🔴</span> კლასიკური შაში ითამაშება მხოლოდ 2 მოთამაშეზე. ბოტები და რეიტინგული სისტემა ამ ეტაპზე გამორთულია.</p>
               </div>
             )}
 
