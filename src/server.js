@@ -730,7 +730,7 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('gameUpdated', room);
   });
 
-  // 🟢 დანებების ფუნქცია
+  // 🟢 დანებების ფუნქცია (გასწორებული: აღარ არჩევს რობოტს / მოთამაშეს, პოულობს ნებისმიერ სხვა მოწინააღმდეგეს)
   socket.on('surrender', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room || !room.gameStarted) return;
@@ -742,19 +742,19 @@ io.on('connection', (socket) => {
     let winnerName = null;
 
     if (room.gameType === 'damka') {
-        const winner = room.players.find(p => p.id !== socket.id && !p.isBot);
-        winnerName = winner ? winner.name : room.players[0].name;
+        const winner = room.players.find(p => p.id !== socket.id); // 🟢 ამოღებულია !p.isBot
+        winnerName = winner ? winner.name : 'მოწინააღმდეგე';
     } else {
         let maxScore = -1;
         room.players.forEach(p => {
-            if (p.id !== socket.id && !p.isBot && p.totalScore > maxScore) {
+            if (p.id !== socket.id && p.totalScore > maxScore) {
                 maxScore = p.totalScore;
                 winnerName = p.name;
             }
         });
         if (!winnerName) {
-            const alt = room.players.find(p => p.id !== socket.id && !p.isBot);
-            winnerName = alt ? alt.name : room.players[0].name;
+            const alt = room.players.find(p => p.id !== socket.id);
+            winnerName = alt ? alt.name : 'მოწინააღმდეგე';
         }
     }
 
@@ -777,7 +777,6 @@ io.on('connection', (socket) => {
                 let earnedXp = isWinner ? (isVip ? 35 : 25) : (isVip ? -5 : -10);
                 let earnedCoins = isWinner ? (isVip ? 75 : 50) : (isVip ? -25 : -50);
                 
-                // დანებების შემთხვევაში დამატებითი მინუსი
                 if (p.name === surrenderer.name) {
                     earnedXp -= 10;
                     earnedCoins -= 20;
