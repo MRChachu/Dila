@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { LogOut, Trophy, Clock, Crown, Flag } from 'lucide-react';
 
-export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName }) {
+export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName, DamkaIcon }) {
   const [selectedCell, setSelectedCell] = useState(null);
   const [timeLeft, setTimeLeft] = useState(100);
   const [showSurrenderModal, setShowSurrenderModal] = useState(false);
@@ -69,7 +69,6 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
   return (
     <div className="w-full flex flex-col items-center max-w-4xl mx-auto h-auto min-h-[85vh] relative pb-6 lg:pb-0 gap-6">
       
-      {/* მოწინააღმდეგის პანელი */}
       <div className="w-full flex items-center justify-between bg-stone-950/40 p-3 md:p-4 border border-white/5 rounded-2xl shadow-md">
          <div className="flex items-center gap-3">
            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-stone-900 border border-white/10 flex items-center justify-center text-xl shadow-inner ${room.currentTurn === opponentIndex && !room.roundSummary ? 'ring-2 ' + activeTheme.accent.replace('text-', 'ring-') + ' animate-pulse' : ''}`}>
@@ -91,7 +90,6 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
          <div className="flex items-center gap-2">
             <span className="text-[10px] md:text-xs font-black tracking-widest font-mono text-stone-500 hidden sm:block mr-2">ROOM: {room.id}</span>
             
-            {/* 🟢 დანებების ღილაკი */}
             {!room.roundSummary && !isSpectator && (
                <button onClick={() => setShowSurrenderModal(true)} className="flex items-center gap-1.5 px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-[10px] font-black transition-colors border border-white/10 active:scale-95 shadow-sm">
                  <Flag size={14} /> დანებება
@@ -104,7 +102,6 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
          </div>
       </div>
 
-      {/* შაშის დაფა */}
       <div className="w-full flex items-center justify-center relative">
         <div className="grid grid-cols-8 w-[95vw] max-w-[400px] md:max-w-[500px] aspect-square border-4 border-stone-800 rounded-lg overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-stone-300/5">
           
@@ -193,7 +190,6 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
          </div>
       </div>
 
-      {/* 🟢 დანებების დადასტურების მოდალი */}
       {showSurrenderModal && (
         <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[250] flex items-center justify-center p-4 animate-in fade-in duration-200 rounded-3xl">
           <div className={`bg-stone-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl text-center space-y-5`}>
@@ -211,7 +207,6 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
         </div>
       )}
 
-      {/* მატჩის დასრულება */}
       {room?.roundSummary && (
         <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300 rounded-3xl">
           <div className={`bg-stone-900 border border-opacity-30 border-current rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-6 ${activeTheme.accent}`}>
@@ -221,7 +216,6 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
             </h2>
             
             <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-5 shadow-inner relative">
-              {/* 🟢 შეტყობინება, თუ ვინმე დანებდა */}
               {room.roundSummary.surrendered && (
                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rose-600 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase shadow-md whitespace-nowrap">
                    {room.roundSummary.surrendered} დანებდა 🏳️
@@ -230,9 +224,44 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
               
               <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">გამარჯვებული</p>
               <div className="text-3xl font-black text-white drop-shadow-md">
-                <VipName name={room.roundSummary.matchWinner} isVip={false} /> 🎉
+                <VipName name={room.roundSummary.matchWinner} isVip={checkIsVip(room.players.find(p=>p.name===room.roundSummary.matchWinner)?.vipUntil)} /> 🎉
               </div>
             </div>
+
+            {/* 🟢 აქ ჩაემატა XP და Coins ვიზუალი! */}
+            {(() => {
+              const isMeWinner = room.roundSummary.matchWinner === me?.name;
+              const amIVip = checkIsVip(me?.vipUntil);
+              
+              let winXp = amIVip ? 35 : 25;
+              let loseXp = amIVip ? 5 : 10;
+              let winCoins = amIVip ? 75 : 50;
+              let loseCoins = amIVip ? 25 : 50;
+
+              // თუ შენ დანებდი, დამატებითი ჯარიმა ეკრანზევე აისახება
+              if (room.roundSummary.surrendered === me?.name) {
+                  loseXp += 10;
+                  loseCoins += 20;
+              }
+
+              return (
+                <div className="bg-stone-950/80 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-4 mb-4 md:mb-6 shadow-inner flex justify-around items-center ring-1 ring-white/5">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-1">XP</span>
+                    <span className={`text-base md:text-lg font-black ${isMeWinner ? 'text-green-400' : 'text-rose-400'} drop-shadow-md`}>
+                      {isMeWinner ? `↑ +${winXp}` : `↓ -${loseXp}`}
+                    </span>
+                  </div>
+                  <div className="w-px h-8 bg-white/10"></div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-1">ქოინები</span>
+                    <span className={`text-base md:text-lg font-black ${isMeWinner ? 'text-yellow-400' : 'text-rose-400'} drop-shadow-md`}>
+                      {isMeWinner ? `+${winCoins}` : `-${loseCoins}`} 🪙
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             <button 
               onClick={() => {
@@ -244,7 +273,7 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
               }}
               className={`w-full py-4 ${activeTheme.accentBg} text-stone-950 rounded-xl text-sm font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all`}
             >
-              {room.readyForNextRound?.includes(socket.id) ? 'მოლოდინი...' : 'ლობიში დაბრუნება'}
+              ლობიში დაბრუნება
             </button>
           </div>
         </div>
