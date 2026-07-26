@@ -459,9 +459,14 @@ io.on('connection', (socket) => {
 
     if (!rooms[roomId]) {
       if (action === 'join' || !maxPlayers) return socket.emit('joinError', 'ასეთი მაგიდა არ არსებობს!');
+      
+      // 🟢 თუ ბოტები დაშვებულია, ოთახი იძულებით ხდება არარეიტინგული
+      let finalIsRanked = isRanked !== undefined ? isRanked : true;
+      if (allowBots) finalIsRanked = false; 
+
       rooms[roomId] = {
         id: roomId, players: [], gameStarted: false, deck: [], tableCards: [], currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null,
-        targetScore: targetScore || 11, maxPlayers: maxPlayers || 4, allowBots: allowBots !== undefined ? allowBots : true, isRanked: allowBots ? false : (isRanked !== undefined ? isRanked : true), 
+        targetScore: targetScore || 11, maxPlayers: maxPlayers || 4, allowBots: allowBots !== undefined ? allowBots : true, isRanked: finalIsRanked, 
         readyForNextRound: [], turnExpiresAt: null, password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword, hostTheme, hostCardBack, gameType: gameType || 'phurti', damkaBoard: null 
       };
     }
@@ -493,9 +498,12 @@ io.on('connection', (socket) => {
     if (room.players[0] && room.players[0].id !== socket.id) return;
     
     room.targetScore = targetScore; room.maxPlayers = maxPlayers; room.allowBots = allowBots;
-    if (isRanked !== undefined) room.isRanked = isRanked;
-    if (allowBots) room.isRanked = false; 
     
+    // 🟢 აქაც იგივე დაცვა
+    let finalIsRanked = isRanked !== undefined ? isRanked : room.isRanked;
+    if (allowBots) finalIsRanked = false; 
+    room.isRanked = finalIsRanked;
+
     if (room.players.length > maxPlayers) room.players = room.players.slice(0, maxPlayers);
     io.to(roomId).emit('roomUpdated', room); broadcastActiveRooms();
   });
@@ -519,7 +527,10 @@ io.on('connection', (socket) => {
     if (!room.allowBots && room.players.length < room.maxPlayers) return socket.emit('error', `საჭიროა ${room.maxPlayers} მოთამაშე!`);
 
     room.gameStarted = true; room.readyForNextRound = [];
+
+    // 🟢 თუ ბოტები ემატებიან ოთახში, 100%-ით ვთიშავთ რეიტინგს!
     if (room.allowBots) {
+      room.isRanked = false; 
       const currentRealCount = room.players.length;
       for (let i = currentRealCount; i < room.maxPlayers; i++) {
         const randomXp = Math.floor(Math.random() * 5000); 
@@ -630,7 +641,6 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('gameUpdated', room);
   });
   
-  // 🟢 დამატებულია 'nextRoundReady', რომელიც რაუნდის დასრულებისას მუშაობს
   socket.on('nextRoundReady', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room || !room.gameStarted || !room.roundSummary || room.roundSummary.matchWinner) return;
