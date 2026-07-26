@@ -10,7 +10,7 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const User = require('./models/User');
 const { createDeck, isValidCapture, calculateRoundScores, getBestMove } = require('./gameLogic');
-const { createDamkaBoard, validateDamkaMove, hasCaptureMoves } = require('./damkaLogic'); // 🟢 გასწორებული იმპორტი
+const { createDamkaBoard, validateDamkaMove, hasCaptureMoves } = require('./damkaLogic');
 
 const ALL_DAILY_QUESTS = [
   { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 15 },
@@ -603,7 +603,6 @@ io.on('connection', (socket) => {
     const validation = validateDamkaMove(room.damkaBoard, playerIndex, from, to);
     
     if (!validation.valid) {
-        // 🟢 ვაგზავნით კონკრეტულ შეცდომას კლიენტთან
         return socket.emit('error', validation.error || 'არასწორი სვლა!');
     }
     
@@ -634,6 +633,59 @@ io.on('connection', (socket) => {
         room.roundSummary = {
             matchWinner: p0Pieces === 0 ? room.players[1].name : room.players[0].name
         };
+        
+        // 🟢 შაშის გამარჯვებულის დაჯილდოება (XP, ქოინები, ისტორია)
+        room.players.forEach(async (p) => {
+            if (p.isBot) return; 
+            try {
+                const isWinner = p.name === room.roundSummary.matchWinner;
+                const dbUser = await User.findOne({ username: p.name });
+                
+                if (dbUser) {
+                    const isVip = dbUser.vipUntil && new Date(dbUser.vipUntil) > new Date();
+                    
+                    let earnedXp = isWinner ? (isVip ? 35 : 25) : (isVip ? -5 : -10);
+                    let earnedCoins = isWinner ? (isVip ? 75 : 50) : (isVip ? -25 : -50);
+                    
+                    if (isWinner) { 
+                        dbUser.stats.gamesWon += 1;
+                        dbUser.stats.winStreak = (dbUser.stats.winStreak || 0) + 1; 
+                        
+                        if (dbUser.stats.winStreak >= 10 && !dbUser.achievements.includes('legionnaire')) dbUser.achievements.push('legionnaire');
+                        if (!dbUser.achievements.includes('first_win')) dbUser.achievements.push('first_win');
+                        if (dbUser.stats.gamesWon >= 100 && !dbUser.achievements.includes('veteran')) dbUser.achievements.push('veteran');
+                    } else {
+                        dbUser.stats.winStreak = 0; 
+                    }
+                    
+                    dbUser.xp = Math.max(0, dbUser.xp + earnedXp);
+                    dbUser.coins = Math.max(0, (dbUser.coins || 0) + earnedCoins);
+                    
+                    let levelThreshold = dbUser.level * 1000;
+                    while (dbUser.xp >= levelThreshold) {
+                        dbUser.xp -= levelThreshold; dbUser.level += 1;
+                        levelThreshold = dbUser.level * 1000;
+                    }
+
+                    dbUser.stats.gamesPlayed += 1;
+                    
+                    const opponentNames = room.players.filter(op => op.id !== p.id).map(op => op.name);
+                    dbUser.gameHistory.unshift({ 
+                        roomId: room.id, 
+                        targetScore: 12, 
+                        myFinalScore: isWinner ? 12 : (p.name === room.players[0].name ? p0Pieces : p1Pieces), 
+                        isWinner: isWinner, 
+                        playedAt: new Date(),
+                        opponents: opponentNames,
+                        gameType: 'damka'
+                    });
+                    
+                    if (dbUser.gameHistory.length > 30) dbUser.gameHistory.pop(); 
+                    await dbUser.save();
+                }
+            } catch (dbErr) { console.error(dbErr.message); }
+        });
+
     } else {
         let canMultiCapture = false;
         if (validation.isCapture) {
