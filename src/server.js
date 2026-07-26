@@ -10,8 +10,7 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const User = require('./models/User');
 const { createDeck, isValidCapture, calculateRoundScores, getBestMove } = require('./gameLogic');
-const { createDamkaBoard, validateDamkaMove } = require('./damkaLogic'); // 🟢 შემოვიტანეთ დამკას ლოგიკა
-const { createDamkaBoard, validateDamkaMove, hasCaptureMoves } = require('./damkaLogic');
+const { createDamkaBoard, validateDamkaMove, hasCaptureMoves } = require('./damkaLogic'); // 🟢 გასწორდა: დარჩა მხოლოდ ერთი სრული იმპორტი
 
 const ALL_DAILY_QUESTS = [
   { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 15 },
@@ -127,7 +126,7 @@ io.on('connection', (socket) => {
       hostVip: r.players[0]?.vipUntil,
       currentPlayers: r.players.length, maxPlayers: r.maxPlayers, targetScore: r.targetScore,
       allowBots: r.allowBots, isPrivate: r.isPrivate, isRanked: r.isRanked,
-      gameType: r.gameType || 'phurti' // 🟢 ლობიში გამოჩნდება თამაშის ტიპი
+      gameType: r.gameType || 'phurti'
     }));
     io.emit('activeRoomsList', activeLobbies); 
   };
@@ -405,7 +404,6 @@ io.on('connection', (socket) => {
     } else { socket.emit('roomNotFound'); }
   });
 
-  // 🟢 განახლდა: gameType-ის მიღება მაგიდის შექმნისას
   socket.on('joinRoom', async ({ action, roomId, playerName, roomPassword, maxPlayers, targetScore, allowBots, isRanked, gameType }) => {
     if (!roomId || !playerName) return socket.emit('error', 'მონაცემები არასრულია');
     socket.join(roomId);
@@ -440,8 +438,8 @@ io.on('connection', (socket) => {
         readyForNextRound: [], turnExpiresAt: null,
         password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword,
         hostTheme, hostCardBack,
-        gameType: gameType || 'phurti', // ფურთი თუ დამკა
-        damkaBoard: null // ინახავს დაფის მდგომარეობას შაშისთვის
+        gameType: gameType || 'phurti',
+        damkaBoard: null 
       };
     }
 
@@ -511,7 +509,6 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('receiveEmote', { playerId: socket.id, emote });
   });
 
-  // 🟢 განახლდა: თამაშის დაწყებისას არჩევს ფურთის ლოგიკას ან შაშის ლოგიკას
   socket.on('startGame', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room || room.gameStarted) return;
@@ -521,18 +518,17 @@ io.on('connection', (socket) => {
       
       room.gameStarted = true;
       room.readyForNextRound = [];
-      room.damkaBoard = createDamkaBoard(); // შაშის დაფის გენერაცია
-      room.currentTurn = 0; // თეთრები (პირველი მოთამაშე) იწყებენ 
+      room.damkaBoard = createDamkaBoard(); 
+      room.currentTurn = 0; 
       room.lastAction = null;
       room.roundSummary = null;
       
-      startTurnTimer(room, roomId); // ტაიმერი შაშისთვის
+      startTurnTimer(room, roomId); 
       io.to(roomId).emit('gameStarted', room);
       broadcastActiveRooms();
       return;
     }
 
-    // --- ფურთის ჩვეულებრივი სტარტი ---
     if (!room.allowBots && room.players.length < room.maxPlayers) return socket.emit('error', `საჭიროა ${room.maxPlayers} მოთამაშე!`);
 
     room.gameStarted = true; room.readyForNextRound = [];
@@ -598,7 +594,6 @@ io.on('connection', (socket) => {
     const playerIndex = room.players.findIndex(p => p.id === socket.id);
     if (room.currentTurn !== playerIndex) return socket.emit('error', 'ახლა შენი სვლა არ არის!');
     
-    // 🟢 მრავალჯერადი მოჭრის შეზღუდვა: უნდა იაროს მხოლოდ იმ ქვით!
     if (room.multiCapturePiece) {
         if (from.r !== room.multiCapturePiece.r || from.c !== room.multiCapturePiece.c) {
             return socket.emit('error', 'უნდა გააგრძელო მოჭრა იმავე ქვით!');
@@ -611,7 +606,6 @@ io.on('connection', (socket) => {
         return socket.emit('error', 'არასწორი სვლა!');
     }
     
-    // 🟢 თუ მრავალჯერადი მოჭრის პროცესშია, სხვა სვლას (უბრალოდ გადაადგილებას) ვერ გააკეთებს
     if (room.multiCapturePiece && !validation.isCapture) {
         return socket.emit('error', 'სავალდებულოა მოჭრის გაგრძელება!');
     }
@@ -640,24 +634,21 @@ io.on('connection', (socket) => {
             matchWinner: p0Pieces === 0 ? room.players[1].name : room.players[0].name
         };
     } else {
-        // 🟢 ვამოწმებთ, აქვს თუ არა ამ ქვის მეტი მოჭრის საშუალება
         let canMultiCapture = false;
         if (validation.isCapture) {
             canMultiCapture = hasCaptureMoves(room.damkaBoard, playerIndex, to.r, to.c);
         }
         
         if (canMultiCapture) {
-            room.multiCapturePiece = { r: to.r, c: to.c }; // ვიმახსოვრებთ ქვას
+            room.multiCapturePiece = { r: to.r, c: to.c }; 
             if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
             room.turnExpiresAt = Date.now() + 30000;
-            // რიგს არ ვცვლით!
         } else {
             room.multiCapturePiece = null;
             room.currentTurn = (room.currentTurn + 1) % 2;
             if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
             room.turnExpiresAt = Date.now() + 30000;
             
-            // ტაიმერი შემდეგი მოთამაშისთვის
             roomTimers[roomId] = setTimeout(() => {
                if (rooms[roomId] && rooms[roomId].gameStarted) {
                    rooms[roomId].currentTurn = (rooms[roomId].currentTurn + 1) % 2;
@@ -834,7 +825,6 @@ function handleTurnTransition(room, roomId) {
       checkAndTriggerBotTurn(room, roomId);
     }
   } else if (room.gameType === 'damka') {
-    // შაშის შემთხვევაში რიგის გადასვლა
     room.currentTurn = (room.currentTurn + 1) % 2;
     startTurnTimer(room, roomId);
     io.to(roomId).emit('gameUpdated', room);
@@ -847,7 +837,7 @@ function startTurnTimer(room, roomId) {
   const activePlayer = room.players[room.currentTurn];
   if (activePlayer && activePlayer.isBot) { room.turnExpiresAt = null; return; }
 
-  room.turnExpiresAt = Date.now() + 30000; // 30 წამი სვლისთვის (შაში საფიქრალია)
+  room.turnExpiresAt = Date.now() + 30000; 
   roomTimers[roomId] = setTimeout(() => {
     if (!room.gameStarted || room.currentTurn === null) return;
     const timeoutPlayer = room.players[room.currentTurn];
@@ -861,8 +851,6 @@ function startTurnTimer(room, roomId) {
       room.lastAction = { playerName: `${timeoutPlayer.name} (🕒)`, isVip: timeoutPlayer.vipUntil, cardFromHand: autoCard, cardsFromTable: [], type: 'DISCARD' };
       handleTurnTransition(room, roomId);
     } else if (room.gameType === 'damka') {
-      // თუ შაშში მოთამაშემ დროში სვლა ვერ მოასწრო, რიგი უბრალოდ გადადის მეორეზე 
-      // (სამომავლოდ აქ შეიძლება ავტომატურად ვაგებინებდეთ მატჩს)
       handleTurnTransition(room, roomId);
     }
   }, 30000);
