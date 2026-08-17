@@ -6,7 +6,7 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
   const [selectedCell, setSelectedCell] = useState(null);
   const [timeLeft, setTimeLeft] = useState(100);
   const [showSurrenderModal, setShowSurrenderModal] = useState(false);
-  const [isMuted, setIsMuted] = useState(false); // 🟢 ხმის გათიშვის სთეითი
+  const [isMuted, setIsMuted] = useState(false); 
 
   const myIndex = room?.players?.findIndex(p => p.id === socket.id);
   const isSpectator = myIndex === -1;
@@ -18,19 +18,17 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
   const me = room?.players?.[isSpectator ? 0 : myIndex];
   const opponent = room?.players?.[isSpectator ? 1 : opponentIndex];
 
-  // 🟢 შაშის ხმების ლოგიკა
   const prevTurnRef = useRef(room?.currentTurn);
   const prevBoardRef = useRef(JSON.stringify(room?.damkaBoard));
 
   const playDamkaSound = (isCapture = false) => {
     if (isMuted) return;
     try {
-      const soundFile = '/card-drop.wav'; // თუ შაშის ქვის ხმა გაქვს, შეგიძლია შეცვალო (მაგ: '/piece-move.wav')
+      const soundFile = '/card-drop.wav'; 
       const audio = new Audio(soundFile);
       audio.volume = 0.3;
       audio.play().catch(e => console.log("Audio play error:", e));
       
-      // თუ მოჭრაა, ოდნავ დაგვიანებით მეორე ხმაც დაიკვრება ეფექტისთვის
       if (isCapture) {
         setTimeout(() => {
           const audio2 = new Audio(soundFile);
@@ -46,7 +44,6 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
     const currentBoardStr = JSON.stringify(room.damkaBoard);
     
     if (prevTurnRef.current !== room.currentTurn || prevBoardRef.current !== currentBoardStr) {
-        // ვთვლით ქვების რაოდენობას, რომ გავიგოთ იყო თუ არა მოჭრა
         const getPieceCount = (boardStr) => {
             if (!boardStr) return 0;
             let count = 0;
@@ -140,7 +137,6 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
          <div className="flex items-center gap-2">
             <span className="text-[10px] md:text-xs font-black tracking-widest font-mono text-stone-500 hidden sm:block mr-2">ROOM: {room.id}</span>
             
-            {/* 🟢 ხმის გამორთვის ღილაკი */}
             <button onClick={() => setIsMuted(!isMuted)} className={`text-stone-500 hover:${activeTheme.accent} transition-colors mr-2`}>
               {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
@@ -165,6 +161,11 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
               const isDark = (r + c) % 2 !== 0;
               const piece = board[r]?.[c];
               const isSelected = selectedCell?.r === r && selectedCell?.c === c;
+              
+              // 🟢 აქ მოწმდება, არის თუ არა ეს უჯრედი ბოლო სვლის ნაწილი
+              const isLastMoveFrom = room?.lastDamkaMove?.from?.r === r && room?.lastDamkaMove?.from?.c === c;
+              const isLastMoveTo = room?.lastDamkaMove?.to?.r === r && room?.lastDamkaMove?.to?.c === c;
+              const isLastMove = isLastMoveFrom || isLastMoveTo;
 
               return (
                 <div 
@@ -174,6 +175,7 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
                     ${isDark ? 'bg-[#1e1c1a]' : 'bg-[#d2c4b5]/10'} 
                     ${isDark && !piece && selectedCell && isMyTurn && !room.roundSummary ? 'hover:bg-[#2c2825] cursor-pointer' : ''}
                     ${isSelected ? 'bg-[#362e28] ring-inset ring-2 ring-white/20' : ''}
+                    ${isLastMove && !isSelected ? 'bg-yellow-500/20 shadow-[inset_0_0_20px_rgba(234,179,8,0.4)] ring-inset ring-1 ring-yellow-500/30' : ''}
                   `}
                 >
                   {piece && (
