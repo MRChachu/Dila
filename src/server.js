@@ -160,6 +160,9 @@ function processDamkaMove(roomId, playerId, from, to, ioInstance) {
     room.damkaBoard[to.r][to.c] = piece;
     room.damkaBoard[from.r][from.c] = null;
     
+    // 🟢 ინახება ბოლო სვლის კოორდინატები ანიმაციისთვის
+    room.lastDamkaMove = { from, to };
+    
     if (validation.isCapture && validation.capturedPos) {
         room.damkaBoard[validation.capturedPos.r][validation.capturedPos.c] = null;
     }
@@ -460,14 +463,13 @@ io.on('connection', (socket) => {
     if (!rooms[roomId]) {
       if (action === 'join' || !maxPlayers) return socket.emit('joinError', 'ასეთი მაგიდა არ არსებობს!');
       
-      // 🟢 თუ ბოტები დაშვებულია, ოთახი იძულებით ხდება არარეიტინგული
       let finalIsRanked = isRanked !== undefined ? isRanked : true;
       if (allowBots) finalIsRanked = false; 
 
       rooms[roomId] = {
         id: roomId, players: [], gameStarted: false, deck: [], tableCards: [], currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null,
         targetScore: targetScore || 11, maxPlayers: maxPlayers || 4, allowBots: allowBots !== undefined ? allowBots : true, isRanked: finalIsRanked, 
-        readyForNextRound: [], turnExpiresAt: null, password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword, hostTheme, hostCardBack, gameType: gameType || 'phurti', damkaBoard: null 
+        readyForNextRound: [], turnExpiresAt: null, password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword, hostTheme, hostCardBack, gameType: gameType || 'phurti', damkaBoard: null, lastDamkaMove: null 
       };
     }
 
@@ -499,7 +501,6 @@ io.on('connection', (socket) => {
     
     room.targetScore = targetScore; room.maxPlayers = maxPlayers; room.allowBots = allowBots;
     
-    // 🟢 აქაც იგივე დაცვა
     let finalIsRanked = isRanked !== undefined ? isRanked : room.isRanked;
     if (allowBots) finalIsRanked = false; 
     room.isRanked = finalIsRanked;
@@ -528,7 +529,6 @@ io.on('connection', (socket) => {
 
     room.gameStarted = true; room.readyForNextRound = [];
 
-    // 🟢 თუ ბოტები ემატებიან ოთახში, 100%-ით ვთიშავთ რეიტინგს!
     if (room.allowBots) {
       room.isRanked = false; 
       const currentRealCount = room.players.length;
@@ -540,6 +540,8 @@ io.on('connection', (socket) => {
 
     if (room.gameType === 'damka') {
       room.damkaBoard = createDamkaBoard(); room.currentTurn = 0; room.lastAction = null; room.roundSummary = null;
+      // 🟢 თამაშის დაწყებისას ვაგდებთ ძველ სვლას (ასეთის არსებობის შემთხვევაში)
+      room.lastDamkaMove = null; 
       startTurnTimer(room, roomId); io.to(roomId).emit('gameStarted', room); broadcastActiveRooms();
       checkAndTriggerBotTurn(room, roomId); 
       return;
