@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { LogOut, Trophy, Clock, Crown, Flag } from 'lucide-react';
+import { LogOut, Trophy, Clock, Crown, Flag, Volume2, VolumeX } from 'lucide-react';
 
 export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName, DamkaIcon }) {
   const [selectedCell, setSelectedCell] = useState(null);
   const [timeLeft, setTimeLeft] = useState(100);
   const [showSurrenderModal, setShowSurrenderModal] = useState(false);
+  const [isMuted, setIsMuted] = useState(false); // 🟢 ხმის გათიშვის სთეითი
 
   const myIndex = room?.players?.findIndex(p => p.id === socket.id);
   const isSpectator = myIndex === -1;
@@ -16,6 +17,55 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
   const opponentIndex = myIndex === 0 ? 1 : (myIndex === 1 ? 0 : 0);
   const me = room?.players?.[isSpectator ? 0 : myIndex];
   const opponent = room?.players?.[isSpectator ? 1 : opponentIndex];
+
+  // 🟢 შაშის ხმების ლოგიკა
+  const prevTurnRef = useRef(room?.currentTurn);
+  const prevBoardRef = useRef(JSON.stringify(room?.damkaBoard));
+
+  const playDamkaSound = (isCapture = false) => {
+    if (isMuted) return;
+    try {
+      const soundFile = '/card-drop.wav'; // თუ შაშის ქვის ხმა გაქვს, შეგიძლია შეცვალო (მაგ: '/piece-move.wav')
+      const audio = new Audio(soundFile);
+      audio.volume = 0.3;
+      audio.play().catch(e => console.log("Audio play error:", e));
+      
+      // თუ მოჭრაა, ოდნავ დაგვიანებით მეორე ხმაც დაიკვრება ეფექტისთვის
+      if (isCapture) {
+        setTimeout(() => {
+          const audio2 = new Audio(soundFile);
+          audio2.volume = 0.3;
+          audio2.play().catch(e => {});
+        }, 150);
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    if (!room) return;
+    const currentBoardStr = JSON.stringify(room.damkaBoard);
+    
+    if (prevTurnRef.current !== room.currentTurn || prevBoardRef.current !== currentBoardStr) {
+        // ვთვლით ქვების რაოდენობას, რომ გავიგოთ იყო თუ არა მოჭრა
+        const getPieceCount = (boardStr) => {
+            if (!boardStr) return 0;
+            let count = 0;
+            JSON.parse(boardStr).forEach(row => row.forEach(cell => { if (cell) count++; }));
+            return count;
+        };
+        
+        const prevCount = getPieceCount(prevBoardRef.current);
+        const currentCount = getPieceCount(currentBoardStr);
+        const isCapture = currentCount < prevCount;
+
+        if (room.gameStarted && !room.roundSummary && prevBoardRef.current) {
+            playDamkaSound(isCapture);
+        }
+
+        prevTurnRef.current = room.currentTurn;
+        prevBoardRef.current = currentBoardStr;
+    }
+  }, [room?.currentTurn, room?.damkaBoard, room?.gameStarted, room?.roundSummary, isMuted]);
 
   useEffect(() => {
     if (isMyTurn && room.turnExpiresAt) {
@@ -90,6 +140,11 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
          <div className="flex items-center gap-2">
             <span className="text-[10px] md:text-xs font-black tracking-widest font-mono text-stone-500 hidden sm:block mr-2">ROOM: {room.id}</span>
             
+            {/* 🟢 ხმის გამორთვის ღილაკი */}
+            <button onClick={() => setIsMuted(!isMuted)} className={`text-stone-500 hover:${activeTheme.accent} transition-colors mr-2`}>
+              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </button>
+
             {!room.roundSummary && !isSpectator && (
                <button onClick={() => setShowSurrenderModal(true)} className="flex items-center gap-1.5 px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-[10px] font-black transition-colors border border-white/10 active:scale-95 shadow-sm">
                  <Flag size={14} /> დანებება
@@ -228,7 +283,6 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
               </div>
             </div>
 
-            {/* 🟢 აქ ჩაემატა XP და Coins ვიზუალი! */}
             {(() => {
               const isMeWinner = room.roundSummary.matchWinner === me?.name;
               const amIVip = checkIsVip(me?.vipUntil);
@@ -238,7 +292,6 @@ export default function DamkaBoard({ room, socket, onLeave, activeTheme, checkIs
               let winCoins = amIVip ? 75 : 50;
               let loseCoins = amIVip ? 25 : 50;
 
-              // თუ შენ დანებდი, დამატებითი ჯარიმა ეკრანზევე აისახება
               if (room.roundSummary.surrendered === me?.name) {
                   loseXp += 10;
                   loseCoins += 20;
