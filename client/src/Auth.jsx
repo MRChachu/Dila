@@ -35,6 +35,23 @@ const translations = {
     achVet: "Veteran", achVetDesc: "Win 100 ranked matches.", ach10D: "10 of Diamonds", ach10DDesc: "Capture 50 times in a won match.", ach2C: "2 of Clubs", ach2CDesc: "Capture 50 times in a won match.", achSweep: "Sweeper", achSweepDesc: "Capture 4+ cards with a Jack 50 times.",
     footerDesc: "A modern, reliable, and exciting online platform for the classic card game.", allRights: "All rights reserved.",
     contactUs: "Contact Us", socials: "Social Media", sendMessage: "Send", contactDesc: "Send us your feedback, ideas, or report a player.", complaint: "Report Player", feedback: "Feedback / Idea", messagePlaceholder: "Describe in detail...", emailPlaceholder: "Your Email (optional)...", contactSuccess: "Thanks! Message received."
+  },
+  ru: {
+    rules: "Правила", system: "Система", about: "О нас", onlinePlatform: "Онлайн Платформа",
+    heroTitle1: "Играй в Пурти", heroTitle2: "Профессионально", heroDesc: "Рейтинговые матчи, уникальные достижения и топ 10. Присоединяйся к лучшим игрокам.",
+    ranked: "Рейтинг", shop: "Магазин", login: "Войти", register: "Регистрация",
+    passRecovery: "Восстановление", step1Desc: "Введите ваши данные", step2Desc: "Введите новый пароль",
+    phUsername: "Имя пользователя...", phSecret: "Секретное слово...", phPass: "Пароль...", phPassRule: "Пароль (мин. 6 симв., 1 цифра)", phConfirm: "Повторите пароль...",
+    wait: "Подождите...", continue: "Продолжить", changePass: "Изменить пароль", forgot: "Забыли пароль?", back: "Назад", backMain: "На главную",
+    errFields: "Заполните все поля!", errPassMatch: "Пароли не совпадают!", errPassRule: "Пароль: мин 6 символов, 1 буква и 1 цифра!", errServer: "Ошибка подключения к серверу", errData: "Неверные данные",
+    errUserRule: "Имя: мин 3 лат. символа/цифры, без пробелов!", errAgeRule: "Вам должно быть минимум 16 лет!",
+    howToPlay: "Как играть?", goal: "Цель", goalDesc: "Цель — набрать 11 или 21 очко по правилам.", scoring: "Система очков", scoringDesc: "Больше карт (2 оч.), Больше треф (1 оч.), 10 Бубен (1 оч.), 2 Треф (1 оч.).", capture: "Взятие / Очистка", captureDesc: "Валет (J) берет любую карту и очищает стол.",
+    economy: "Экономика", shopQuests: "Магазин и Квесты", economyDesc: "Выполняйте 3 задания в день, зарабатывайте монеты и покупайте премиум контент.",
+    dailyQuests: "Ежедневные задания", dailyQuestsDesc: "Обновление 24ч", designs: "Дизайны", designsDesc: "Стол и Карты", premiumAvatar: "Премиум Аватар", premiumAvatarDesc: "Уникальное эмодзи", vipStatus: "VIP Статус", vipStatusDesc: "Светящееся имя",
+    achievementsSys: "Система Достижений", achievementsDesc: "Значки для избранных. Учитываются только в выигранных матчах!",
+    achVet: "Ветеран", achVetDesc: "Выиграть 100 рейтинговых матчей.", ach10D: "10 Бубен", ach10DDesc: "Взять 50 раз в победном матче.", ach2C: "2 Треф", ach2CDesc: "Взять 50 раз в победном матче.", achSweep: "Уборщик", achSweepDesc: "Взять 4+ карт Валетом 50 раз.",
+    footerDesc: "Современная, надежная и увлекательная онлайн-платформа для классической карточной игры.", allRights: "Все права защищены.",
+    contactUs: "Контакты", socials: "Соц. сети", sendMessage: "Отправить", contactDesc: "Напишите нам свои идеи, отзывы или подайте жалобу.", complaint: "Жалоба / Репорт", feedback: "Идея / Отзыв", messagePlaceholder: "Опишите подробно...", emailPlaceholder: "Ваш Email (необязательно)...", contactSuccess: "Спасибо! Сообщение получено."
   }
 };
 
@@ -56,7 +73,6 @@ export default function Auth({ onAuthSuccess }) {
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // 🟢 საკონტაქტო მოდალის State-ები
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [contactData, setContactData] = useState({ email: '', subject: 'feedback', message: '' });
   const [isSending, setIsSending] = useState(false);
@@ -167,6 +183,7 @@ export default function Auth({ onAuthSuccess }) {
             <div className="flex bg-stone-900/80 rounded-lg border border-white/5 p-1 gap-1 shadow-md ml-2 md:ml-4">
               <button onClick={() => setLang('ka')} className={`p-1 rounded transition-all text-[10px] md:text-xs ${lang === 'ka' ? 'bg-yellow-500 text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇪</button>
               <button onClick={() => setLang('en')} className={`p-1 rounded transition-all text-[10px] md:text-xs ${lang === 'en' ? 'bg-yellow-500 text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇧</button>
+              <button onClick={() => setLang('ru')} className={`p-1 rounded transition-all text-[10px] md:text-xs ${lang === 'ru' ? 'bg-yellow-500 text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇷🇺</button>
             </div>
           </div>
         </div>
@@ -323,7 +340,7 @@ export default function Auth({ onAuthSuccess }) {
                 <span className="text-sm font-black tracking-widest text-stone-100">PHURTI.GE</span>
               </div>
               <p className="text-[10px] md:text-xs text-stone-500 leading-relaxed font-medium max-w-xs">
-                {t.footerDesc}
+                ქართული დეველოპერული პროექტი. კლასიკური ბანქოს თამაშის თანამედროვე, სანდო და აზარტული ონლაინ სივრცე.
               </p>
             </div>
 
@@ -349,16 +366,14 @@ export default function Auth({ onAuthSuccess }) {
                 <Mail size={14} className="text-yellow-500"/> {t.contactUs}
               </button>
             </div>
-
           </div>
-
           <div className="pt-6 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-[9px] text-stone-600 font-bold tracking-widest uppercase">
-              &copy; {new Date().getFullYear()} PHURTI.GE. {t.allRights}
+              &copy; {new Date().getFullYear()} PHURTI.GE. ყველა უფლება დაცულია.
             </p>
             <div className="flex gap-4 text-[9px] font-bold text-stone-600 uppercase tracking-widest">
-              <a href="#" className="hover:text-stone-300">წესები</a>
-              <a href="#" className="hover:text-stone-300">კონფიდენციალურობა</a>
+              <span className="hover:text-stone-300 cursor-pointer">წესები</span>
+              <span className="hover:text-stone-300 cursor-pointer">კონფიდენციალურობა</span>
             </div>
           </div>
         </div>
@@ -378,24 +393,23 @@ export default function Auth({ onAuthSuccess }) {
               {contactStatus && <div className={`mb-4 p-2 text-[10px] font-bold text-center border rounded-lg ${contactStatus.includes('მადლობა') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>{contactStatus}</div>}
               
               <form onSubmit={handleContactSubmit} className="space-y-3">
-                <input type="email" placeholder={t.emailPlaceholder} value={contactData.email} onChange={e=>setContactData({...contactData, email: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" />
+                <input type="email" placeholder={t.emailPlaceholder} value={contactData.email} onChange={e=>setContactData({...contactData, email: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600 shadow-inner" />
                 
-                <select value={contactData.subject} onChange={e=>setContactData({...contactData, subject: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all cursor-pointer">
+                <select value={contactData.subject} onChange={e=>setContactData({...contactData, subject: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all cursor-pointer shadow-inner">
                   <option value="feedback">{t.feedback}</option>
                   <option value="complaint">{t.complaint}</option>
                   <option value="other">სხვა...</option>
                 </select>
                 
-                <textarea placeholder={t.messagePlaceholder} value={contactData.message} onChange={e=>setContactData({...contactData, message: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600 min-h-[100px] resize-none" required></textarea>
+                <textarea placeholder={t.messagePlaceholder} value={contactData.message} onChange={e=>setContactData({...contactData, message: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600 min-h-[100px] resize-none shadow-inner" required></textarea>
                 
-                <button type="submit" disabled={isSending} className="w-full bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-black text-[11px] uppercase tracking-widest py-3 rounded-xl mt-2 transition-all active:scale-95 flex items-center justify-center gap-2">
+                <button type="submit" disabled={isSending} className="w-full bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-black text-[11px] uppercase tracking-widest py-3 rounded-xl mt-2 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg">
                   {isSending ? t.wait : <><Send size={14}/> {t.sendMessage}</>}
                 </button>
               </form>
            </div>
         </div>
       )}
-
     </div>
   );
 }
