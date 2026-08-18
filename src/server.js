@@ -39,74 +39,31 @@ app.use('/api/auth', authRoutes);
 app.get('/api/admin/stats', async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
-    const globalStats = await User.aggregate([
-      {
-        $group: {
-          _id: null,
-          totalGamesPlayed: { $sum: "$stats.gamesPlayed" },
-          totalCoins: { $sum: "$coins" }
-        }
-      }
-    ]);
-    const topAvatars = await User.aggregate([
-      { $match: { avatar: { $ne: null } } },
-      { $group: { _id: "$avatar", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 3 }
-    ]);
-    const topThemes = await User.aggregate([
-      { $match: { tableTheme: { $ne: null } } },
-      { $group: { _id: "$tableTheme", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 3 }
-    ]);
-
-    res.json({
-      totalUsers,
-      totalGamesPlayed: globalStats[0]?.totalGamesPlayed || 0,
-      totalCoins: globalStats[0]?.totalCoins || 0,
-      topAvatars,
-      topThemes
-    });
-  } catch (err) {
-    console.error('სტატისტიკის შეცდომა:', err);
-    res.status(500).json({ message: 'სერვერის შეცდომა სტატისტიკის ჩატვირთვისას' });
-  }
+    const globalStats = await User.aggregate([{ $group: { _id: null, totalGamesPlayed: { $sum: "$stats.gamesPlayed" }, totalCoins: { $sum: "$coins" } } }]);
+    const topAvatars = await User.aggregate([{ $match: { avatar: { $ne: null } } }, { $group: { _id: "$avatar", count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 3 }]);
+    const topThemes = await User.aggregate([{ $match: { tableTheme: { $ne: null } } }, { $group: { _id: "$tableTheme", count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 3 }]);
+    res.json({ totalUsers, totalGamesPlayed: globalStats[0]?.totalGamesPlayed || 0, totalCoins: globalStats[0]?.totalCoins || 0, topAvatars, topThemes });
+  } catch (err) { res.status(500).json({ message: 'სერვერის შეცდომა სტატისტიკის ჩატვირთვისას' }); }
 });
 
 app.post('/api/admin/advanced-action', async (req, res) => {
   try {
     const { adminPass, targetUser, action } = req.body;
-    if (adminPass !== process.env.ADMIN_PASS && adminPass !== 'chachu123') { 
-        return res.status(403).json({ message: 'წვდომა აკრძალულია' });
-    }
-    
-    if (action === 'delete') {
-      await User.deleteOne({ username: targetUser });
-      return res.json({ success: true, message: 'ექაუნთი წაიშალა' });
-    } else if (action === 'reset') {
-      await User.updateOne({ username: targetUser }, { 
-        $set: { coins: 0, xp: 0, level: 1, 'stats.gamesPlayed': 0, 'stats.gamesWon': 0, 'stats.winStreak': 0, 'stats.totalPointsScored': 0 } 
-      });
+    if (adminPass !== process.env.ADMIN_PASS && adminPass !== 'chachu123') return res.status(403).json({ message: 'წვდომა აკრძალულია' });
+    if (action === 'delete') { await User.deleteOne({ username: targetUser }); return res.json({ success: true, message: 'ექაუნთი წაიშალა' }); } 
+    else if (action === 'reset') {
+      await User.updateOne({ username: targetUser }, { $set: { coins: 0, xp: 0, level: 1, 'stats.gamesPlayed': 0, 'stats.gamesWon': 0, 'stats.winStreak': 0, 'stats.totalPointsScored': 0 } });
       return res.json({ success: true, message: 'სტატისტიკა განულდა' });
     }
     res.status(400).json({ message: 'უცნობი მოქმედება' });
-  } catch (err) {
-    res.status(500).json({ message: 'შეცდომა სერვერზე' });
-  }
+  } catch (err) { res.status(500).json({ message: 'შეცდომა სერვერზე' }); }
 });
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ მონაცემთა ბაზა წარმატებით დაუკავშირდა'))
   .catch(err => console.error('❌ ბაზასთან კავშირის შეცდომა:', err.message));
 
-const io = new Server(server, {
-  cors: { 
-    origin: ['http://localhost:5173', 'https://dila-alpha.vercel.app', 'https://phurti.ge', 'https://www.phurti.ge'], 
-    methods: ["GET", "POST"],
-    credentials: true
-  }
-});
+const io = new Server(server, { cors: { origin: ['http://localhost:5173', 'https://dila-alpha.vercel.app', 'https://phurti.ge', 'https://www.phurti.ge'], methods: ["GET", "POST"], credentials: true } });
 
 const rooms = {};
 const roomTimers = {}; 
@@ -146,9 +103,7 @@ function processDamkaMove(roomId, playerId, from, to, ioInstance) {
     if (room.currentTurn !== playerIndex) return { error: 'ახლა შენი სვლა არ არის!' };
     
     if (room.multiCapturePiece) {
-        if (from.r !== room.multiCapturePiece.r || from.c !== room.multiCapturePiece.c) {
-            return { error: 'უნდა გააგრძელო მოჭრა იმავე ქვით!' };
-        }
+        if (from.r !== room.multiCapturePiece.r || from.c !== room.multiCapturePiece.c) return { error: 'უნდა გააგრძელო მოჭრა იმავე ქვით!' };
     }
     
     const validation = validateDamkaMove(room.damkaBoard, playerIndex, from, to);
@@ -160,7 +115,6 @@ function processDamkaMove(roomId, playerId, from, to, ioInstance) {
     room.damkaBoard[to.r][to.c] = piece;
     room.damkaBoard[from.r][from.c] = null;
     
-    // 🟢 ინახება ბოლო სვლის კოორდინატები ანიმაციისთვის
     room.lastDamkaMove = { from, to };
     
     if (validation.isCapture && validation.capturedPos) {
@@ -242,7 +196,7 @@ function processDamkaMove(roomId, playerId, from, to, ioInstance) {
                         if (dbUser.gameHistory.length > 30) dbUser.gameHistory.pop(); 
                         await dbUser.save();
                     }
-                } catch (dbErr) { console.error(dbErr.message); }
+                } catch (dbErr) {}
             });
         }
     }
@@ -253,8 +207,6 @@ function processDamkaMove(roomId, playerId, from, to, ioInstance) {
 }
 
 io.on('connection', (socket) => {
-  console.log(`🔌 ახალი კავშირი: ${socket.id}`);
-
   socket.on('adminBroadcast', (message) => { io.emit('systemBroadcast', message); });
 
   const broadcastActiveRooms = () => {
@@ -462,7 +414,6 @@ io.on('connection', (socket) => {
 
     if (!rooms[roomId]) {
       if (action === 'join' || !maxPlayers) return socket.emit('joinError', 'ასეთი მაგიდა არ არსებობს!');
-      
       let finalIsRanked = isRanked !== undefined ? isRanked : true;
       if (allowBots) finalIsRanked = false; 
 
@@ -492,6 +443,55 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('roomUpdated', room); broadcastActiveRooms();
   });
 
+  // 🟢 თამაშის ძებნის (Matchmaking) ლოგიკა
+  socket.on('findMatch', async ({ playerName, gameType, maxPlayers, isRanked }) => {
+      if (!playerName) return socket.emit('error', 'მონაცემები არასრულია');
+
+      let foundRoomId = null;
+      for (const rId in rooms) {
+          const r = rooms[rId];
+          if (!r.gameStarted && !r.isPrivate && r.gameType === gameType && r.isRanked === isRanked && r.players.length < r.maxPlayers) {
+              if (gameType === 'damka' || r.maxPlayers === maxPlayers) {
+                  foundRoomId = rId;
+                  break;
+              }
+          }
+      }
+
+      let userAvatar = '😎'; let hostTheme = 'wood'; let hostCardBack = 'classic'; let userVip = null; let userXp = 0;
+      try {
+          const dbUser = await User.findOne({ username: playerName });
+          if (dbUser) { userAvatar = dbUser.avatar || '😎'; hostTheme = dbUser.tableTheme || 'wood'; hostCardBack = dbUser.cardBack || 'classic'; userVip = dbUser.vipUntil; userXp = dbUser.xp || 0; }
+      } catch(e) {}
+
+      if (foundRoomId) {
+          const room = rooms[foundRoomId];
+          const playerExists = room.players.find(p => p.name === playerName);
+          if (!playerExists) {
+              room.players.push({ id: socket.id, name: playerName, avatar: userAvatar, vipUntil: userVip, xp: userXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
+          } else {
+              playerExists.id = socket.id;
+          }
+          socket.join(foundRoomId);
+          io.to(foundRoomId).emit('roomUpdated', room);
+          broadcastActiveRooms();
+          socket.emit('joinedMatchedRoom', foundRoomId);
+      } else {
+          const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
+          rooms[generatedId] = {
+              id: generatedId, players: [], gameStarted: false, deck: [], tableCards: [], currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null,
+              targetScore: gameType === 'damka' ? 12 : 11, maxPlayers: maxPlayers || 4, allowBots: false, isRanked: isRanked, 
+              readyForNextRound: [], turnExpiresAt: null, password: null, isPrivate: false, hostTheme, hostCardBack, gameType: gameType, damkaBoard: null, lastDamkaMove: null 
+          };
+          const newRoom = rooms[generatedId];
+          newRoom.players.push({ id: socket.id, name: playerName, avatar: userAvatar, vipUntil: userVip, xp: userXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
+          socket.join(generatedId);
+          io.to(generatedId).emit('roomUpdated', newRoom);
+          broadcastActiveRooms();
+          socket.emit('joinedMatchedRoom', generatedId);
+      }
+  });
+
   socket.on('getLiveRooms', () => broadcastActiveRooms());
 
   socket.on('updateConfig', ({ roomId, targetScore, maxPlayers, allowBots, isRanked }) => {
@@ -500,7 +500,6 @@ io.on('connection', (socket) => {
     if (room.players[0] && room.players[0].id !== socket.id) return;
     
     room.targetScore = targetScore; room.maxPlayers = maxPlayers; room.allowBots = allowBots;
-    
     let finalIsRanked = isRanked !== undefined ? isRanked : room.isRanked;
     if (allowBots) finalIsRanked = false; 
     room.isRanked = finalIsRanked;
@@ -540,7 +539,6 @@ io.on('connection', (socket) => {
 
     if (room.gameType === 'damka') {
       room.damkaBoard = createDamkaBoard(); room.currentTurn = 0; room.lastAction = null; room.roundSummary = null;
-      // 🟢 თამაშის დაწყებისას ვაგდებთ ძველ სვლას (ასეთის არსებობის შემთხვევაში)
       room.lastDamkaMove = null; 
       startTurnTimer(room, roomId); io.to(roomId).emit('gameStarted', room); broadcastActiveRooms();
       checkAndTriggerBotTurn(room, roomId); 

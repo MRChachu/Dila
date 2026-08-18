@@ -276,6 +276,9 @@ export default function App() {
   
   const [inviteTarget, setInviteTarget] = useState(null);
 
+  // 🟢 მოდალების სთეითები
+  const [isMatchmakingOpen, setIsMatchmakingOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   
@@ -404,6 +407,16 @@ export default function App() {
       localStorage.removeItem('phurti_inRoom');
     });
 
+    // 🟢 როცა თამაშის ძებნა წარმატებით სრულდება
+    socket.on('joinedMatchedRoom', (rId) => {
+      setInRoom(true);
+      setRoomId(rId);
+      localStorage.setItem('phurti_roomId', rId);
+      localStorage.setItem('phurti_inRoom', 'true');
+      setIsMatchmakingOpen(false);
+      setIsSearching(false);
+    });
+
     socket.on('activeRoomsList', (rooms) => setLiveRooms(rooms));
     socket.on('updateOnlineUsers', (users) => setOnlineUser(users));
     socket.on('receiveInvite', (data) => setInviteAlert(data));
@@ -465,7 +478,7 @@ export default function App() {
     return () => {
       socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('joinError'); socket.off('activeRoomsList'); 
       socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound'); socket.off('vipBonusClaimed');
-      socket.off('systemBroadcast');
+      socket.off('systemBroadcast'); socket.off('joinedMatchedRoom');
       socket.off('connect', handleOnConnect);
     };
   }, []);
@@ -511,12 +524,9 @@ export default function App() {
       const data = await res.json();
       if (res.ok) {
         setAdminUsers(data);
-        
         const statRes = await fetch('https://purti.onrender.com/api/admin/stats');
         if (statRes.ok) setAdminStats(await statRes.json());
-      } else {
-        setAdminMessage(data.message);
-      }
+      } else { setAdminMessage(data.message); }
     } catch (err) { setAdminMessage('შეცდომა სერვერთან კავშირისას!'); }
   };
 
@@ -526,10 +536,7 @@ export default function App() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminPass, targetUser, action, amount })
       });
-      if (res.ok) {
-         setAdminMessage(`მოთამაშე ${targetUser} წარმატებით განახლდა!`);
-         loginAdmin(); 
-      }
+      if (res.ok) { setAdminMessage(`მოთამაშე ${targetUser} წარმატებით განახლდა!`); loginAdmin(); }
     } catch (err) { console.error(err); }
   };
 
@@ -541,12 +548,7 @@ export default function App() {
         body: JSON.stringify({ adminPass, targetUser, action })
       });
       const data = await res.json();
-      if (res.ok) {
-        setToastMsg(data.message);
-        loginAdmin();
-      } else {
-        setToastMsg(data.message);
-      }
+      if (res.ok) { setToastMsg(data.message); loginAdmin(); } else { setToastMsg(data.message); }
     } catch (err) { console.error(err); }
   };
 
@@ -567,10 +569,10 @@ export default function App() {
     setIsPasswordModalOpen(false); setJoinPasswordInput('');
   };
 
+  // 🟢 ოთახის შექმნა (როცა თვითონ ირჩევს პარამეტრებს)
   const handleConfirmCreateRoom = (e) => {
     e.preventDefault();
     const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
-    
     const finalMaxPlayers = mGameType === 'damka' ? 2 : mMaxPlayers;
 
     socket.emit('joinRoom', { 
@@ -581,13 +583,30 @@ export default function App() {
       maxPlayers: finalMaxPlayers, 
       targetScore: mGameType === 'damka' ? 12 : mTargetScore, 
       allowBots: mAllowBots, 
-      isRanked: mIsRanked, 
+      isRanked: mGameType === 'damka' ? false : mIsRanked, 
       gameType: mGameType 
     });
     
     setInRoom(true);
     localStorage.setItem('phurti_roomId', generatedId); localStorage.setItem('phurti_inRoom', 'true');
     setIsCreateModalOpen(false); setMRoomPassword('');
+  };
+
+  // 🟢 თამაშის ძებნა (Matchmaking)
+  const handleFindMatchSubmit = (e) => {
+    e.preventDefault();
+    setIsSearching(true);
+    const finalMaxPlayers = mGameType === 'damka' ? 2 : mMaxPlayers;
+    
+    // მცირე დაყოვნება, რომ მომხმარებელმა ძებნის ეფექტი დაინახოს
+    setTimeout(() => {
+        socket.emit('findMatch', {
+            playerName: safeUsername,
+            gameType: mGameType,
+            maxPlayers: finalMaxPlayers,
+            isRanked: mGameType === 'damka' ? false : mIsRanked
+        });
+    }, 1500);
   };
 
   const handleSendInviteClick = (targetSocketId, targetName) => {
@@ -637,38 +656,23 @@ export default function App() {
 
   const handleSendFriendReq = async (targetName) => {
     try {
-      const res = await fetch('https://purti.onrender.com/api/auth/friend/request', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender: safeUsername, target: targetName })
-      });
-      const data = await res.json();
-      setToastMsg(data.message);
-      fetchDashboardData(safeUsername); 
-    } catch(err) { console.error(err); }
+      const res = await fetch('https://purti.onrender.com/api/auth/friend/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sender: safeUsername, target: targetName }) });
+      const data = await res.json(); setToastMsg(data.message); fetchDashboardData(safeUsername); 
+    } catch(err) {}
   };
 
   const handleAcceptFriend = async (senderName) => {
     try {
-      const res = await fetch('https://purti.onrender.com/api/auth/friend/accept', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ me: safeUsername, sender: senderName })
-      });
-      const data = await res.json();
-      setToastMsg(data.message);
-      fetchDashboardData(safeUsername); 
-    } catch(err) { console.error(err); }
+      const res = await fetch('https://purti.onrender.com/api/auth/friend/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ me: safeUsername, sender: senderName }) });
+      const data = await res.json(); setToastMsg(data.message); fetchDashboardData(safeUsername); 
+    } catch(err) {}
   };
 
   const handleRejectFriend = async (senderName) => {
     try {
-      const res = await fetch('https://purti.onrender.com/api/auth/friend/reject', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ me: safeUsername, sender: senderName })
-      });
-      const data = await res.json();
-      setToastMsg(data.message);
-      fetchDashboardData(safeUsername); 
-    } catch(err) { console.error(err); }
+      const res = await fetch('https://purti.onrender.com/api/auth/friend/reject', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ me: safeUsername, sender: senderName }) });
+      const data = await res.json(); setToastMsg(data.message); fetchDashboardData(safeUsername); 
+    } catch(err) {}
   };
 
   const handleBuyItem = (type, itemId, price) => socket.emit('buyItem', { type, itemId, price });
@@ -1495,18 +1499,30 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                  <button onClick={() => setIsCreateModalOpen(true)} className={`p-4 md:p-5 bg-stone-100 hover:bg-stone-200 border-stone-300 text-stone-900 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-lg active:scale-95 border-b-4 group`}>
-                    <div>
-                      <h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><PlusCircle size={14} className="md:w-4 md:h-4"/> თამაშის შექმნა</h4>
-                      <p className="text-[9px] md:text-xs text-stone-500 mt-1 font-bold">აირჩიე ფურთი ან დამკა</p>
-                    </div>
-                    <Play size={18} className="md:w-5 md:h-5 text-stone-900 group-hover:translate-x-0.5 transition-transform" />
+                {/* 🟢 განახლებული მენიუ თამაშის ძებნით */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                  
+                  {/* თამაშის ძებნის ღილაკი */}
+                  <button onClick={() => setIsMatchmakingOpen(true)} className={`p-4 md:p-5 ${activeTheme.accentBg} hover:opacity-90 text-stone-950 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-[0_0_20px_currentColor] active:scale-95 border-b-4 border-black/20 group`}>
+                      <div>
+                          <h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><Search size={14} className="md:w-4 md:h-4"/> თამაშის ძებნა</h4>
+                          <p className="text-[9px] md:text-xs text-stone-800 mt-1 font-black opacity-80">სწრაფი დაკავშირება</p>
+                      </div>
+                      <Play size={18} className="md:w-5 md:h-5 text-stone-900 group-hover:scale-110 transition-transform" />
                   </button>
 
-                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-3 md:p-4 flex gap-2 md:gap-2.5 items-center shadow-2xl transition-colors duration-700`}>
-                    <input type="text" placeholder={t.roomIdPlaceholder} value={roomId} onChange={(e) => setRoomId(e.target.value)} className={`flex-1 rounded-xl bg-stone-950/60 border border-white/5 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none transition-all placeholder-stone-600 shadow-inner`} />
-                    <button onClick={() => handleJoinSpecificRoom(roomId)} className={`px-4 md:px-5 py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/10 ${activeTheme.accent} rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md`}>{t.join}</button>
+                  {/* ოთახის შექმნა */}
+                  <button onClick={() => setIsCreateModalOpen(true)} className={`p-4 md:p-5 bg-stone-100 hover:bg-stone-200 border-stone-300 text-stone-900 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-lg active:scale-95 border-b-4 group`}>
+                    <div>
+                      <h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><PlusCircle size={14} className="md:w-4 md:h-4"/> ოთახის შექმნა</h4>
+                      <p className="text-[9px] md:text-xs text-stone-500 mt-1 font-bold">შენი წესებით</p>
+                    </div>
+                  </button>
+
+                  {/* ID-ით შესვლა */}
+                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-3 md:p-4 flex gap-2 md:gap-2.5 items-center shadow-2xl transition-colors duration-700 col-span-1 md:col-span-2 lg:col-span-1`}>
+                    <input type="text" placeholder={t.roomIdPlaceholder} value={roomId} onChange={(e) => setRoomId(e.target.value)} className={`flex-1 w-full rounded-xl bg-stone-950/60 border border-white/5 px-3 md:px-4 py-3 md:py-3.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none transition-all placeholder-stone-600 shadow-inner`} />
+                    <button onClick={() => handleJoinSpecificRoom(roomId)} className={`px-4 md:px-5 py-3 md:py-3.5 bg-stone-800 hover:bg-stone-700 border border-white/10 ${activeTheme.accent} rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md`}>{t.join}</button>
                   </div>
                 </div>
 
@@ -1613,13 +1629,13 @@ export default function App() {
                         
                         <div className="space-y-2 md:space-y-2.5">
                           <div className="grid grid-cols-2 gap-2 md:gap-2.5">
-                            <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: true })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.isRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🏆 {t.ranked}</button>
+                            <button disabled={!isHost || roomData.gameType === 'damka'} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: true })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.isRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'} ${roomData.gameType === 'damka' ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
                             <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: false })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!roomData.isRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
                           </div>
                         </div>
                         
                         <div className="space-y-2 md:space-y-2.5 mt-2">
-                          <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🤖 ბოტები</label>
+                          <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">🤖 ბოტები</label>
                           <div className="grid grid-cols-2 gap-2 md:gap-2.5">
                             <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: true, isRanked: false })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.allowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🤖 ჩართვა</button>
                             <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!roomData.allowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🤖 გამორთვა</button>
@@ -1673,6 +1689,63 @@ export default function App() {
         </main>
       </div>
 
+      {/* 🟢 თამაშის ძებნის (Matchmaking) მოდალი */}
+      {isMatchmakingOpen && (
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-5 shadow-2xl relative text-center`}>
+            {isSearching ? (
+               <div className="py-8 flex flex-col items-center">
+                  <Search className={`w-12 h-12 mb-4 animate-spin-slow ${activeTheme.accent}`} />
+                  <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">ვეძებთ მოთამაშეებს...</h3>
+                  <p className="text-xs text-stone-400 mt-2 font-bold">გთხოვთ დაელოდოთ</p>
+                  <button onClick={() => setIsSearching(false)} className="mt-8 py-2.5 px-8 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner uppercase tracking-wider">გაუქმება</button>
+               </div>
+            ) : (
+              <form onSubmit={handleFindMatchSubmit} className="space-y-4 md:space-y-5 text-left">
+                <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider`}>თამაშის ძებნა</h3>
+                
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <button type="button" onClick={() => setMGameType('phurti')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'phurti' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}>
+                    <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-300'}`}>ფურთი</span>
+                  </button>
+                  <button type="button" onClick={() => setMGameType('damka')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}>
+                    <div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2">
+                      <DamkaIcon type="red" size="lg" className="z-10" />
+                      <DamkaIcon type="white" size="lg" className="mt-2" />
+                    </div>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-300'}`}>შაში</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2 md:space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" disabled={mGameType === 'damka'} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mGameType === 'damka' ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 რეიტინგული</button>
+                    <button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 გასართობი</button>
+                  </div>
+                </div>
+
+                {mGameType === 'phurti' && (
+                  <div className="space-y-2 md:space-y-2.5">
+                    <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">მოთამაშეების რაოდენობა</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[2, 3, 4].map(num => (
+                        <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 md:gap-3 pt-3 border-t border-white/5 mt-4">
+                  <button type="button" onClick={() => setIsMatchmakingOpen(false)} className="py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase tracking-wider">გაუქმება</button>
+                  <button type="submit" className={`py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg uppercase tracking-wider`}>ძებნა 🔍</button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-2xl font-sans relative`}>
@@ -1694,9 +1767,10 @@ export default function App() {
 
             <div className="space-y-2 md:space-y-2.5">
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" disabled={mAllowBots} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
+                <button type="button" disabled={mAllowBots || mGameType === 'damka'} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots || mGameType === 'damka' ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
                 <button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
               </div>
+              {mGameType === 'damka' && <p className="text-[9px] text-stone-500 font-bold text-center pt-1">შაში ითამაშება მხოლოდ გასართობ რეჟიმში (Casual)</p>}
             </div>
 
             <div className="space-y-2 md:space-y-2.5">
