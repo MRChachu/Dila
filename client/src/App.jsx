@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
 import DamkaBoard from './DamkaBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Facebook, Instagram, Mail, Send, X, MessageSquare } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Mail, Send, X, MessageSquare } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -49,7 +49,6 @@ export default function App() {
   const [dailyReward, setDailyReward] = useState(null); const [vipDailyReward, setVipDailyReward] = useState(null);
   const [deferredPrompt, setDeferredPrompt] = useState(null); const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
-  // 🟢 საკონტაქტო ფანჯრის State-ები
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [contactData, setContactData] = useState({ email: '', subject: 'feedback', message: '' });
   const [isSending, setIsSending] = useState(false);
@@ -137,30 +136,19 @@ export default function App() {
   const handleLogout = () => { socket.emit('leaveRoom'); setUserState(null); setInRoom(false); setRoomId(''); setRoomData(null); setProfileData(null); localStorage.clear(); socket.disconnect(); socket.connect(); };
   const handleResetToLobby = () => { socket.emit('leaveRoom'); setInRoom(false); setRoomId(''); setRoomData(null); setStartCountdown(null); localStorage.removeItem('phurti_roomId'); localStorage.removeItem('phurti_inRoom'); };
 
-  // 🟢 საკონტაქტო ფორმის გაგზავნის ლოგიკა
   const handleContactSubmit = async (e) => {
-    e.preventDefault();
-    setIsSending(true);
-    setContactStatus('');
+    e.preventDefault(); setIsSending(true); setContactStatus('');
     try {
       const res = await fetch(`https://purti.onrender.com/api/auth/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(contactData)
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(contactData)
       });
       const data = await res.json();
       if (res.ok) {
-        setContactStatus(t.contactSuccess);
-        setContactData({ email: '', subject: 'feedback', message: '' });
+        setContactStatus(t.contactSuccess); setContactData({ email: '', subject: 'feedback', message: '' });
         setTimeout(() => { setIsContactOpen(false); setContactStatus(''); }, 3000);
-      } else {
-        setContactStatus(data.message || 'Error');
-      }
-    } catch (err) {
-      setContactStatus('სერვერთან კავშირი ვერ მოხერხდა');
-    } finally {
-      setIsSending(false);
-    }
+      } else setContactStatus(data.message || 'Error');
+    } catch (err) { setContactStatus(t.errServer); } 
+    finally { setIsSending(false); }
   };
 
   if (!userState) return <Auth onAuthSuccess={handleAuthSuccess} />;
@@ -176,7 +164,6 @@ export default function App() {
       {error && <div className="fixed top-20 md:top-24 right-4 md:right-6 z-[100] rounded-2xl bg-stone-900/95 border border-rose-500/20 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-right-8 fade-in duration-300 flex items-center gap-3"><div className="flex items-center justify-center p-1 rounded-full bg-rose-500/20 text-rose-500 border border-rose-500/30"><XCircle size={16} className="md:w-5 md:h-5" /></div><span className="text-stone-100 tracking-wide uppercase">{error}</span></div>}
       {toastMsg && <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-[100] rounded-2xl bg-stone-900/95 border border-white/10 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-top-5 fade-in duration-300 flex items-center gap-3"><div className={`flex items-center justify-center p-1 rounded-full ${activeTheme.accentBg} bg-opacity-20 ${activeTheme.accent} border border-current border-opacity-30`}><CheckCircle2 size={16} className="md:w-5 md:h-5" /></div><span className="text-stone-100 tracking-wide uppercase">{toastMsg}</span></div>}
       
-      {/* Invite Target */}
       {inviteTarget && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[150] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 shadow-2xl font-sans relative text-center`}>
@@ -330,10 +317,10 @@ export default function App() {
                 <h4 className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t.socials}</h4>
                 <div className="flex items-center gap-3">
                   <a href="https://facebook.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#1877F2] hover:bg-[#1877F2]/10 hover:border-[#1877F2]/30 transition-all">
-                    <Facebook size={18}/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
                   </a>
                   <a href="https://instagram.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#E4405F] hover:bg-[#E4405F]/10 hover:border-[#E4405F]/30 transition-all">
-                    <Instagram size={18}/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
                   </a>
                   <a href="https://discord.gg/phurti" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#5865F2] hover:bg-[#5865F2]/10 hover:border-[#5865F2]/30 transition-all">
                     <MessageSquare size={18}/>
@@ -351,11 +338,11 @@ export default function App() {
             </div>
             <div className="pt-6 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-[9px] text-stone-600 font-bold tracking-widest uppercase">
-                &copy; {new Date().getFullYear()} PHURTI.GE. ყველა უფლება დაცულია.
+                &copy; {new Date().getFullYear()} PHURTI.GE. {t.allRights}
               </p>
               <div className="flex gap-4 text-[9px] font-bold text-stone-600 uppercase tracking-widest">
-                <span className="hover:text-stone-300 cursor-pointer">წესები</span>
-                <span className="hover:text-stone-300 cursor-pointer">კონფიდენციალურობა</span>
+                <a href="#" className="hover:text-stone-300">წესები</a>
+                <a href="#" className="hover:text-stone-300">კონფიდენციალურობა</a>
               </div>
             </div>
           </div>

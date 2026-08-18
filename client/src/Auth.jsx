@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound, Calendar, Key, Facebook, Instagram, Mail, Send, X, MessageSquare } from 'lucide-react';
+import { Shield, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound, Calendar, Key, Mail, Send, X, MessageSquare } from 'lucide-react';
 
 const translations = {
   ka: {
@@ -327,7 +327,6 @@ export default function Auth({ onAuthSuccess }) {
         </section>
       </main>
 
-      {/* 🟢 3-სვეტიანი Footer */}
       <footer id="about" className="bg-[#050505] pt-12 pb-8 border-t border-white/5 mt-auto relative z-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mb-10">
@@ -340,7 +339,7 @@ export default function Auth({ onAuthSuccess }) {
                 <span className="text-sm font-black tracking-widest text-stone-100">PHURTI.GE</span>
               </div>
               <p className="text-[10px] md:text-xs text-stone-500 leading-relaxed font-medium max-w-xs">
-                ქართული დეველოპერული პროექტი. კლასიკური ბანქოს თამაშის თანამედროვე, სანდო და აზარტული ონლაინ სივრცე.
+                {t.footerDesc}
               </p>
             </div>
 
@@ -348,10 +347,10 @@ export default function Auth({ onAuthSuccess }) {
               <h4 className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t.socials}</h4>
               <div className="flex items-center gap-3">
                 <a href="https://facebook.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#1877F2] hover:bg-[#1877F2]/10 hover:border-[#1877F2]/30 transition-all">
-                  <Facebook size={18}/>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
                 </a>
                 <a href="https://instagram.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#E4405F] hover:bg-[#E4405F]/10 hover:border-[#E4405F]/30 transition-all">
-                  <Instagram size={18}/>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
                 </a>
                 <a href="https://discord.gg/phurti" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#5865F2] hover:bg-[#5865F2]/10 hover:border-[#5865F2]/30 transition-all">
                   <MessageSquare size={18}/>
@@ -369,17 +368,16 @@ export default function Auth({ onAuthSuccess }) {
           </div>
           <div className="pt-6 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-[9px] text-stone-600 font-bold tracking-widest uppercase">
-              &copy; {new Date().getFullYear()} PHURTI.GE. ყველა უფლება დაცულია.
+              &copy; {new Date().getFullYear()} PHURTI.GE. {t.allRights}
             </p>
             <div className="flex gap-4 text-[9px] font-bold text-stone-600 uppercase tracking-widest">
-              <span className="hover:text-stone-300 cursor-pointer">წესები</span>
-              <span className="hover:text-stone-300 cursor-pointer">კონფიდენციალურობა</span>
+              <a href="#" className="hover:text-stone-300">წესები</a>
+              <a href="#" className="hover:text-stone-300">კონფიდენციალურობა</a>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* 🟢 საკონტაქტო მოდალი */}
       {isContactOpen && (
         <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[200] flex items-center justify-center p-4">
            <div className="bg-stone-900 border border-white/10 p-6 rounded-3xl w-full max-w-md shadow-2xl relative animate-in zoom-in-95">
@@ -393,23 +391,24 @@ export default function Auth({ onAuthSuccess }) {
               {contactStatus && <div className={`mb-4 p-2 text-[10px] font-bold text-center border rounded-lg ${contactStatus.includes('მადლობა') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>{contactStatus}</div>}
               
               <form onSubmit={handleContactSubmit} className="space-y-3">
-                <input type="email" placeholder={t.emailPlaceholder} value={contactData.email} onChange={e=>setContactData({...contactData, email: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600 shadow-inner" />
+                <input type="email" placeholder={t.emailPlaceholder} value={contactData.email} onChange={e=>setContactData({...contactData, email: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" />
                 
-                <select value={contactData.subject} onChange={e=>setContactData({...contactData, subject: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all cursor-pointer shadow-inner">
+                <select value={contactData.subject} onChange={e=>setContactData({...contactData, subject: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all cursor-pointer">
                   <option value="feedback">{t.feedback}</option>
                   <option value="complaint">{t.complaint}</option>
                   <option value="other">სხვა...</option>
                 </select>
                 
-                <textarea placeholder={t.messagePlaceholder} value={contactData.message} onChange={e=>setContactData({...contactData, message: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600 min-h-[100px] resize-none shadow-inner" required></textarea>
+                <textarea placeholder={t.messagePlaceholder} value={contactData.message} onChange={e=>setContactData({...contactData, message: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600 min-h-[100px] resize-none" required></textarea>
                 
-                <button type="submit" disabled={isSending} className="w-full bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-black text-[11px] uppercase tracking-widest py-3 rounded-xl mt-2 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg">
+                <button type="submit" disabled={isSending} className="w-full bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-black text-[11px] uppercase tracking-widest py-3 rounded-xl mt-2 transition-all active:scale-95 flex items-center justify-center gap-2">
                   {isSending ? t.wait : <><Send size={14}/> {t.sendMessage}</>}
                 </button>
               </form>
            </div>
         </div>
       )}
+
     </div>
   );
 }
