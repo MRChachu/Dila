@@ -7,796 +7,167 @@ import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, 
 
 const socket = io('https://purti.onrender.com');
 
-const AVAILABLE_BADGES = [
-  { id: 'first_win', icon: '🥇', name: 'პირველი მოგება' },
-  { id: 'diamond_10', icon: '💎', name: '10 აგური' },
-  { id: 'club_2', icon: '♣️', name: '2 ჯვარი' },
-  { id: 'veteran', icon: '🛡️', name: 'ვეტერანი (10 მატჩი)' },
-  { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' },
-  { id: 'collector', icon: '🛍️', name: 'კოლექციონერი (20+ ემოჯი)' },
-  { id: 'legionnaire', icon: '🔥', name: 'ლეგიონერი (10 Win Streak)' }
-];
+const AVAILABLE_BADGES = [{ id: 'first_win', icon: '🥇', name: 'პირველი მოგება' }, { id: 'diamond_10', icon: '💎', name: '10 აგური' }, { id: 'club_2', icon: '♣️', name: '2 ჯვარი' }, { id: 'veteran', icon: '🛡️', name: 'ვეტერანი (10 მატჩი)' }, { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' }, { id: 'collector', icon: '🛍️', name: 'კოლექციონერი (20+ ემოჯი)' }, { id: 'legionnaire', icon: '🔥', name: 'ლეგიონერი (10 Win Streak)' }];
+const SHOP_ITEMS = { avatars: [{ id: '😎', price: 0, name: 'სტანდარტული' }, { id: '😉', price: 50, name: 'თვალი' }, { id: '🤪', price: 100, name: 'გიჟი' }, { id: '🥷', price: 100, name: 'ნინძა' }, { id: '🤓', price: 150, name: 'ჭკვიანი' }, { id: '🧐', price: 150, name: 'მონოკლი' }, { id: '🤠', price: 200, name: 'კოვბოი' }, { id: '🥳', price: 200, name: 'წვეულება' }, { id: '🧙‍♂️', price: 250, name: 'ჯადოქარი' }, { id: '👽', price: 250, name: 'უცხოპლანეტელი' }, { id: '👻', price: 300, name: 'მოჩვენება' }, { id: '🤖', price: 300, name: 'რობოტი' }, { id: '🤡', price: 350, name: 'ჯამბაზი' }, { id: '💩', price: 350, name: 'პუპ' }, { id: '💀', price: 400, name: 'თავის ქალა' }, { id: '🧛', price: 400, name: 'ვამპირი' }, { id: '🎃', price: 450, name: 'გოგრა' }, { id: '😺', price: 500, name: 'კატა' }, { id: '🐶', price: 500, name: 'ძაღლი' }, { id: '🐭', price: 500, name: 'თაგვი' }, { id: '🦊', price: 600, name: 'მელია' }, { id: '🐻', price: 600, name: 'დათვი' }, { id: '🐼', price: 650, name: 'პანდა' }, { id: '🐨', price: 700, name: 'კოალა' }, { id: '🐯', price: 700, name: 'ვეფხვი' }, { id: '🐮', price: 750, name: 'ძროხა' }, { id: '🐷', price: 750, name: 'ღორი' }, { id: '👑', price: 800, name: 'მეფე' }, { id: '🐸', price: 800, name: 'ბაყაყი' }, { id: '🐵', price: 850, name: 'მაიმუნი' }, { id: '🐔', price: 850, name: 'ქათამი' }, { id: '🐧', price: 900, name: 'პინგვინი' }, { id: '🐦', price: 900, name: 'ჩიტი' }, { id: '🦆', price: 950, name: 'იხვი' }, { id: '🦉', price: 1000, name: 'ბუ' }, { id: '🦇', price: 1000, name: 'ღამურა' }, { id: '🐺', price: 1100, name: 'მგელი' }, { id: '🐗', price: 1100, name: 'ტახი' }, { id: '🐴', price: 1200, name: 'ცხენი' }, { id: '🦁', price: 1200, name: 'ლომი' }, { id: '🐝', price: 1300, name: 'ფუტკარი' }, { id: '🐛', price: 1300, name: 'მუხლუხო' }, { id: '🦋', price: 1400, name: 'პეპელა' }, { id: '🐌', price: 1400, name: 'ლოკოკინა' }, { id: '🐞', price: 1500, name: 'ჭიამაია' }, { id: '🦅', price: 1500, name: 'არწივი' }, { id: '🎱', price: 1500, name: 'რვიანი' }, { id: '🇬🇪', price: 1500, name: 'საქართველო' }, { id: '🐜', price: 1600, name: 'ჭიანჭველა' }, { id: '🐢', price: 1600, name: 'კუ' }, { id: '🐍', price: 1700, name: 'გველი' }, { id: '🐙', price: 1700, name: 'რვაფეხა' }, { id: '🦑', price: 1800, name: 'კალმარი' }, { id: '🦀', price: 1800, name: 'კიბორჩხალა' }, { id: '🐡', price: 1900, name: 'ფუგუ' }, { id: '🐠', price: 1900, name: 'თევზი' }, { id: '🐬', price: 2000, name: 'დელფინი' }, { id: '🦄', price: 2000, name: 'მარტორქა' }, { id: '🐳', price: 2100, name: 'ვეშაპი' }, { id: '🦈', price: 2200, name: 'ზვიგენი' }, { id: '🐊', price: 2300, name: 'ნიანგი' }, { id: '🐅', price: 2400, name: 'ვეფხვი 2' }, { id: '🐆', price: 2400, name: 'ლეოპარდი' }, { id: '🐉', price: 2500, name: 'დრაკონი' }, { id: '🦍', price: 2600, name: 'გორილა' }, { id: '🐘', price: 2700, name: 'სპილო' }, { id: '🦏', price: 2800, name: 'მარტორქა 2' }, { id: '🐪', price: 2900, name: 'აქლემი' }, { id: '🦒', price: 3000, name: 'ჟირაფი' }, { id: '🦘', price: 3200, name: 'კენგურუ' }, { id: '🦚', price: 3500, name: 'ფარშევანგი' }, { id: '🦢', price: 3800, name: 'გედი' }, { id: '🦩', price: 4000, name: 'ფლამინგო' }, { id: '🐲', price: 4500, name: 'დრაკონის თავი' }, { id: '🍎', price: 500, name: 'ვაშლი' }, { id: '🍓', price: 600, name: 'მარწყვი' }, { id: '🍉', price: 700, name: 'საზამთრო' }, { id: '🍌', price: 800, name: 'ბანანი' }, { id: '🍍', price: 900, name: 'ანანასი' }, { id: '🥝', price: 1000, name: 'კივი' }, { id: '🍔', price: 1200, name: 'ბურგერი' }, { id: '🍕', price: 1500, name: 'პიცა' }, { id: '🌮', price: 1800, name: 'ტაკო' }, { id: '🍣', price: 2000, name: 'სუში' }, { id: '🍩', price: 2200, name: 'დონატი' }, { id: '☕', price: 2500, name: 'ყავა' }, { id: '🍹', price: 2800, name: 'კოქტეილი' }, { id: '🍺', price: 3000, name: 'ლუდი' }, { id: '🍷', price: 3500, name: 'ღვინო' }, { id: '⚽', price: 1000, name: 'ფეხბურთი' }, { id: '🏀', price: 1200, name: 'კალათბურთი' }, { id: '🏈', price: 1500, name: 'რაგბი' }, { id: '🎾', price: 1800, name: 'ჩოგბურთი' }, { id: '🎸', price: 2500, name: 'გიტარა' }, { id: '🎷', price: 3000, name: 'საქსოფონი' }, { id: '🚀', price: 4000, name: 'რაკეტა' }, { id: '🛸', price: 5000, name: 'მფრინავი თეფში' }, { id: '🚁', price: 6000, name: 'ვერტმფრენი' }, { id: '⛵', price: 7000, name: 'იალქნიანი' }, { id: '⚓', price: 8000, name: 'ღუზა' }, { id: '❤️', price: 25000, name: 'გული' }, { id: '♦️', price: 25000, name: 'აგური' }, { id: '♠️', price: 25000, name: 'ყვავი' }, { id: '♣️', price: 25000, name: 'ჯვარი' }], tables: [{ id: 'wood', price: 0, name: 'Classic Wood' }, { id: 'lavender', price: 0, name: 'Soft Lavender' }, { id: 'casino', price: 1500, name: 'Dark Casino' }, { id: 'midnight', price: 2500, name: 'Midnight Gold' }, { id: 'neon', price: 4000, name: 'Cyberpunk Neon' }, { id: 'dark_club', price: 5000, name: 'VIP Dark Club' }, { id: 'vip_gold', price: 'VIP', name: '👑 Royal Gold', isVipExclusive: true }, { id: 'vip_diamond', price: 'VIP', name: '💎 Diamond Lounge', isVipExclusive: true }], cards: [{ id: 'classic', price: 0, name: 'Classic Blue' }, { id: 'crimson', price: 500, name: 'Deep Crimson' }, { id: 'gold', price: 1000, name: 'Solid Gold' }, { id: 'obsidian', price: 2000, name: 'Obsidian Black' }, { id: 'cyber', price: 3000, name: 'Neon Cyber' }, { id: 'royal', price: 4000, name: 'Royal Purple' }, { id: 'hacker', price: 5000, name: 'Matrix Hacker' }] };
+const translations = { ka: { top10: "ტოპ 10", shop: "მაღაზია", admin: "ადმინ", settings: "პარამეტრები", xpProgress: "XP პროგრესი", matches: "მატჩი", wins: "მოგება", winRate: "Win %", myHistory: "📜 ჩემი ისტორია", achievements: "მიღწევები", online: "ონლაინ", friends: "მეგობრები", requests: "თხოვნები", noPlayers: "სხვა მოთამაშეები არ არიან", dailyQuests: "ყოველდღიური მისიები", createTable: "მაგიდის შექმნა", customRules: "შენი წესებით და დიზაინით!", join: "შესვლა", tables: "მაგიდები", noTables: "მაგიდები არ არის", music: "ფონური მუსიკა", on: "ჩართული", off: "გამორთული", changePass: "პაროლის შეცვლა", oldPass: "ძველი პაროლი", newPass: "ახალი პაროლი", change: "შეცვლა", close: "დახურვა", ranked: "რეიტინგული", casual: "გასართობი", invite: "მოწვევა", room: "ოთახი", password: "პაროლი", cancel: "გაუქმება", create: "შექმნა", bots: "რობოტები", targetScore: "მიზნობრივი ქულა", playerLimit: "მოთამაშეების ლიმიტი", roomIdPlaceholder: "ოთახის ID...", active: "აქტიურია", emptyHistory: "ისტორია ცარიელია", opponent: "წინააღმდეგ", score: "ქულა" }, en: { top10: "Top 10", shop: "Shop", admin: "Admin", settings: "Settings", xpProgress: "XP Progress", matches: "Matches", wins: "Wins", winRate: "Win %", myHistory: "📜 My History", achievements: "Achievements", online: "Online", friends: "Friends", requests: "Requests", noPlayers: "No other players", dailyQuests: "Daily Quests", createTable: "Create Table", customRules: "With your rules & design!", join: "Join", tables: "Tables", noTables: "No tables available", music: "BG Music", on: "On", off: "Off", changePass: "Change Password", oldPass: "Old Password", newPass: "New Password", change: "Change", close: "Close", ranked: "Ranked", casual: "Casual", invite: "Invite", room: "Room", password: "Password", cancel: "Cancel", create: "Create", bots: "Bots", targetScore: "Target Score", playerLimit: "Player Limit", roomIdPlaceholder: "Room ID...", active: "Active", emptyHistory: "History is empty", opponent: "Versus", score: "Score" }, ru: { top10: "Топ 10", shop: "Магазин", admin: "Админ", settings: "Настройки", xpProgress: "Прогресс XP", matches: "Матчи", wins: "Победы", winRate: "Победы %", myHistory: "📜 Моя история", achievements: "Достижения", online: "Онлайн", friends: "Друзья", requests: "Запросы", noPlayers: "Нет других игроков", dailyQuests: "Ежедневные задания", createTable: "Создать стол", customRules: "С вашими правилами!", join: "Войти", tables: "Столы", noTables: "Нет доступных столов", music: "Музыка", on: "Вкл", off: "Выкл", changePass: "Изменить пароль", oldPass: "Старый пароль", newPass: "Новый пароль", change: "Изменить", close: "Закрыть", ranked: "Рейтинг", casual: "Обычная", invite: "Пригласить", room: "Комната", password: "Пароль", cancel: "Отмена", create: "Создать", bots: "Боты", targetScore: "Целевой счет", playerLimit: "Лимит игроков", roomIdPlaceholder: "ID Комнаты...", active: "Активен", emptyHistory: "История пуста", opponent: "Против", score: "Счет" } };
 
-const SHOP_ITEMS = {
-  avatars: [
-    { id: '😎', price: 0, name: 'სტანდარტული' },
-    { id: '😉', price: 50, name: 'თვალი' },
-    { id: '🤪', price: 100, name: 'გიჟი' },
-    { id: '🥷', price: 100, name: 'ნინძა' },
-    { id: '🤓', price: 150, name: 'ჭკვიანი' },
-    { id: '🧐', price: 150, name: 'მონოკლი' },
-    { id: '🤠', price: 200, name: 'კოვბოი' },
-    { id: '🥳', price: 200, name: 'წვეულება' },
-    { id: '🧙‍♂️', price: 250, name: 'ჯადოქარი' },
-    { id: '👽', price: 250, name: 'უცხოპლანეტელი' },
-    { id: '👻', price: 300, name: 'მოჩვენება' },
-    { id: '🤖', price: 300, name: 'რობოტი' },
-    { id: '🤡', price: 350, name: 'ჯამბაზი' },
-    { id: '💩', price: 350, name: 'პუპ' },
-    { id: '💀', price: 400, name: 'თავის ქალა' },
-    { id: '🧛', price: 400, name: 'ვამპირი' },
-    { id: '🎃', price: 450, name: 'გოგრა' },
-    { id: '😺', price: 500, name: 'კატა' },
-    { id: '🐶', price: 500, name: 'ძაღლი' },
-    { id: '🐭', price: 500, name: 'თაგვი' },
-    { id: '🦊', price: 600, name: 'მელია' },
-    { id: '🐻', price: 600, name: 'დათვი' },
-    { id: '🐼', price: 650, name: 'პანდა' },
-    { id: '🐨', price: 700, name: 'კოალა' },
-    { id: '🐯', price: 700, name: 'ვეფხვი' },
-    { id: '🐮', price: 750, name: 'ძროხა' },
-    { id: '🐷', price: 750, name: 'ღორი' },
-    { id: '👑', price: 800, name: 'მეფე' },
-    { id: '🐸', price: 800, name: 'ბაყაყი' },
-    { id: '🐵', price: 850, name: 'მაიმუნი' },
-    { id: '🐔', price: 850, name: 'ქათამი' },
-    { id: '🐧', price: 900, name: 'პინგვინი' },
-    { id: '🐦', price: 900, name: 'ჩიტი' },
-    { id: '🦆', price: 950, name: 'იხვი' },
-    { id: '🦉', price: 1000, name: 'ბუ' },
-    { id: '🦇', price: 1000, name: 'ღამურა' },
-    { id: '🐺', price: 1100, name: 'მგელი' },
-    { id: '🐗', price: 1100, name: 'ტახი' },
-    { id: '🐴', price: 1200, name: 'ცხენი' },
-    { id: '🦁', price: 1200, name: 'ლომი' },
-    { id: '🐝', price: 1300, name: 'ფუტკარი' },
-    { id: '🐛', price: 1300, name: 'მუხლუხო' },
-    { id: '🦋', price: 1400, name: 'პეპელა' },
-    { id: '🐌', price: 1400, name: 'ლოკოკინა' },
-    { id: '🐞', price: 1500, name: 'ჭიამაია' },
-    { id: '🦅', price: 1500, name: 'არწივი' },
-    { id: '🎱', price: 1500, name: 'რვიანი' },
-    { id: '🇬🇪', price: 1500, name: 'საქართველო' },
-    { id: '🐜', price: 1600, name: 'ჭიანჭველა' },
-    { id: '🐢', price: 1600, name: 'კუ' },
-    { id: '🐍', price: 1700, name: 'გველი' },
-    { id: '🐙', price: 1700, name: 'რვაფეხა' },
-    { id: '🦑', price: 1800, name: 'კალმარი' },
-    { id: '🦀', price: 1800, name: 'კიბორჩხალა' },
-    { id: '🐡', price: 1900, name: 'ფუგუ' },
-    { id: '🐠', price: 1900, name: 'თევზი' },
-    { id: '🐬', price: 2000, name: 'დელფინი' },
-    { id: '🦄', price: 2000, name: 'მარტორქა' },
-    { id: '🐳', price: 2100, name: 'ვეშაპი' },
-    { id: '🦈', price: 2200, name: 'ზვიგენი' },
-    { id: '🐊', price: 2300, name: 'ნიანგი' },
-    { id: '🐅', price: 2400, name: 'ვეფხვი 2' },
-    { id: '🐆', price: 2400, name: 'ლეოპარდი' },
-    { id: '🐉', price: 2500, name: 'დრაკონი' },
-    { id: '🦍', price: 2600, name: 'გორილა' },
-    { id: '🐘', price: 2700, name: 'სპილო' },
-    { id: '🦏', price: 2800, name: 'მარტორქა 2' },
-    { id: '🐪', price: 2900, name: 'აქლემი' },
-    { id: '🦒', price: 3000, name: 'ჟირაფი' },
-    { id: '🦘', price: 3200, name: 'კენგურუ' },
-    { id: '🦚', price: 3500, name: 'ფარშევანგი' },
-    { id: '🦢', price: 3800, name: 'გედი' },
-    { id: '🦩', price: 4000, name: 'ფლამინგო' },
-    { id: '🐲', price: 4500, name: 'დრაკონის თავი' },
-    { id: '🍎', price: 500, name: 'ვაშლი' },
-    { id: '🍓', price: 600, name: 'მარწყვი' },
-    { id: '🍉', price: 700, name: 'საზამთრო' },
-    { id: '🍌', price: 800, name: 'ბანანი' },
-    { id: '🍍', price: 900, name: 'ანანასი' },
-    { id: '🥝', price: 1000, name: 'კივი' },
-    { id: '🍔', price: 1200, name: 'ბურგერი' },
-    { id: '🍕', price: 1500, name: 'პიცა' },
-    { id: '🌮', price: 1800, name: 'ტაკო' },
-    { id: '🍣', price: 2000, name: 'სუში' },
-    { id: '🍩', price: 2200, name: 'დონატი' },
-    { id: '☕', price: 2500, name: 'ყავა' },
-    { id: '🍹', price: 2800, name: 'კოქტეილი' },
-    { id: '🍺', price: 3000, name: 'ლუდი' },
-    { id: '🍷', price: 3500, name: 'ღვინო' },
-    { id: '⚽', price: 1000, name: 'ფეხბურთი' },
-    { id: '🏀', price: 1200, name: 'კალათბურთი' },
-    { id: '🏈', price: 1500, name: 'რაგბი' },
-    { id: '🎾', price: 1800, name: 'ჩოგბურთი' },
-    { id: '🎸', price: 2500, name: 'გიტარა' },
-    { id: '🎷', price: 3000, name: 'საქსოფონი' },
-    { id: '🚀', price: 4000, name: 'რაკეტა' },
-    { id: '🛸', price: 5000, name: 'მფრინავი თეფში' },
-    { id: '🚁', price: 6000, name: 'ვერტმფრენი' },
-    { id: '⛵', price: 7000, name: 'იალქნიანი' },
-    { id: '⚓', price: 8000, name: 'ღუზა' },
-    { id: '❤️', price: 25000, name: 'გული' },
-    { id: '♦️', price: 25000, name: 'აგური' },
-    { id: '♠️', price: 25000, name: 'ყვავი' },
-    { id: '♣️', price: 25000, name: 'ჯვარი' },
-  ],
-  tables: [
-    { id: 'wood', price: 0, name: 'Classic Wood' },
-    { id: 'lavender', price: 0, name: 'Soft Lavender' },
-    { id: 'casino', price: 1500, name: 'Dark Casino' },
-    { id: 'midnight', price: 2500, name: 'Midnight Gold' },
-    { id: 'neon', price: 4000, name: 'Cyberpunk Neon' },
-    { id: 'dark_club', price: 5000, name: 'VIP Dark Club' },
-    { id: 'vip_gold', price: 'VIP', name: '👑 Royal Gold', isVipExclusive: true },
-    { id: 'vip_diamond', price: 'VIP', name: '💎 Diamond Lounge', isVipExclusive: true }
-  ],
-  cards: [
-    { id: 'classic', price: 0, name: 'Classic Blue' },
-    { id: 'crimson', price: 500, name: 'Deep Crimson' },
-    { id: 'gold', price: 1000, name: 'Solid Gold' },
-    { id: 'obsidian', price: 2000, name: 'Obsidian Black' },
-    { id: 'cyber', price: 3000, name: 'Neon Cyber' },
-    { id: 'royal', price: 4000, name: 'Royal Purple' },
-    { id: 'hacker', price: 5000, name: 'Matrix Hacker' }
-  ]
-};
-
-const translations = {
-  ka: {
-    top10: "ტოპ 10", shop: "მაღაზია", admin: "ადმინ", settings: "პარამეტრები",
-    xpProgress: "XP პროგრესი", matches: "მატჩი", wins: "მოგება", winRate: "Win %",
-    myHistory: "📜 ჩემი ისტორია", achievements: "მიღწევები",
-    online: "ონლაინ", friends: "მეგობრები", requests: "თხოვნები", noPlayers: "სხვა მოთამაშეები არ არიან",
-    dailyQuests: "ყოველდღიური მისიები", createTable: "მაგიდის შექმნა", customRules: "შენი წესებით და დიზაინით!",
-    join: "შესვლა", tables: "მაგიდები", noTables: "მაგიდები არ არის",
-    music: "ფონური მუსიკა", on: "ჩართული", off: "გამორთული", changePass: "პაროლის შეცვლა",
-    oldPass: "ძველი პაროლი", newPass: "ახალი პაროლი", change: "შეცვლა", close: "დახურვა",
-    ranked: "რეიტინგული", casual: "გასართობი", invite: "მოწვევა",
-    room: "ოთახი", password: "პაროლი", cancel: "გაუქმება", create: "შექმნა",
-    bots: "რობოტები", targetScore: "მიზნობრივი ქულა", playerLimit: "მოთამაშეების ლიმიტი",
-    roomIdPlaceholder: "ოთახის ID...", active: "აქტიურია", emptyHistory: "ისტორია ცარიელია",
-    opponent: "წინააღმდეგ", score: "ქულა"
-  },
-  en: {
-    top10: "Top 10", shop: "Shop", admin: "Admin", settings: "Settings",
-    xpProgress: "XP Progress", matches: "Matches", wins: "Wins", winRate: "Win %",
-    myHistory: "📜 My History", achievements: "Achievements",
-    online: "Online", friends: "Friends", requests: "Requests", noPlayers: "No other players",
-    dailyQuests: "Daily Quests", createTable: "Create Table", customRules: "With your rules & design!",
-    join: "Join", tables: "Tables", noTables: "No tables available",
-    music: "BG Music", on: "On", off: "Off", changePass: "Change Password",
-    oldPass: "Old Password", newPass: "New Password", change: "Change", close: "Close",
-    ranked: "Ranked", casual: "Casual", invite: "Invite",
-    room: "Room", password: "Password", cancel: "Cancel", create: "Create",
-    bots: "Bots", targetScore: "Target Score", playerLimit: "Player Limit",
-    roomIdPlaceholder: "Room ID...", active: "Active", emptyHistory: "History is empty",
-    opponent: "Versus", score: "Score"
-  },
-  ru: {
-    top10: "Топ 10", shop: "Магазин", admin: "Админ", settings: "Настройки",
-    xpProgress: "Прогресс XP", matches: "Матчи", wins: "Победы", winRate: "Победы %",
-    myHistory: "📜 Моя история", achievements: "Достижения",
-    online: "Онлайн", friends: "Друзья", requests: "Запросы", noPlayers: "Нет других игроков",
-    dailyQuests: "Ежедневные задания", createTable: "Создать стол", customRules: "С вашими правилами!",
-    join: "Войти", tables: "Столы", noTables: "Нет доступных столов",
-    music: "Музыка", on: "Вкл", off: "Выкл", changePass: "Изменить пароль",
-    oldPass: "Старый пароль", newPass: "Новый пароль", change: "Изменить", close: "Закрыть",
-    ranked: "Рейтинг", casual: "Обычная", invite: "Пригласить",
-    room: "Комната", password: "Пароль", cancel: "Отмена", create: "Создать",
-    bots: "Боты", targetScore: "Целевой счет", playerLimit: "Лимит игроков",
-    roomIdPlaceholder: "ID Комнаты...", active: "Активен", emptyHistory: "История пуста",
-    opponent: "Против", score: "Счет"
-  }
-};
-
-export const getLeague = (xp = 0) => {
-  if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
-  if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
-  if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' };
-  if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' };
-  return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
-};
-
-export const checkIsVip = (vipDate) => {
-  return vipDate && new Date(vipDate) > new Date();
-};
-
-export const VipName = ({ name, isVip, className = '' }) => {
-  if (isVip) {
-    return (
-      <span className={`bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-600 bg-clip-text text-transparent font-black drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] animate-pulse ${className}`}>
-        👑 {name}
-      </span>
-    );
-  }
-  return <span className={className}>{name}</span>;
-};
-
-export const DamkaIcon = ({ type = 'red', size = 'md', className = '' }) => {
-  const dimensions = {
-    sm: 'w-3.5 h-3.5',
-    md: 'w-5 h-5',
-    lg: 'w-10 h-10',
-    xl: 'w-16 h-16'
-  }[size];
-
-  const crownSizes = { sm: 6, md: 10, lg: 20, xl: 32 }[size];
-  const innerBorderW = size === 'sm' ? 'border-[0.5px]' : size === 'xl' ? 'border-2' : 'border-[1px]';
-  const outerBorderW = size === 'sm' ? 'border-[1px]' : size === 'xl' ? 'border-[3px]' : 'border-[2px]';
-
-  const colors = type === 'red' 
-    ? 'bg-gradient-to-br from-red-500 to-red-800 border-red-950 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.4),0_2px_4px_rgba(0,0,0,0.6)]'
-    : 'bg-gradient-to-br from-stone-100 to-stone-300 border-stone-400 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.6)]';
-
-  const innerBorder = type === 'red' ? 'border-red-950' : 'border-stone-400';
-  const crownColor = type === 'red' ? 'text-amber-400' : 'text-amber-500';
-
-  return (
-    <div className={`${dimensions} ${outerBorderW} rounded-full flex items-center justify-center shrink-0 ${colors} ${className}`}>
-      <div className={`w-[65%] h-[65%] rounded-full ${innerBorderW} flex items-center justify-center opacity-80 ${innerBorder}`}>
-        <Crown size={crownSizes} strokeWidth={3} className={`${crownColor} drop-shadow-md`} />
-      </div>
-    </div>
-  );
-};
+export const getLeague = (xp = 0) => { if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' }; if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' }; if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' }; if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' }; return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' }; };
+export const checkIsVip = (vipDate) => { return vipDate && new Date(vipDate) > new Date(); };
+export const VipName = ({ name, isVip, className = '' }) => { if (isVip) { return ( <span className={`bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-600 bg-clip-text text-transparent font-black drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] animate-pulse ${className}`}> 👑 {name} </span> ); } return <span className={className}>{name}</span>; };
+export const DamkaIcon = ({ type = 'red', size = 'md', className = '' }) => { const dims = { sm: 'w-3.5 h-3.5', md: 'w-5 h-5', lg: 'w-10 h-10', xl: 'w-16 h-16' }[size]; const cs = { sm: 6, md: 10, lg: 20, xl: 32 }[size]; const ibw = size === 'sm' ? 'border-[0.5px]' : size === 'xl' ? 'border-2' : 'border-[1px]'; const obw = size === 'sm' ? 'border-[1px]' : size === 'xl' ? 'border-[3px]' : 'border-[2px]'; const cols = type === 'red' ? 'bg-gradient-to-br from-red-500 to-red-800 border-red-950 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.4),0_2px_4px_rgba(0,0,0,0.6)]' : 'bg-gradient-to-br from-stone-100 to-stone-300 border-stone-400 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.6)]'; const ib = type === 'red' ? 'border-red-950' : 'border-stone-400'; const cc = type === 'red' ? 'text-amber-400' : 'text-amber-500'; return ( <div className={`${dims} ${obw} rounded-full flex items-center justify-center shrink-0 ${cols} ${className}`}> <div className={`w-[65%] h-[65%] rounded-full ${ibw} flex items-center justify-center opacity-80 ${ib}`}> <Crown size={cs} strokeWidth={3} className={`${cc} drop-shadow-md`} /> </div> </div> ); };
 
 export default function App() {
-  const [userState, setUserState] = useState(() => {
-    const savedUser = localStorage.getItem('phurti_user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-
-  const user = userState?.user || userState; 
-  const safeUsername = user?.username || 'მოთამაშე';
-
+  const [userState, setUserState] = useState(() => { const s = localStorage.getItem('phurti_user'); return s ? JSON.parse(s) : null; });
+  const user = userState?.user || userState; const safeUsername = user?.username || 'მოთამაშე';
   const [lang, setLang] = useState(() => localStorage.getItem('phurti_lang') || 'ka');
-  
-  useEffect(() => {
-    localStorage.setItem('phurti_lang', lang);
-  }, [lang]);
-
+  useEffect(() => { localStorage.setItem('phurti_lang', lang); }, [lang]);
   const t = translations[lang];
 
   const [roomId, setRoomId] = useState(() => localStorage.getItem('phurti_roomId') || '');
   const [inRoom, setInRoom] = useState(() => localStorage.getItem('phurti_inRoom') === 'true');
-  const [roomData, setRoomData] = useState(null);
-  const roomDataRef = useRef(roomData); 
-  const [profileData, setProfileData] = useState(null);
-  const [liveRooms, setLiveRooms] = useState([]);
-  
-  const [error, setError] = useState('');
-  const [toastMsg, setToastMsg] = useState('');
-
-  const [onlineUser, setOnlineUser] = useState([]);
-  const [inviteAlert, setInviteAlert] = useState(null);
-  
+  const [roomData, setRoomData] = useState(null); const roomDataRef = useRef(roomData); 
+  const [profileData, setProfileData] = useState(null); const [liveRooms, setLiveRooms] = useState([]);
+  const [error, setError] = useState(''); const [toastMsg, setToastMsg] = useState('');
+  const [onlineUser, setOnlineUser] = useState([]); const [inviteAlert, setInviteAlert] = useState(null);
   const [inviteTarget, setInviteTarget] = useState(null);
 
-  // 🟢 მოდალების სთეითები
+  // 🟢 ლოგიკის სთეითები (ძებნის და დაწყების)
   const [isMatchmakingOpen, setIsMatchmakingOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  
-  const [isShopOpen, setIsShopOpen] = useState(false); 
-  const [shopTab, setShopTab] = useState('vip'); 
-  const [inspectProfile, setInspectProfile] = useState(null); 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  
-  const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem('phurti_music') === 'true');
-  const audioRef = useRef(typeof Audio !== 'undefined' ? new Audio('/bg-music.mp3') : null);
+  const [searchFailed, setSearchFailed] = useState(false);
+  const searchIntervalRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
+  const [startCountdown, setStartCountdown] = useState(null);
 
-  const [selectedRoomIdForJoin, setSelectedRoomIdForJoin] = useState('');
-  const [joinPasswordInput, setJoinPasswordInput] = useState('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isShopOpen, setIsShopOpen] = useState(false); const [shopTab, setShopTab] = useState('vip'); 
+  const [inspectProfile, setInspectProfile] = useState(null); const [isSettingsOpen, setIsSettingsOpen] = useState(false); const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem('phurti_music') === 'true'); const audioRef = useRef(typeof Audio !== 'undefined' ? new Audio('/bg-music.mp3') : null);
+  const [selectedRoomIdForJoin, setSelectedRoomIdForJoin] = useState(''); const [joinPasswordInput, setJoinPasswordInput] = useState('');
+  const [mGameType, setMGameType] = useState('phurti'); const [mTargetScore, setMTargetScore] = useState(11); const [mMaxPlayers, setMMaxPlayers] = useState(4); const [mAllowBots, setMAllowBots] = useState(false); const [mRoomPassword, setMRoomPassword] = useState(''); const [mIsRanked, setMIsRanked] = useState(true); 
+  const [socialTab, setSocialTab] = useState('online'); const [leaderboard, setLeaderboard] = useState([]); const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false); const [adminPass, setAdminPass] = useState(''); const [adminUsers, setAdminUsers] = useState([]); const [adminMessage, setAdminMessage] = useState(''); const [adminStats, setAdminStats] = useState(null); const [searchQuery, setSearchQuery] = useState(''); const [broadcastText, setBroadcastText] = useState(''); const [systemAlert, setSystemAlert] = useState(null);
+  const [dailyReward, setDailyReward] = useState(null); const [vipDailyReward, setVipDailyReward] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState(null); const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
-  const [mGameType, setMGameType] = useState('phurti');
-  const [mTargetScore, setMTargetScore] = useState(11);
-  const [mMaxPlayers, setMMaxPlayers] = useState(4);
-  const [mAllowBots, setMAllowBots] = useState(false);
-  const [mRoomPassword, setMRoomPassword] = useState('');
-  const [mIsRanked, setMIsRanked] = useState(true); 
+  useEffect(() => { const h = (e) => { e.preventDefault(); setDeferredPrompt(e); setShowInstallPrompt(true); }; window.addEventListener('beforeinstallprompt', h); return () => window.removeEventListener('beforeinstallprompt', h); }, []);
+  const handleInstallApp = async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { setDeferredPrompt(null); setShowInstallPrompt(false); } };
+  useEffect(() => { roomDataRef.current = roomData; }, [roomData]);
+  useEffect(() => { if (audioRef.current) { audioRef.current.loop = true; audioRef.current.volume = 0.15; if (isMusicPlaying && userState) audioRef.current.play().catch(e => {}); else audioRef.current.pause(); localStorage.setItem('phurti_music', isMusicPlaying); } }, [isMusicPlaying, userState]);
 
-  const [socialTab, setSocialTab] = useState('online');
-
-  const [leaderboard, setLeaderboard] = useState([]); 
-  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
-  
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [adminPass, setAdminPass] = useState('');
-  const [adminUsers, setAdminUsers] = useState([]);
-  const [adminMessage, setAdminMessage] = useState('');
-  const [adminStats, setAdminStats] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [broadcastText, setBroadcastText] = useState('');
-  const [systemAlert, setSystemAlert] = useState(null);
-
-  const [dailyReward, setDailyReward] = useState(null);
-  const [vipDailyReward, setVipDailyReward] = useState(null);
-
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const fetchDashboardData = async (username) => { try { const resProf = await fetch(`https://purti.onrender.com/api/auth/profile/${username}`); if (resProf.ok) setProfileData(await resProf.json()); const resLead = await fetch(`https://purti.onrender.com/api/auth/leaderboard`); if (resLead.ok) setLeaderboard(await resLead.json()); } catch (err) {} };
+  useEffect(() => { const cd = async () => { if (!safeUsername || safeUsername === 'მოთამაშე') return; try { const r = await fetch('https://purti.onrender.com/api/auth/daily-reward', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: safeUsername }) }); const d = await r.json(); if (d.success) { setDailyReward(d); fetchDashboardData(safeUsername); } } catch (err) {} }; cd(); }, [safeUsername]);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowInstallPrompt(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallApp = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-      setShowInstallPrompt(false);
-    }
-  };
-
-  useEffect(() => {
-    roomDataRef.current = roomData;
-  }, [roomData]);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.15; 
-      if (isMusicPlaying && userState) {
-        audioRef.current.play().catch(e => console.log("Autoplay prevented:", e));
-      } else {
-        audioRef.current.pause();
-      }
-      localStorage.setItem('phurti_music', isMusicPlaying);
-    }
-  }, [isMusicPlaying, userState]);
-
-  const fetchDashboardData = async (username) => {
-    try {
-      const resProf = await fetch(`https://purti.onrender.com/api/auth/profile/${username}`);
-      if (resProf.ok) setProfileData(await resProf.json());
-
-      const resLead = await fetch(`https://purti.onrender.com/api/auth/leaderboard`);
-      if (resLead.ok) setLeaderboard(await resLead.json());
-    } catch (err) {}
-  };
-
-  useEffect(() => {
-    const checkDailyReward = async () => {
-      if (!safeUsername || safeUsername === 'მოთამაშე') return;
-      try {
-        const response = await fetch('https://purti.onrender.com/api/auth/daily-reward', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: safeUsername })
-        });
-        const data = await response.json();
-        if (data.success) {
-          setDailyReward(data);
-          fetchDashboardData(safeUsername); 
-        }
-      } catch (err) {}
-    };
-    checkDailyReward();
-  }, [safeUsername]);
-
-  useEffect(() => {
-    socket.on('roomUpdated', (room) => setRoomData(room));
-    socket.on('gameStarted', (room) => setRoomData(room));
+    socket.on('roomUpdated', (room) => { 
+        setRoomData(room); 
+        if (room.players.length < room.maxPlayers) setStartCountdown(null);
+    });
+    socket.on('gameStarted', (room) => { setRoomData(room); setStartCountdown(null); });
     socket.on('gameUpdated', (room) => setRoomData(room));
     socket.on('error', (msg) => setError(msg));
     
-    socket.on('joinError', (msg) => {
-      setError(msg);
-      socket.emit('leaveRoom');
-      setInRoom(false);
-      setRoomId('');
-      setRoomData(null);
-      localStorage.removeItem('phurti_roomId');
-      localStorage.removeItem('phurti_inRoom');
+    // 🟢 ავტომატური დაწყების ლისენერი (3... 2... 1...)
+    socket.on('gameStartingCountdown', (sec) => {
+        setStartCountdown(sec);
+        let t = sec;
+        const int = setInterval(() => {
+            t--;
+            if (t <= 0) { clearInterval(int); setStartCountdown(null); }
+            else setStartCountdown(t);
+        }, 1000);
     });
 
-    // 🟢 როცა თამაშის ძებნა წარმატებით სრულდება
-    socket.on('joinedMatchedRoom', (rId) => {
-      setInRoom(true);
-      setRoomId(rId);
-      localStorage.setItem('phurti_roomId', rId);
-      localStorage.setItem('phurti_inRoom', 'true');
-      setIsMatchmakingOpen(false);
-      setIsSearching(false);
-    });
-
-    socket.on('activeRoomsList', (rooms) => setLiveRooms(rooms));
-    socket.on('updateOnlineUsers', (users) => setOnlineUser(users));
-    socket.on('receiveInvite', (data) => setInviteAlert(data));
-
-    socket.on('inviteRejected', (rejecterName) => {
-      setToastMsg(`${rejecterName}-მ უარყო შენი მოწვევა ❌`);
-      if (roomDataRef.current && roomDataRef.current.players.length === 1) {
-        setTimeout(() => {
-          handleResetToLobby();
-        }, 2500);
-      }
-    });
-
-    socket.on('successMessage', (msg) => setToastMsg(msg));
-    socket.on('friendRequestReceived', (sender) => {
-      setToastMsg(`${sender}-მ მეგობრობის თხოვნა გამოგიგზავნა!`);
-      fetchDashboardData(safeUsername);
-    });
-    socket.on('friendListUpdated', () => fetchDashboardData(safeUsername));
+    socket.on('joinError', (msg) => { setError(msg); socket.emit('leaveRoom'); setInRoom(false); setRoomId(''); setRoomData(null); localStorage.removeItem('phurti_roomId'); localStorage.removeItem('phurti_inRoom'); });
     
-    socket.on('receiveUserProfile', (data) => setInspectProfile(data)); 
-    socket.on('roomNotFound', () => handleResetToLobby());
-
-    socket.on('vipBonusClaimed', (amount) => {
-      setVipDailyReward(amount);
-      fetchDashboardData(safeUsername);
+    // 🟢 როცა მოძებნის დასრულდება
+    socket.on('joinedMatchedRoom', (rId) => {
+      clearInterval(searchIntervalRef.current); clearTimeout(searchTimeoutRef.current);
+      setInRoom(true); setRoomId(rId); localStorage.setItem('phurti_roomId', rId); localStorage.setItem('phurti_inRoom', 'true');
+      setIsMatchmakingOpen(false); setIsSearching(false); setSearchFailed(false);
     });
 
-    socket.on('systemBroadcast', (msg) => {
-      setSystemAlert(msg);
-    });
+    socket.on('activeRoomsList', (r) => setLiveRooms(r)); socket.on('updateOnlineUsers', (u) => setOnlineUser(u)); socket.on('receiveInvite', (d) => setInviteAlert(d));
+    socket.on('inviteRejected', (rN) => { setToastMsg(`${rN}-მ უარყო ❌`); if (roomDataRef.current && roomDataRef.current.players.length === 1) setTimeout(() => handleResetToLobby(), 2500); });
+    socket.on('successMessage', (m) => setToastMsg(m)); socket.on('friendRequestReceived', (s) => { setToastMsg(`${s}-მ გამოგიგზავნა!`); fetchDashboardData(safeUsername); });
+    socket.on('friendListUpdated', () => fetchDashboardData(safeUsername)); socket.on('receiveUserProfile', (d) => setInspectProfile(d)); socket.on('roomNotFound', () => handleResetToLobby());
+    socket.on('vipBonusClaimed', (a) => { setVipDailyReward(a); fetchDashboardData(safeUsername); }); socket.on('systemBroadcast', (m) => setSystemAlert(m));
 
-    const handleOnConnect = () => {
-      const oldSocketId = localStorage.getItem('phurti_socketId');
-      const savedUserRaw = localStorage.getItem('phurti_user');
-      const savedRoomId = localStorage.getItem('phurti_roomId');
-      const savedInRoom = localStorage.getItem('phurti_inRoom') === 'true';
-
-      if (savedUserRaw) {
-        const parsedState = JSON.parse(savedUserRaw);
-        const actualUser = parsedState?.user || parsedState;
-        const uName = actualUser?.username;
-
-        if (uName) {
-          socket.emit('setOnlineUser', uName); 
-          if (savedInRoom && savedRoomId) {
-            socket.emit('reconnectUser', { oldSocketId, playerName: uName, roomId: savedRoomId.trim() });
-          } else {
-            socket.emit('getLiveRooms');
-          }
-        }
-      }
-      localStorage.setItem('phurti_socketId', socket.id);
-    };
-
-    socket.on('connect', handleOnConnect);
-    if (socket.connected) handleOnConnect();
-
-    return () => {
-      socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('joinError'); socket.off('activeRoomsList'); 
-      socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound'); socket.off('vipBonusClaimed');
-      socket.off('systemBroadcast'); socket.off('joinedMatchedRoom');
-      socket.off('connect', handleOnConnect);
-    };
+    const hOC = () => { const o = localStorage.getItem('phurti_socketId'); const u = localStorage.getItem('phurti_user'); const r = localStorage.getItem('phurti_roomId'); const iR = localStorage.getItem('phurti_inRoom') === 'true'; if (u) { const p = JSON.parse(u); const a = p?.user || p; const uN = a?.username; if (uN) { socket.emit('setOnlineUser', uN); if (iR && r) socket.emit('reconnectUser', { oldSocketId: o, playerName: uN, roomId: r.trim() }); else socket.emit('getLiveRooms'); } } localStorage.setItem('phurti_socketId', socket.id); };
+    socket.on('connect', hOC); if (socket.connected) hOC();
+    return () => { socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('joinError'); socket.off('activeRoomsList'); socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound'); socket.off('vipBonusClaimed'); socket.off('systemBroadcast'); socket.off('joinedMatchedRoom'); socket.off('gameStartingCountdown'); socket.off('connect', hOC); };
   }, []);
 
-  useEffect(() => {
-    if (userState && !inRoom && safeUsername !== 'მოთამაშე') {
-      fetchDashboardData(safeUsername);
-      socket.emit('getLiveRooms');
-      socket.emit('setOnlineUser', safeUsername); 
-    }
-  }, [userState, inRoom, safeUsername]);
+  useEffect(() => { if (userState && !inRoom && safeUsername !== 'მოთამაშე') { fetchDashboardData(safeUsername); socket.emit('getLiveRooms'); socket.emit('setOnlineUser', safeUsername); } }, [userState, inRoom, safeUsername]);
+  useEffect(() => { if (error) { const t = setTimeout(() => setError(''), 4000); return () => clearTimeout(t); } }, [error]);
+  useEffect(() => { if (toastMsg) { const t = setTimeout(() => setToastMsg(''), 4000); return () => clearTimeout(t); } }, [toastMsg]);
 
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(''), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
-
-  useEffect(() => {
-    if (toastMsg) {
-      const timer = setTimeout(() => setToastMsg(''), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMsg]);
-
-  const loadLeaderboard = async () => {
-    try {
-      const res = await fetch('https://purti.onrender.com/api/auth/leaderboard');
-      const data = await res.json();
-      setLeaderboard(data);
-      setIsLeaderboardOpen(true);
-    } catch(err) { console.error(err); }
-  };
-
-  const loginAdmin = async (e) => {
-    if (e) e.preventDefault();
-    try {
-      const res = await fetch('https://purti.onrender.com/api/auth/admin/users', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPass })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setAdminUsers(data);
-        const statRes = await fetch('https://purti.onrender.com/api/admin/stats');
-        if (statRes.ok) setAdminStats(await statRes.json());
-      } else { setAdminMessage(data.message); }
-    } catch (err) { setAdminMessage('შეცდომა სერვერთან კავშირისას!'); }
-  };
-
-  const adminAction = async (targetUser, action, amount = 0) => {
-    try {
-      const res = await fetch('https://purti.onrender.com/api/auth/admin/update', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPass, targetUser, action, amount })
-      });
-      if (res.ok) { setAdminMessage(`მოთამაშე ${targetUser} წარმატებით განახლდა!`); loginAdmin(); }
-    } catch (err) { console.error(err); }
-  };
-
-  const handleAdvancedAdminAction = async (targetUser, action) => {
-    if (!window.confirm(`ნამდვილად გინდა ${action === 'delete' ? 'სამუდამოდ წაშალო' : 'გაუნულო სტატისტიკა'} მოთამაშეს: ${targetUser}?`)) return;
-    try {
-      const res = await fetch('https://purti.onrender.com/api/admin/advanced-action', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPass, targetUser, action })
-      });
-      const data = await res.json();
-      if (res.ok) { setToastMsg(data.message); loginAdmin(); } else { setToastMsg(data.message); }
-    } catch (err) { console.error(err); }
-  };
-
-  const handleAuthSuccess = (userData) => {
-    setUserState(userData);
-    localStorage.setItem('phurti_user', JSON.stringify(userData));
-    const actualUser = userData?.user || userData;
-    if (actualUser?.username) socket.emit('setOnlineUser', actualUser.username); 
-  };
-
-  const handleJoinSpecificRoom = (targetId, pass = '') => {
-    if (!targetId || !targetId.trim()) return;
-    setError('');
-    socket.emit('joinRoom', { action: 'join', roomId: targetId.trim(), playerName: safeUsername, roomPassword: pass });
-    setInRoom(true);
-    localStorage.setItem('phurti_roomId', targetId.trim());
-    localStorage.setItem('phurti_inRoom', 'true');
-    setIsPasswordModalOpen(false); setJoinPasswordInput('');
-  };
-
-  // 🟢 ოთახის შექმნა (როცა თვითონ ირჩევს პარამეტრებს)
+  const loadLeaderboard = async () => { try { const r = await fetch('https://purti.onrender.com/api/auth/leaderboard'); const d = await r.json(); setLeaderboard(d); setIsLeaderboardOpen(true); } catch(e) {} };
+  const loginAdmin = async (e) => { if (e) e.preventDefault(); try { const r = await fetch('https://purti.onrender.com/api/auth/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminPass }) }); const d = await r.json(); if (r.ok) { setAdminUsers(d); const sR = await fetch('https://purti.onrender.com/api/admin/stats'); if (sR.ok) setAdminStats(await sR.json()); } else setAdminMessage(d.message); } catch (e) { setAdminMessage('შეცდომა!'); } };
+  const adminAction = async (tU, a, am = 0) => { try { const r = await fetch('https://purti.onrender.com/api/auth/admin/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminPass, targetUser: tU, action: a, amount: am }) }); if (r.ok) { setAdminMessage(`${tU} განახლდა!`); loginAdmin(); } } catch (e) {} };
+  const handleAdvancedAdminAction = async (tU, a) => { if (!window.confirm(`ნამდვილად გინდა?`)) return; try { const r = await fetch('https://purti.onrender.com/api/admin/advanced-action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminPass, targetUser: tU, action: a }) }); const d = await r.json(); setToastMsg(d.message); if (r.ok) loginAdmin(); } catch (e) {} };
+  const handleAuthSuccess = (uD) => { setUserState(uD); localStorage.setItem('phurti_user', JSON.stringify(uD)); const aU = uD?.user || uD; if (aU?.username) socket.emit('setOnlineUser', aU.username); };
+  const handleJoinSpecificRoom = (tI, p = '') => { if (!tI || !tI.trim()) return; setError(''); socket.emit('joinRoom', { action: 'join', roomId: tI.trim(), playerName: safeUsername, roomPassword: p }); setInRoom(true); localStorage.setItem('phurti_roomId', tI.trim()); localStorage.setItem('phurti_inRoom', 'true'); setIsPasswordModalOpen(false); setJoinPasswordInput(''); };
+  
   const handleConfirmCreateRoom = (e) => {
-    e.preventDefault();
-    const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
-    const finalMaxPlayers = mGameType === 'damka' ? 2 : mMaxPlayers;
-
-    socket.emit('joinRoom', { 
-      action: 'create', 
-      roomId: generatedId, 
-      playerName: safeUsername, 
-      roomPassword: mRoomPassword ? mRoomPassword.trim() : null, 
-      maxPlayers: finalMaxPlayers, 
-      targetScore: mGameType === 'damka' ? 12 : mTargetScore, 
-      allowBots: mAllowBots, 
-      isRanked: mGameType === 'damka' ? false : mIsRanked, 
-      gameType: mGameType 
-    });
-    
-    setInRoom(true);
-    localStorage.setItem('phurti_roomId', generatedId); localStorage.setItem('phurti_inRoom', 'true');
-    setIsCreateModalOpen(false); setMRoomPassword('');
+    e.preventDefault(); const gId = Math.floor(1000 + Math.random() * 9000).toString(); const fM = mGameType === 'damka' ? 2 : mMaxPlayers;
+    socket.emit('joinRoom', { action: 'create', roomId: gId, playerName: safeUsername, roomPassword: mRoomPassword ? mRoomPassword.trim() : null, maxPlayers: fM, targetScore: mGameType === 'damka' ? 12 : mTargetScore, allowBots: mAllowBots, isRanked: mGameType === 'damka' ? false : mIsRanked, gameType: mGameType });
+    setInRoom(true); localStorage.setItem('phurti_roomId', gId); localStorage.setItem('phurti_inRoom', 'true'); setIsCreateModalOpen(false); setMRoomPassword('');
   };
 
-  // 🟢 თამაშის ძებნა (Matchmaking)
+  // 🟢 10-წამიანი ძებნის ლოგიკა
   const handleFindMatchSubmit = (e) => {
-    e.preventDefault();
-    setIsSearching(true);
-    const finalMaxPlayers = mGameType === 'damka' ? 2 : mMaxPlayers;
-    
-    // მცირე დაყოვნება, რომ მომხმარებელმა ძებნის ეფექტი დაინახოს
-    setTimeout(() => {
-        socket.emit('findMatch', {
-            playerName: safeUsername,
-            gameType: mGameType,
-            maxPlayers: finalMaxPlayers,
-            isRanked: mGameType === 'damka' ? false : mIsRanked
-        });
-    }, 1500);
+    e.preventDefault(); setIsSearching(true); setSearchFailed(false);
+    const cfg = { playerName: safeUsername, gameType: mGameType, maxPlayers: mGameType === 'damka' ? 2 : mMaxPlayers, isRanked: mGameType === 'damka' ? false : mIsRanked };
+    socket.emit('tryFindMatch', cfg);
+    searchIntervalRef.current = setInterval(() => { socket.emit('tryFindMatch', cfg); }, 2000);
+    searchTimeoutRef.current = setTimeout(() => {
+        clearInterval(searchIntervalRef.current); setIsSearching(false); setSearchFailed(true);
+    }, 10000);
   };
+  const cancelSearch = () => { clearInterval(searchIntervalRef.current); clearTimeout(searchTimeoutRef.current); setIsSearching(false); setSearchFailed(false); setIsMatchmakingOpen(false); };
 
-  const handleSendInviteClick = (targetSocketId, targetName) => {
-    if (inRoom && roomData) {
-      socket.emit('sendInvite', { targetSocketId, roomId: roomData.id, password: roomData.password, fromName: safeUsername, gameType: roomData.gameType });
-      setToastMsg('მოწვევა გაიგზავნა!');
-    } else {
-      setInviteTarget({ socketId: targetSocketId, name: targetName });
-    }
-  };
-
-  const handleConfirmGameInvite = (selectedGameType) => {
-    if (!inviteTarget) return;
-
-    const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
-    const isDamka = selectedGameType === 'damka';
-
-    socket.emit('joinRoom', { 
-      action: 'create', 
-      roomId: generatedId, 
-      playerName: safeUsername, 
-      roomPassword: null, 
-      maxPlayers: isDamka ? 2 : 4, 
-      targetScore: 11, 
-      allowBots: false, 
-      isRanked: !isDamka,
-      gameType: selectedGameType 
-    });
-    
-    setInRoom(true);
-    localStorage.setItem('phurti_roomId', generatedId); 
-    localStorage.setItem('phurti_inRoom', 'true');
-    
-    setTimeout(() => { 
-      socket.emit('sendInvite', { 
-        targetSocketId: inviteTarget.socketId, 
-        roomId: generatedId, 
-        password: null, 
-        fromName: safeUsername, 
-        gameType: selectedGameType 
-      }); 
-      setToastMsg('მოწვევა გაიგზავნა!');
-    }, 300);
-    
-    setInviteTarget(null);
-  };
-
-  const handleSendFriendReq = async (targetName) => {
-    try {
-      const res = await fetch('https://purti.onrender.com/api/auth/friend/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sender: safeUsername, target: targetName }) });
-      const data = await res.json(); setToastMsg(data.message); fetchDashboardData(safeUsername); 
-    } catch(err) {}
-  };
-
-  const handleAcceptFriend = async (senderName) => {
-    try {
-      const res = await fetch('https://purti.onrender.com/api/auth/friend/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ me: safeUsername, sender: senderName }) });
-      const data = await res.json(); setToastMsg(data.message); fetchDashboardData(safeUsername); 
-    } catch(err) {}
-  };
-
-  const handleRejectFriend = async (senderName) => {
-    try {
-      const res = await fetch('https://purti.onrender.com/api/auth/friend/reject', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ me: safeUsername, sender: senderName }) });
-      const data = await res.json(); setToastMsg(data.message); fetchDashboardData(safeUsername); 
-    } catch(err) {}
-  };
-
-  const handleBuyItem = (type, itemId, price) => socket.emit('buyItem', { type, itemId, price });
-  const handleEquipItem = (type, itemId) => socket.emit('equipItem', { type, itemId });
-  const handleBuyVip = (days, price) => socket.emit('buyVip', { days, price });
-
-  const handleInspectPlayer = (username) => socket.emit('getUserProfile', { username });
-
-  const handleRoomClickFromList = (room) => {
-    if (room.isPrivate) { setSelectedRoomIdForJoin(room.id); setIsPasswordModalOpen(true); } else { handleJoinSpecificRoom(room.id); }
-  };
-
-  const handleLogout = () => {
-    socket.emit('leaveRoom'); setUserState(null); setInRoom(false); setRoomId(''); setRoomData(null); setProfileData(null);
-    localStorage.clear(); socket.disconnect(); socket.connect();
-  };
-
-  const handleResetToLobby = () => {
-    socket.emit('leaveRoom'); setInRoom(false); setRoomId(''); setRoomData(null);
-    localStorage.removeItem('phurti_roomId'); localStorage.removeItem('phurti_inRoom');
-  };
+  const handleSendInviteClick = (tId, tN) => { if (inRoom && roomData) { socket.emit('sendInvite', { targetSocketId: tId, roomId: roomData.id, password: roomData.password, fromName: safeUsername, gameType: roomData.gameType }); setToastMsg('გაიგზავნა!'); } else setInviteTarget({ socketId: tId, name: tN }); };
+  const handleConfirmGameInvite = (sG) => { if (!inviteTarget) return; const gId = Math.floor(1000 + Math.random() * 9000).toString(); const iD = sG === 'damka'; socket.emit('joinRoom', { action: 'create', roomId: gId, playerName: safeUsername, roomPassword: null, maxPlayers: iD ? 2 : 4, targetScore: 11, allowBots: false, isRanked: !iD, gameType: sG }); setInRoom(true); localStorage.setItem('phurti_roomId', gId); localStorage.setItem('phurti_inRoom', 'true'); setTimeout(() => { socket.emit('sendInvite', { targetSocketId: inviteTarget.socketId, roomId: gId, password: null, fromName: safeUsername, gameType: sG }); setToastMsg('გაიგზავნა!'); }, 300); setInviteTarget(null); };
+  const handleSendFriendReq = async (t) => { try { const r = await fetch('https://purti.onrender.com/api/auth/friend/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sender: safeUsername, target: t }) }); const d = await r.json(); setToastMsg(d.message); fetchDashboardData(safeUsername); } catch(e) {} };
+  const handleAcceptFriend = async (s) => { try { const r = await fetch('https://purti.onrender.com/api/auth/friend/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ me: safeUsername, sender: s }) }); const d = await r.json(); setToastMsg(d.message); fetchDashboardData(safeUsername); } catch(e) {} };
+  const handleRejectFriend = async (s) => { try { const r = await fetch('https://purti.onrender.com/api/auth/friend/reject', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ me: safeUsername, sender: s }) }); const d = await r.json(); setToastMsg(d.message); fetchDashboardData(safeUsername); } catch(e) {} };
+  const handleBuyItem = (t, i, p) => socket.emit('buyItem', { type: t, itemId: i, price: p }); const handleEquipItem = (t, i) => socket.emit('equipItem', { type: t, itemId: i }); const handleBuyVip = (d, p) => socket.emit('buyVip', { days: d, price: p }); const handleInspectPlayer = (u) => socket.emit('getUserProfile', { username: u }); const handleRoomClickFromList = (r) => { if (r.isPrivate) { setSelectedRoomIdForJoin(r.id); setIsPasswordModalOpen(true); } else handleJoinSpecificRoom(r.id); };
+  const handleLogout = () => { socket.emit('leaveRoom'); setUserState(null); setInRoom(false); setRoomId(''); setRoomData(null); setProfileData(null); localStorage.clear(); socket.disconnect(); socket.connect(); };
+  const handleResetToLobby = () => { socket.emit('leaveRoom'); setInRoom(false); setRoomId(''); setRoomData(null); setStartCountdown(null); localStorage.removeItem('phurti_roomId'); localStorage.removeItem('phurti_inRoom'); };
 
   if (!userState) return <Auth onAuthSuccess={handleAuthSuccess} />;
 
-  const winRate = profileData?.stats?.gamesPlayed > 0 ? Math.round((profileData.stats.gamesWon / profileData.stats.gamesPlayed) * 100) : 0;
-  const currentLevel = profileData?.level || 1;
-  const currentXp = profileData?.xp || 0;
-  const targetXp = currentLevel * 1000;
-  const xpPercentage = Math.min((currentXp / targetXp) * 100, 100);
-  
-  const myCoins = profileData?.coins || 0;
-  const myAvatar = profileData?.avatar || '😎';
-  const amIVip = checkIsVip(profileData?.vipUntil); 
-  const myLeague = getLeague(currentXp); 
-  
-  const unlockedAvatars = profileData?.unlockedAvatars || ['😎'];
-  const unlockedTables = profileData?.unlockedTableThemes || ['wood', 'lavender'];
-  const unlockedCards = profileData?.unlockedCardBacks || ['classic'];
+  const winRate = profileData?.stats?.gamesPlayed > 0 ? Math.round((profileData.stats.gamesWon / profileData.stats.gamesPlayed) * 100) : 0; const currentLevel = profileData?.level || 1; const currentXp = profileData?.xp || 0; const targetXp = currentLevel * 1000; const xpPercentage = Math.min((currentXp / targetXp) * 100, 100); const myCoins = profileData?.coins || 0; const myAvatar = profileData?.avatar || '😎'; const amIVip = checkIsVip(profileData?.vipUntil); const myLeague = getLeague(currentXp); const unlockedAvatars = profileData?.unlockedAvatars || ['😎']; const unlockedTables = profileData?.unlockedTableThemes || ['wood', 'lavender']; const unlockedCards = profileData?.unlockedCardBacks || ['classic']; const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id; const myAchievements = profileData?.achievements || [];
 
-  const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id;
-  const myAchievements = profileData?.achievements || [];
-
-  const themeStyles = {
-    wood: { bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", overlay: "bg-black/10", accent: "text-amber-500", accentBg: "bg-amber-500", card: "bg-stone-900/80" },
-    lavender: { bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)", overlay: "bg-black/10", accent: "text-violet-400", accentBg: "bg-violet-500", card: "bg-indigo-950/70" },
-    casino: { bg: "linear-gradient(135deg, #062615 0%, #020c06 100%)", overlay: "bg-black/20", accent: "text-emerald-400", accentBg: "bg-emerald-500", card: "bg-stone-950/80" },
-    midnight: { bg: "linear-gradient(135deg, #0b1120 0%, #03050a 100%)", overlay: "bg-black/10", accent: "text-yellow-500", accentBg: "bg-yellow-500", card: "bg-slate-900/70" },
-    neon: { bg: "linear-gradient(135deg, #09090b 0%, #020617 100%)", overlay: "bg-fuchsia-900/10", accent: "text-fuchsia-400 drop-shadow-[0_0_5px_rgba(232,121,249,0.8)]", accentBg: "bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.5)]", card: "bg-slate-950/80 border-fuchsia-500/20" },
-    dark_club: { bg: "radial-gradient(circle at top right, #3f3f46 0%, #000000 100%)", overlay: "bg-rose-900/5", accent: "text-rose-500 drop-shadow-[0_0_5px_rgba(244,63,94,0.6)]", accentBg: "bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.5)]", card: "bg-black/80 border-rose-900/20" },
-    vip_gold: { bg: "linear-gradient(135deg, #1f1400 0%, #000000 100%)", overlay: "bg-yellow-900/10", accent: "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]", accentBg: "bg-gradient-to-r from-yellow-600 to-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]", card: "bg-black/90 border-yellow-500/30 ring-1 ring-yellow-500/20" },
-    vip_diamond: { bg: "linear-gradient(135deg, #040e1f 0%, #000000 100%)", overlay: "bg-cyan-900/10", accent: "text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]", accentBg: "bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]", card: "bg-black/90 border-cyan-500/30 ring-1 ring-cyan-500/20" }
-  };
-
-  const activeThemeName = (inRoom && roomData?.hostTheme) ? roomData.hostTheme : (profileData?.tableTheme || 'wood');
-  const activeTheme = themeStyles[activeThemeName] || themeStyles['wood'];
+  const themeStyles = { wood: { bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", overlay: "bg-black/10", accent: "text-amber-500", accentBg: "bg-amber-500", card: "bg-stone-900/80" }, lavender: { bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)", overlay: "bg-black/10", accent: "text-violet-400", accentBg: "bg-violet-500", card: "bg-indigo-950/70" }, casino: { bg: "linear-gradient(135deg, #062615 0%, #020c06 100%)", overlay: "bg-black/20", accent: "text-emerald-400", accentBg: "bg-emerald-500", card: "bg-stone-950/80" }, midnight: { bg: "linear-gradient(135deg, #0b1120 0%, #03050a 100%)", overlay: "bg-black/10", accent: "text-yellow-500", accentBg: "bg-yellow-500", card: "bg-slate-900/70" }, neon: { bg: "linear-gradient(135deg, #09090b 0%, #020617 100%)", overlay: "bg-fuchsia-900/10", accent: "text-fuchsia-400 drop-shadow-[0_0_5px_rgba(232,121,249,0.8)]", accentBg: "bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.5)]", card: "bg-slate-950/80 border-fuchsia-500/20" }, dark_club: { bg: "radial-gradient(circle at top right, #3f3f46 0%, #000000 100%)", overlay: "bg-rose-900/5", accent: "text-rose-500 drop-shadow-[0_0_5px_rgba(244,63,94,0.6)]", accentBg: "bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.5)]", card: "bg-black/80 border-rose-900/20" }, vip_gold: { bg: "linear-gradient(135deg, #1f1400 0%, #000000 100%)", overlay: "bg-yellow-900/10", accent: "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]", accentBg: "bg-gradient-to-r from-yellow-600 to-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]", card: "bg-black/90 border-yellow-500/30 ring-1 ring-yellow-500/20" }, vip_diamond: { bg: "linear-gradient(135deg, #040e1f 0%, #000000 100%)", overlay: "bg-cyan-900/10", accent: "text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]", accentBg: "bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]", card: "bg-black/90 border-cyan-500/30 ring-1 ring-cyan-500/20" } };
+  const activeThemeName = (inRoom && roomData?.hostTheme) ? roomData.hostTheme : (profileData?.tableTheme || 'wood'); const activeTheme = themeStyles[activeThemeName] || themeStyles['wood'];
 
   return (
     <div className="relative flex min-h-screen flex-col font-sans antialiased transition-all duration-700" style={{ background: activeTheme.bg }}>
       <div className={`absolute inset-0 ${activeTheme.overlay} backdrop-blur-[4px] z-0 transition-colors duration-700`}></div>
-
-      {error && (
-        <div className="fixed top-20 md:top-24 right-4 md:right-6 z-[100] rounded-2xl bg-stone-900/95 border border-rose-500/20 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-right-8 fade-in duration-300 flex items-center gap-3">
-          <div className="flex items-center justify-center p-1 rounded-full bg-rose-500/20 text-rose-500 border border-rose-500/30">
-             <XCircle size={16} className="md:w-5 md:h-5" />
-          </div>
-          <span className="text-stone-100 tracking-wide uppercase">{error}</span>
-        </div>
-      )}
-
-      {toastMsg && (
-        <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-[100] rounded-2xl bg-stone-900/95 border border-white/10 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-top-5 fade-in duration-300 flex items-center gap-3">
-          <div className={`flex items-center justify-center p-1 rounded-full ${activeTheme.accentBg} bg-opacity-20 ${activeTheme.accent} border border-current border-opacity-30`}>
-             <CheckCircle2 size={16} className="md:w-5 md:h-5" />
-          </div>
-          <span className="text-stone-100 tracking-wide uppercase">{toastMsg}</span>
-        </div>
-      )}
-
+      {error && <div className="fixed top-20 md:top-24 right-4 md:right-6 z-[100] rounded-2xl bg-stone-900/95 border border-rose-500/20 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-right-8 fade-in duration-300 flex items-center gap-3"><div className="flex items-center justify-center p-1 rounded-full bg-rose-500/20 text-rose-500 border border-rose-500/30"><XCircle size={16} className="md:w-5 md:h-5" /></div><span className="text-stone-100 tracking-wide uppercase">{error}</span></div>}
+      {toastMsg && <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-[100] rounded-2xl bg-stone-900/95 border border-white/10 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-top-5 fade-in duration-300 flex items-center gap-3"><div className={`flex items-center justify-center p-1 rounded-full ${activeTheme.accentBg} bg-opacity-20 ${activeTheme.accent} border border-current border-opacity-30`}><CheckCircle2 size={16} className="md:w-5 md:h-5" /></div><span className="text-stone-100 tracking-wide uppercase">{toastMsg}</span></div>}
+      
+      {/* Invite Target */}
       {inviteTarget && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[150] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 shadow-2xl font-sans relative text-center`}>
-            <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} uppercase tracking-wider mb-2`}>
-              აირჩიე თამაში
-            </h3>
-            <p className="text-xs text-stone-400 font-bold mb-4">
-              იწვევთ მოთამაშეს: <span className="text-stone-200">{inviteTarget.name}</span>
-            </p>
-
+            <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} uppercase tracking-wider mb-2`}>აირჩიე თამაში</h3>
+            <p className="text-xs text-stone-400 font-bold mb-4">იწვევთ მოთამაშეს: <span className="text-stone-200">{inviteTarget.name}</span></p>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => handleConfirmGameInvite('phurti')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group">
-                 <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-200">ფურთი</span>
-              </button>
-              <button onClick={() => handleConfirmGameInvite('damka')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group">
-                 <div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2">
-                     <DamkaIcon type="red" size="lg" className="z-10 animate-bounce" />
-                     <DamkaIcon type="white" size="lg" className="mt-2 animate-bounce delay-100" />
-                 </div>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-200">შაში</span>
-              </button>
+              <button onClick={() => handleConfirmGameInvite('phurti')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group"><span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span><span className="text-[10px] font-black uppercase tracking-widest text-stone-200">ფურთი</span></button>
+              <button onClick={() => handleConfirmGameInvite('damka')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group"><div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2"><DamkaIcon type="red" size="lg" className="z-10 animate-bounce" /><DamkaIcon type="white" size="lg" className="mt-2 animate-bounce delay-100" /></div><span className="text-[10px] font-black uppercase tracking-widest text-stone-200">შაში</span></button>
             </div>
-
-            <button onClick={() => setInviteTarget(null)} className="w-full mt-4 py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase">
-              გაუქმება
-            </button>
+            <button onClick={() => setInviteTarget(null)} className="w-full mt-4 py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase">გაუქმება</button>
           </div>
         </div>
       )}
 
       {showInstallPrompt && (
         <div className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[500] bg-stone-900 border border-cyan-500/30 p-4 rounded-2xl shadow-[0_10px_40px_rgba(6,182,212,0.2)] flex flex-col md:flex-row items-center gap-4 w-[90%] max-w-md animate-in slide-in-from-bottom-5">
-           <div className="flex items-center gap-3 w-full">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shrink-0">
-                <Download size={24} />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs md:text-sm font-black text-stone-100 uppercase tracking-wider">აპლიკაციის დაყენება</span>
-                <span className="text-[10px] md:text-xs text-stone-400 font-bold">გადმოწერე და ითამაშე უფრო სწრაფად!</span>
-              </div>
-           </div>
-           <div className="flex items-center gap-2 w-full md:w-auto mt-2 md:mt-0 shrink-0">
-             <button onClick={() => setShowInstallPrompt(false)} className="px-4 py-2.5 bg-stone-800 text-stone-400 hover:text-white text-[10px] font-black uppercase rounded-xl transition-all border border-white/5 w-full md:w-auto active:scale-95">დახურვა</button>
-             <button onClick={handleInstallApp} className="px-5 py-2.5 bg-cyan-500 text-stone-950 hover:bg-cyan-400 text-[10px] font-black uppercase rounded-xl transition-all shadow-[0_0_15px_rgba(6,182,212,0.4)] w-full md:w-auto active:scale-95">გადმოწერა</button>
-           </div>
+           <div className="flex items-center gap-3 w-full"><div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shrink-0"><Download size={24} /></div><div className="flex flex-col"><span className="text-xs md:text-sm font-black text-stone-100 uppercase tracking-wider">აპლიკაციის დაყენება</span><span className="text-[10px] md:text-xs text-stone-400 font-bold">გადმოწერე და ითამაშე უფრო სწრაფად!</span></div></div>
+           <div className="flex items-center gap-2 w-full md:w-auto mt-2 md:mt-0 shrink-0"><button onClick={() => setShowInstallPrompt(false)} className="px-4 py-2.5 bg-stone-800 text-stone-400 hover:text-white text-[10px] font-black uppercase rounded-xl transition-all border border-white/5 w-full md:w-auto active:scale-95">დახურვა</button><button onClick={handleInstallApp} className="px-5 py-2.5 bg-cyan-500 text-stone-950 hover:bg-cyan-400 text-[10px] font-black uppercase rounded-xl transition-all shadow-[0_0_15px_rgba(6,182,212,0.4)] w-full md:w-auto active:scale-95">გადმოწერა</button></div>
         </div>
       )}
 
@@ -804,14 +175,7 @@ export default function App() {
         <div className="fixed inset-0 bg-red-950/80 backdrop-blur-md z-[500] flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="bg-stone-900 border-2 border-red-500 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-[0_0_80px_rgba(239,68,68,0.5)] relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-500/20 via-stone-900 to-stone-900 z-0"></div>
-            <div className="relative z-10">
-              <Megaphone size={56} className="mx-auto text-red-500 mb-4 animate-bounce drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-              <h2 className="text-xl md:text-2xl font-black text-red-500 uppercase tracking-widest mb-4">შეტყობინება!</h2>
-              <div className="bg-stone-950/80 rounded-2xl p-4 md:p-5 border border-white/10 shadow-inner mb-6">
-                <p className="text-stone-200 font-bold text-sm md:text-base">{systemAlert}</p>
-              </div>
-              <button onClick={() => setSystemAlert(null)} className="w-full py-3 md:py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl uppercase transition-all shadow-lg active:scale-95">გასაგებია</button>
-            </div>
+            <div className="relative z-10"><Megaphone size={56} className="mx-auto text-red-500 mb-4 animate-bounce drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]" /><h2 className="text-xl md:text-2xl font-black text-red-500 uppercase tracking-widest mb-4">შეტყობინება!</h2><div className="bg-stone-950/80 rounded-2xl p-4 md:p-5 border border-white/10 shadow-inner mb-6"><p className="text-stone-200 font-bold text-sm md:text-base">{systemAlert}</p></div><button onClick={() => setSystemAlert(null)} className="w-full py-3 md:py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl uppercase transition-all shadow-lg active:scale-95">გასაგებია</button></div>
           </div>
         </div>
       )}
@@ -820,22 +184,12 @@ export default function App() {
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className={`bg-stone-900 border border-opacity-30 border-current ${activeTheme.accent} rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-[0_0_50px_rgba(0,0,0,0.3)] font-sans text-center relative overflow-hidden animate-in zoom-in duration-200`}>
             <div className={`absolute top-0 left-0 w-full h-1 ${activeTheme.accentBg} animate-pulse`}></div>
-            <div className={`w-16 h-16 ${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current rounded-full flex items-center justify-center mx-auto border mb-2 shadow-lg`}>
-              <BellRing size={28} />
-            </div>
+            <div className={`w-16 h-16 ${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current rounded-full flex items-center justify-center mx-auto border mb-2 shadow-lg`}><BellRing size={28} /></div>
             <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">ახალი გამოწვევა!</h3>
-            <p className="text-sm font-bold text-stone-400 mb-1">
-              <span className="font-black">{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})
-            </p>
-            <div className="bg-stone-950 px-3 py-1 rounded-md text-[10px] text-stone-500 uppercase font-black tracking-widest border border-white/5 inline-flex items-center gap-1.5 justify-center">
-               {inviteAlert.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}
-            </div>
+            <p className="text-sm font-bold text-stone-400 mb-1"><span className="font-black">{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})</p>
+            <div className="bg-stone-950 px-3 py-1 rounded-md text-[10px] text-stone-500 uppercase font-black tracking-widest border border-white/5 inline-flex items-center gap-1.5 justify-center">{inviteAlert.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}</div>
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5 mt-4">
-              <button onClick={() => { 
-                socket.emit('rejectInvite', { senderSocketId: inviteAlert.senderSocketId, rejecterName: safeUsername });
-                setInviteAlert(null); 
-              }} className="py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md">უარყოფა</button>
-              
+              <button onClick={() => { socket.emit('rejectInvite', { senderSocketId: inviteAlert.senderSocketId, rejecterName: safeUsername }); setInviteAlert(null); }} className="py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md">უარყოფა</button>
               <button onClick={() => { handleJoinSpecificRoom(inviteAlert.roomId, inviteAlert.password); setInviteAlert(null); }} className={`py-3 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg`}>{t.join} 🎮</button>
             </div>
           </div>
@@ -846,56 +200,17 @@ export default function App() {
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={(e) => { if(e.target === e.currentTarget) setInspectProfile(null); }}>
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl font-sans relative animate-in zoom-in-95 duration-200`}>
             <div className="flex flex-col items-center gap-3 mb-6">
-               <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center text-5xl border border-white/10 shadow-xl relative`}>
-                 {inspectProfile.avatar || '😎'}
-                 <div className={`absolute -bottom-3 w-8 h-8 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{inspectProfile.level || 1}</div>
-               </div>
-               
-               <h2 className="text-xl font-black tracking-wide mt-2">
-                 <VipName name={inspectProfile.username} isVip={checkIsVip(inspectProfile.vipUntil)} className="text-stone-100"/>
-               </h2>
-
-               <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${getLeague(inspectProfile.xp || 0).bg} ${getLeague(inspectProfile.xp || 0).border} shadow-sm mb-2`}>
-                  <span className="text-[12px] drop-shadow-md">{getLeague(inspectProfile.xp || 0).icon}</span>
-                  <span className={`text-[10px] font-black uppercase tracking-wider ${getLeague(inspectProfile.xp || 0).color}`}>{getLeague(inspectProfile.xp || 0).name}</span>
-               </div>
-
-               <div className="flex gap-2">
-                 {!profileData?.friends?.includes(inspectProfile.username) && inspectProfile.username !== safeUsername && (
-                    <button onClick={() => { handleSendFriendReq(inspectProfile.username); setInspectProfile(null); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all flex items-center gap-1.5`}>
-                      <UserPlus size={12} /> დამატება
-                    </button>
-                 )}
-               </div>
+               <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center text-5xl border border-white/10 shadow-xl relative`}>{inspectProfile.avatar || '😎'}<div className={`absolute -bottom-3 w-8 h-8 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{inspectProfile.level || 1}</div></div>
+               <h2 className="text-xl font-black tracking-wide mt-2"><VipName name={inspectProfile.username} isVip={checkIsVip(inspectProfile.vipUntil)} className="text-stone-100"/></h2>
+               <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${getLeague(inspectProfile.xp || 0).bg} ${getLeague(inspectProfile.xp || 0).border} shadow-sm mb-2`}><span className="text-[12px] drop-shadow-md">{getLeague(inspectProfile.xp || 0).icon}</span><span className={`text-[10px] font-black uppercase tracking-wider ${getLeague(inspectProfile.xp || 0).color}`}>{getLeague(inspectProfile.xp || 0).name}</span></div>
+               <div className="flex gap-2">{!profileData?.friends?.includes(inspectProfile.username) && inspectProfile.username !== safeUsername && ( <button onClick={() => { handleSendFriendReq(inspectProfile.username); setInspectProfile(null); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all flex items-center gap-1.5`}><UserPlus size={12} /> დამატება</button> )}</div>
             </div>
-
             <div className="grid grid-cols-2 gap-2 mb-6">
-              <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 text-center shadow-inner">
-                <p className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.wins}</p>
-                <p className={`text-lg font-mono font-black ${activeTheme.accent}`}>{inspectProfile.stats?.gamesWon || 0}</p>
-              </div>
-              <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 text-center shadow-inner">
-                <p className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.winRate}</p>
-                <p className="text-lg font-mono font-black text-emerald-400">
-                  {inspectProfile.stats?.gamesPlayed > 0 ? Math.round((inspectProfile.stats.gamesWon / inspectProfile.stats.gamesPlayed) * 100) : 0}%
-                </p>
-              </div>
+              <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 text-center shadow-inner"><p className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.wins}</p><p className={`text-lg font-mono font-black ${activeTheme.accent}`}>{inspectProfile.stats?.gamesWon || 0}</p></div>
+              <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 text-center shadow-inner"><p className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.winRate}</p><p className="text-lg font-mono font-black text-emerald-400">{inspectProfile.stats?.gamesPlayed > 0 ? Math.round((inspectProfile.stats.gamesWon / inspectProfile.stats.gamesPlayed) * 100) : 0}%</p></div>
             </div>
-
-            <h4 className={`text-[10px] font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2 uppercase tracking-widest mb-3`}>
-              <Award size={14} className={activeTheme.accent} /> {t.achievements}
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {AVAILABLE_BADGES.map(b => {
-                 const hasIt = inspectProfile.achievements?.includes(b.id);
-                 return (
-                   <div key={b.id} className={`w-10 h-10 flex items-center justify-center rounded-xl border ${hasIt ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-50 border-current ${activeTheme.accent} text-xl` : 'bg-stone-950/50 border-white/5 text-lg opacity-30 grayscale'}`} title={b.name}>
-                     {b.icon}
-                   </div>
-                 )
-              })}
-            </div>
-
+            <h4 className={`text-[10px] font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2 uppercase tracking-widest mb-3`}><Award size={14} className={activeTheme.accent} /> {t.achievements}</h4>
+            <div className="flex flex-wrap gap-2">{AVAILABLE_BADGES.map(b => { const hasIt = inspectProfile.achievements?.includes(b.id); return ( <div key={b.id} className={`w-10 h-10 flex items-center justify-center rounded-xl border ${hasIt ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-50 border-current ${activeTheme.accent} text-xl` : 'bg-stone-950/50 border-white/5 text-lg opacity-30 grayscale'}`} title={b.name}>{b.icon}</div> )})}</div>
             <button onClick={() => setInspectProfile(null)} className="w-full py-3 mt-6 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner uppercase">{t.close}</button>
           </div>
         </div>
@@ -911,404 +226,72 @@ export default function App() {
                 <button onClick={() => setShopTab('tables')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='tables' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>{t.tables}</button>
                 <button onClick={() => setShopTab('cards')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='cards' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>კარტები</button>
               </div>
-              <div className="flex items-center gap-2 bg-stone-950 px-3 py-2 rounded-lg border border-white/5 shrink-0 w-fit">
-                 <Coins size={16} className="text-yellow-500"/>
-                 <span className="font-mono font-black text-stone-200">{myCoins}</span>
-              </div>
+              <div className="flex items-center gap-2 bg-stone-950 px-3 py-2 rounded-lg border border-white/5 shrink-0 w-fit"><Coins size={16} className="text-yellow-500"/><span className="font-mono font-black text-stone-200">{myCoins}</span></div>
             </div>
             
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[300px]">
-              
               {shopTab === 'vip' && (
                 <div className="flex flex-col gap-4">
-                  {amIVip && profileData?.vipUntil && (
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-center animate-pulse shadow-inner">
-                      <p className="text-yellow-500 font-black text-[10px] md:text-xs tracking-wider uppercase">
-                        👑 VIP აქტიურია {new Date(profileData.vipUntil).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}-მდე
-                      </p>
-                    </div>
-                  )}
-
+                  {amIVip && profileData?.vipUntil && (<div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-center animate-pulse shadow-inner"><p className="text-yellow-500 font-black text-[10px] md:text-xs tracking-wider uppercase">👑 VIP აქტიურია {new Date(profileData.vipUntil).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}-მდე</p></div>)}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                    {[
-                      { days: 3, price: 1500, title: '3 დღე' },
-                      { days: 7, price: 3000, title: '7 დღე', best: true },
-                      { days: 30, price: 10000, title: '30 დღე' }
-                    ].map(pkg => (
-                      <div key={pkg.days} className={`p-4 md:p-5 rounded-2xl flex flex-col items-center justify-between gap-4 border transition-all bg-gradient-to-br ${pkg.best ? 'from-yellow-900/60 to-stone-950 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'from-yellow-900/20 to-stone-950 border-yellow-500/30'}`}>
-                        {pkg.best && <span className="absolute -top-3 bg-yellow-500 text-stone-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">საუკეთესო ფასი</span>}
-                        <span className="text-4xl md:text-5xl drop-shadow-lg">👑</span>
-                        <div className="text-center">
-                          <p className="text-sm md:text-base font-black text-yellow-500 tracking-wide">{pkg.title}</p>
-                          <p className="text-[9px] md:text-[10px] font-bold text-stone-400 mt-1">უფრო მეტი XP, ქოინები და ექსკლუზივები!</p>
-                        </div>
-                        <button 
-                          onClick={() => handleBuyVip(pkg.days, pkg.price)} 
-                          disabled={amIVip}
-                          className={`w-full py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-md ${amIVip ? 'bg-stone-800 text-stone-500 border border-white/5 cursor-not-allowed uppercase' : 'bg-stone-900 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-stone-950 active:scale-95'}`}
-                        >
-                          {amIVip ? t.active : <><Coins size={12} /> {pkg.price}</>}
-                        </button>
-                      </div>
+                    {[{ days: 3, price: 1500, title: '3 დღე' }, { days: 7, price: 3000, title: '7 დღე', best: true }, { days: 30, price: 10000, title: '30 დღე' }].map(pkg => (
+                      <div key={pkg.days} className={`p-4 md:p-5 rounded-2xl flex flex-col items-center justify-between gap-4 border transition-all bg-gradient-to-br ${pkg.best ? 'from-yellow-900/60 to-stone-950 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'from-yellow-900/20 to-stone-950 border-yellow-500/30'}`}>{pkg.best && <span className="absolute -top-3 bg-yellow-500 text-stone-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">საუკეთესო ფასი</span>}<span className="text-4xl md:text-5xl drop-shadow-lg">👑</span><div className="text-center"><p className="text-sm md:text-base font-black text-yellow-500 tracking-wide">{pkg.title}</p><p className="text-[9px] md:text-[10px] font-bold text-stone-400 mt-1">უფრო მეტი XP, ქოინები და ექსკლუზივები!</p></div><button onClick={() => handleBuyVip(pkg.days, pkg.price)} disabled={amIVip} className={`w-full py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-md ${amIVip ? 'bg-stone-800 text-stone-500 border border-white/5 cursor-not-allowed uppercase' : 'bg-stone-900 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-stone-950 active:scale-95'}`}>{amIVip ? t.active : <><Coins size={12} /> {pkg.price}</>}</button></div>
                     ))}
                   </div>
                 </div>
               )}
-
               {shopTab === 'avatars' && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 pb-6">
-                  {SHOP_ITEMS.avatars.map(item => {
-                    const isUnlocked = unlockedAvatars.includes(item.id);
-                    const isEquipped = profileData?.avatar === item.id;
-                    const isCardSuit = ['❤️', '♦️', '♠️', '♣️'].includes(item.id);
-
-                    return (
-                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col items-center justify-between gap-2 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : isCardSuit ? 'bg-gradient-to-br from-yellow-900/20 to-stone-950 border-yellow-500/30 hover:border-yellow-500/60' : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
-                        <span className={`text-3xl md:text-4xl drop-shadow-lg ${isCardSuit ? 'animate-pulse' : ''}`}>{item.id}</span>
-                        <span className={`text-[9px] font-bold text-center leading-tight ${isCardSuit ? 'text-yellow-500' : 'text-stone-400'}`}>{item.name}</span>
-                        {isEquipped ? <button disabled className="w-full py-1.5 rounded-lg text-[8px] font-black bg-stone-800 text-stone-500 uppercase mt-1">დაყენებულია</button> 
-                        : isUnlocked ? <button onClick={() => handleEquipItem('avatar', item.id)} className={`w-full py-1.5 rounded-lg text-[8px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase mt-1`}>დაყენება</button>
-                        : <button onClick={() => handleBuyItem('avatar', item.id, item.price)} className={`w-full py-1.5 rounded-lg text-[9px] font-black transition-all flex items-center justify-center gap-1 mt-1 active:scale-95 ${isCardSuit ? 'bg-yellow-500 text-stone-950 shadow-lg' : 'bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10'}`}><Coins size={10} /> {item.price}</button>}
-                      </div>
-                    )
-                  })}
+                  {SHOP_ITEMS.avatars.map(item => { const isUnlocked = unlockedAvatars.includes(item.id); const isEquipped = profileData?.avatar === item.id; const isCardSuit = ['❤️', '♦️', '♠️', '♣️'].includes(item.id); return ( <div key={item.id} className={`p-3 rounded-2xl flex flex-col items-center justify-between gap-2 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : isCardSuit ? 'bg-gradient-to-br from-yellow-900/20 to-stone-950 border-yellow-500/30 hover:border-yellow-500/60' : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}><span className={`text-3xl md:text-4xl drop-shadow-lg ${isCardSuit ? 'animate-pulse' : ''}`}>{item.id}</span><span className={`text-[9px] font-bold text-center leading-tight ${isCardSuit ? 'text-yellow-500' : 'text-stone-400'}`}>{item.name}</span>{isEquipped ? <button disabled className="w-full py-1.5 rounded-lg text-[8px] font-black bg-stone-800 text-stone-500 uppercase mt-1">დაყენებულია</button> : isUnlocked ? <button onClick={() => handleEquipItem('avatar', item.id)} className={`w-full py-1.5 rounded-lg text-[8px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase mt-1`}>დაყენება</button> : <button onClick={() => handleBuyItem('avatar', item.id, item.price)} className={`w-full py-1.5 rounded-lg text-[9px] font-black transition-all flex items-center justify-center gap-1 mt-1 active:scale-95 ${isCardSuit ? 'bg-yellow-500 text-stone-950 shadow-lg' : 'bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10'}`}><Coins size={10} /> {item.price}</button>}</div> )})}
                 </div>
               )}
-
               {shopTab === 'tables' && (
                 <div className="grid grid-cols-2 gap-3 md:gap-4">
-                  {SHOP_ITEMS.tables.map(item => {
-                    const isUnlocked = item.isVipExclusive ? amIVip : unlockedTables.includes(item.id);
-                    const isEquipped = profileData?.tableTheme === item.id || (!profileData?.tableTheme && item.id === 'wood');
-                    return (
-                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : item.isVipExclusive ? 'bg-gradient-to-b from-stone-900 to-stone-950 border-yellow-500/30' : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
-                        <div className="h-16 rounded-xl border border-white/10 relative overflow-hidden" style={{ background: themeStyles[item.id]?.bg || themeStyles.wood.bg }}>
-                          {item.isVipExclusive && <div className="absolute top-0 right-0 w-8 h-8 bg-yellow-500 blur-xl opacity-30"></div>}
-                        </div>
-                        <span className={`text-[10px] md:text-xs font-bold text-center uppercase tracking-widest ${item.isVipExclusive ? 'text-yellow-400 drop-shadow-md' : 'text-stone-200'}`}>{item.name}</span>
-                        
-                        {isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> 
-                        : item.isVipExclusive && !amIVip ? <button onClick={() => setShopTab('vip')} className={`w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/30 shadow-md active:scale-95 transition-all uppercase flex items-center justify-center gap-1`}><Crown size={12}/> VIP გახსნა</button>
-                        : isUnlocked ? <button onClick={() => handleEquipItem('table', item.id)} className={`w-full py-2 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button>
-                        : <button onClick={() => handleBuyItem('table', item.id, item.price)} className="w-full py-2 rounded-lg text-[10px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"><Coins size={12} /> {item.price}</button>}
-                      </div>
-                    )
-                  })}
+                  {SHOP_ITEMS.tables.map(item => { const isUnlocked = item.isVipExclusive ? amIVip : unlockedTables.includes(item.id); const isEquipped = profileData?.tableTheme === item.id || (!profileData?.tableTheme && item.id === 'wood'); return ( <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : item.isVipExclusive ? 'bg-gradient-to-b from-stone-900 to-stone-950 border-yellow-500/30' : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}><div className="h-16 rounded-xl border border-white/10 relative overflow-hidden" style={{ background: themeStyles[item.id]?.bg || themeStyles.wood.bg }}>{item.isVipExclusive && <div className="absolute top-0 right-0 w-8 h-8 bg-yellow-500 blur-xl opacity-30"></div>}</div><span className={`text-[10px] md:text-xs font-bold text-center uppercase tracking-widest ${item.isVipExclusive ? 'text-yellow-400 drop-shadow-md' : 'text-stone-200'}`}>{item.name}</span>{isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> : item.isVipExclusive && !amIVip ? <button onClick={() => setShopTab('vip')} className={`w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/30 shadow-md active:scale-95 transition-all uppercase flex items-center justify-center gap-1`}><Crown size={12}/> VIP გახსნა</button> : isUnlocked ? <button onClick={() => handleEquipItem('table', item.id)} className={`w-full py-2 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button> : <button onClick={() => handleBuyItem('table', item.id, item.price)} className="w-full py-2 rounded-lg text-[10px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"><Coins size={12} /> {item.price}</button>}</div>)})}
                 </div>
               )}
-
               {shopTab === 'cards' && (
                 <div className="grid grid-cols-2 gap-3 md:gap-4">
-                  {SHOP_ITEMS.cards.map(item => {
-                    const isUnlocked = unlockedCards.includes(item.id);
-                    const isEquipped = profileData?.cardBack === item.id || (!profileData?.cardBack && item.id === 'classic');
-                    
-                    const shopCardStyles = {
-                      classic: 'bg-blue-900 border-white/20',
-                      crimson: 'bg-red-900 border-white/20',
-                      gold: 'bg-yellow-600 border-yellow-400',
-                      obsidian: 'bg-stone-950 border-stone-700',
-                      cyber: 'bg-fuchsia-900 border-fuchsia-400 shadow-[0_0_10px_rgba(232,121,249,0.5)]',
-                      royal: 'bg-purple-900 border-yellow-500',
-                      hacker: 'bg-black border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]'
-                    };
-                    const cardStyle = shopCardStyles[item.id] || shopCardStyles.classic;
-
-                    return (
-                      <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between items-center gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}>
-                        <div className={`w-12 h-16 rounded-md ${cardStyle} border-2 shadow-lg flex items-center justify-center`}><Shield size={16} className={item.id==='gold'?'text-stone-900':'text-white/30'}/></div>
-                        <span className="text-[10px] md:text-xs font-bold text-stone-200 text-center uppercase tracking-widest">{item.name}</span>
-                        {isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> 
-                        : isUnlocked ? <button onClick={() => handleEquipItem('card', item.id)} className={`w-full py-2 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button>
-                        : <button onClick={() => handleBuyItem('card', item.id, item.price)} className="w-full py-2 rounded-lg text-[10px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"><Coins size={12} /> {item.price}</button>}
-                      </div>
-                    )
-                  })}
+                  {SHOP_ITEMS.cards.map(item => { const isUnlocked = unlockedCards.includes(item.id); const isEquipped = profileData?.cardBack === item.id || (!profileData?.cardBack && item.id === 'classic'); const shopCardStyles = { classic: 'bg-blue-900 border-white/20', crimson: 'bg-red-900 border-white/20', gold: 'bg-yellow-600 border-yellow-400', obsidian: 'bg-stone-950 border-stone-700', cyber: 'bg-fuchsia-900 border-fuchsia-400 shadow-[0_0_10px_rgba(232,121,249,0.5)]', royal: 'bg-purple-900 border-yellow-500', hacker: 'bg-black border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' }; const cardStyle = shopCardStyles[item.id] || shopCardStyles.classic; return ( <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between items-center gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}><div className={`w-12 h-16 rounded-md ${cardStyle} border-2 shadow-lg flex items-center justify-center`}><Shield size={16} className={item.id==='gold'?'text-stone-900':'text-white/30'}/></div><span className="text-[10px] md:text-xs font-bold text-stone-200 text-center uppercase tracking-widest">{item.name}</span>{isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> : isUnlocked ? <button onClick={() => handleEquipItem('card', item.id)} className={`w-full py-2 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button> : <button onClick={() => handleBuyItem('card', item.id, item.price)} className="w-full py-2 rounded-lg text-[10px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"><Coins size={12} /> {item.price}</button>}</div> )})}
                 </div>
               )}
-
             </div>
             <button onClick={() => setIsShopOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4 uppercase">{t.close}</button>
           </div>
         </div>
       )}
 
-      {isSettingsOpen && (
-        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-6 shadow-2xl font-sans relative`}>
-            <h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> {t.settings}</h3>
-            
-            <div className="space-y-3 border-b border-white/10 pb-4">
-              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> {t.music}</label>
-              <div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5">
-                <button onClick={() => setIsMusicPlaying(true)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${isMusicPlaying ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500'}`}>{t.on}</button>
-                <button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>{t.off}</button>
-              </div>
-            </div>
-
-            <form onSubmit={async (e) => {
-                e.preventDefault();
-                const curPass = e.target.currentPass.value;
-                const newPass = e.target.newPass.value;
-                try {
-                   const res = await fetch(`https://purti.onrender.com/api/auth/change-password`, {
-                      method: 'POST', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ username: safeUsername, currentPassword: curPass, newPassword: newPass })
-                   });
-                   const data = await res.json();
-                   if(res.ok) {
-                       setToastMsg('პაროლი წარმატებით შეიცვალა!');
-                       e.target.reset();
-                   } else { setError(data.message); }
-                } catch(err) { setError('შეცდომა სერვერთან კავშირისას'); }
-            }} className="space-y-3">
-              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Lock size={14}/> {t.changePass}</label>
-              <input name="currentPass" type="password" placeholder={t.oldPass} className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required />
-              <input name="newPass" type="password" placeholder={t.newPass} className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required />
-              <button type="submit" className={`w-full py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md`}>{t.change}</button>
-            </form>
-
-            <button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">{t.close}</button>
-          </div>
-        </div>
-      )}
-
-      {isLeaderboardOpen && (
-        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-stone-900 border border-yellow-500/30 rounded-[2rem] p-6 max-w-md w-full shadow-[0_0_50px_rgba(234,179,8,0.1)] relative max-h-[80vh] overflow-y-auto custom-scrollbar">
-            <h2 className="text-xl font-black text-stone-100 uppercase mb-6 flex items-center gap-3 justify-center"><Trophy className="text-yellow-500"/> {t.top10}</h2>
-            <div className="space-y-3">
-              {leaderboard.map((u, i) => {
-                const rank = getLeague(u.xp); 
-                return (
-                  <div key={i} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-500/20 border-yellow-500 text-stone-100 scale-105 shadow-lg' : 'bg-stone-950/50 border-white/5 text-stone-300'}`}>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-black w-4 text-stone-500">{i + 1}.</span>
-                      <div className="text-2xl drop-shadow-md">{u.avatar}</div>
-                      <div>
-                        <div className="text-xs font-black uppercase tracking-wider flex items-center gap-2">
-                           {u.username} {u.vipUntil && new Date(u.vipUntil) > new Date() && <span className="text-[10px] bg-yellow-500 text-stone-900 px-1.5 rounded uppercase font-black">VIP</span>}
-                        </div>
-                        <div className={`text-[10px] font-bold mt-0.5 flex items-center gap-1 ${rank.color}`}>{rank.icon} {rank.name} • {u.xp} XP</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs font-black text-stone-400">{t.wins}</div>
-                      <div className="text-sm font-black text-yellow-500">{u.stats.gamesWon}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <button onClick={() => setIsLeaderboardOpen(false)} className="w-full mt-6 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all">{t.close}</button>
-          </div>
-        </div>
-      )}
-
-      {isAdminOpen && (
-        <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
-          <div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto custom-scrollbar relative">
-            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 sticky top-0 bg-stone-900 z-10">
-              <h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Control Panel</h2>
-              <button onClick={() => {setIsAdminOpen(false); setAdminUsers([]); setAdminPass(''); setAdminMessage('');}} className="text-stone-500 hover:text-stone-300">{t.close}</button>
-            </div>
-
-            {adminUsers.length === 0 ? (
-              <form onSubmit={loginAdmin} className="space-y-4 max-w-xs mx-auto py-10">
-                <input type="password" placeholder="ადმინისტრატორის პაროლი" value={adminPass} onChange={e => setAdminPass(e.target.value)} className="w-full bg-stone-950 border border-rose-500/30 rounded-xl px-4 py-3 text-xs text-stone-100 outline-none text-center" />
-                <button type="submit" className="w-full py-3 bg-rose-500 text-stone-950 font-black rounded-xl text-xs uppercase shadow-lg hover:bg-rose-400 transition-all">შესვლა</button>
-                {adminMessage && <p className="text-[10px] text-rose-400 text-center font-bold">{adminMessage}</p>}
-              </form>
-            ) : (
-              <div>
-                {adminStats && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner">
-                      <span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">სულ მოთამაშე</span>
-                      <div className="text-3xl font-black text-stone-100">{adminStats.totalUsers}</div>
-                    </div>
-                    <div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner">
-                      <span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ჯამური თამაშები</span>
-                      <div className="text-3xl font-black text-blue-400">{adminStats.totalGamesPlayed}</div>
-                    </div>
-                    <div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner">
-                      <span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ეკონომიკა (ქოინები)</span>
-                      <div className="text-3xl font-black text-yellow-500">{adminStats.totalCoins} 🪙</div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="bg-red-950/20 border border-red-500/30 rounded-2xl p-4 mb-6 flex flex-col md:flex-row gap-3 items-center">
-                  <Megaphone className="text-red-500 shrink-0" size={24}/>
-                  <input 
-                    type="text" 
-                    placeholder="დაწერე გლობალური შეტყობინება ყველასთვის..." 
-                    value={broadcastText}
-                    onChange={(e) => setBroadcastText(e.target.value)}
-                    className="flex-1 bg-stone-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-stone-100 outline-none"
-                  />
-                  <button 
-                    onClick={() => { 
-                      if(broadcastText.trim()) {
-                        socket.emit('adminBroadcast', broadcastText.trim()); 
-                        setBroadcastText(''); 
-                        setToastMsg('გლობალური შეტყობინება გაიგზავნა!'); 
-                      }
-                    }}
-                    className="w-full md:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase rounded-xl transition-all shadow-md shrink-0"
-                  >
-                    გაგზავნა
-                  </button>
-                </div>
-
-                <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" size={16} />
-                  <input 
-                    type="text" 
-                    placeholder="მოძებნე მოთამაშე სახელით..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-stone-950 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-stone-100 outline-none"
-                  />
-                </div>
-
-                {adminMessage && <div className="mb-4 p-2 bg-emerald-500/20 text-emerald-400 text-xs text-center rounded-lg font-bold border border-emerald-500/30">{adminMessage}</div>}
-                
-                <div className="grid gap-3">
-                  {adminUsers.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase())).map((u, i) => (
-                    <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4 transition-all hover:bg-stone-800/40`}>
-                      <div className="min-w-[150px]">
-                        <div className="text-sm font-black text-stone-100">{u.username}</div>
-                        <div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">{u.password}</span></div>
-                        <div className="text-[10px] text-stone-500 font-mono mt-0.5">📅 თარიღი: {u.dateOfBirth} | 📝 სიტყვა: {u.secretWord}</div>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs font-black">
-                         <div className="text-yellow-500">🪙 {u.coins}</div>
-                         <div className="text-blue-400">⭐ {u.xp} XP</div>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors border border-yellow-500/20">+500 🪙</button>
-                        <button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors border border-blue-500/20">+1000 XP</button>
-                        
-                        <button onClick={() => handleAdvancedAdminAction(u.username, 'reset')} className="px-3 py-1.5 bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 rounded-lg text-[10px] font-black transition-colors border border-orange-500/20" title="სტატისტიკის განულება">RESET</button>
-                        
-                        {u.isBanned ? (
-                          <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors shadow-md">UNBAN</button>
-                        ) : (
-                          <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors shadow-md">BAN</button>
-                        )}
-
-                        <button onClick={() => handleAdvancedAdminAction(u.username, 'delete')} className="p-1.5 bg-red-950 text-red-500 hover:bg-red-900 rounded-lg transition-colors border border-red-500/30" title="ექაუნთის წაშლა"><Trash2 size={14}/></button>
-                      </div>
-                    </div>
-                  ))}
-                  {adminUsers.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-                    <div className="text-center py-6 text-stone-500 text-xs font-bold uppercase">მოთამაშე ვერ მოიძებნა</div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {isHistoryOpen && (
-        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-stone-900 border border-white/10 rounded-[2rem] p-5 md:p-6 max-w-lg w-full shadow-2xl relative max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
-            <h2 className={`text-lg md:text-xl font-black text-stone-100 uppercase mb-4 flex items-center gap-3 justify-center border-b border-white/5 pb-4`}>
-              <Clock className={activeTheme.accent}/> {t.myHistory}
-            </h2>
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 min-h-[250px]">
-              {profileData?.gameHistory?.length > 0 ? (
-                profileData.gameHistory.map((game, i) => {
-                   const isWin = game.isWinner;
-                   return (
-                     <div key={i} className={`p-3 md:p-4 rounded-2xl border flex flex-col gap-2 transition-all hover:scale-[1.01] ${isWin ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
-                        <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                          <div className="flex items-center gap-2">
-                            <span className={`font-black text-xs md:text-sm uppercase tracking-wider flex items-center gap-1.5 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
-                               {isWin ? `🏆 ${t.wins}` : '💔'}
-                            </span>
-                            <span className="text-[8px] bg-stone-950 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md font-black uppercase flex items-center gap-1">
-                              {game.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}
-                            </span>
-                          </div>
-                          <span className="text-[9px] md:text-[10px] text-stone-400 font-bold bg-stone-950/50 px-2 py-1 rounded-lg">
-                            {new Date(game.playedAt).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-[10px] md:text-xs pt-1">
-                          <span className="text-stone-400 font-medium truncate max-w-[50%]">
-                            {t.opponent}: <span className="font-bold text-stone-200 truncate">{game.opponents?.length ? game.opponents.join(', ') : t.bots}</span>
-                          </span>
-                          <span className="font-mono font-black text-stone-400 bg-stone-950/40 px-2 py-1 rounded-md border border-white/5 shrink-0">
-                            {t.score}: <span className={isWin ? 'text-emerald-400' : 'text-rose-400'}>{game.myFinalScore}</span> / {game.targetScore}
-                          </span>
-                        </div>
-                     </div>
-                   )
-                })
-              ) : (
-                 <div className="flex flex-col items-center justify-center py-12 text-stone-500 opacity-50">
-                    <Clock size={40} className="mb-3"/>
-                    <p className="text-xs font-bold uppercase tracking-widest">{t.emptyHistory}</p>
-                 </div>
-              )}
-            </div>
-            <button onClick={() => setIsHistoryOpen(false)} className="w-full mt-5 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all active:scale-95 shadow-inner">{t.close}</button>
-          </div>
-        </div>
-      )}
+      {/* Settings / Leaderboard / History Modals (minified) */}
+      {isSettingsOpen && ( <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4"><div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-6 shadow-2xl font-sans relative`}><h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> {t.settings}</h3><div className="space-y-3 border-b border-white/10 pb-4"><label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> {t.music}</label><div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5"><button onClick={() => setIsMusicPlaying(true)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${isMusicPlaying ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500'}`}>{t.on}</button><button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>{t.off}</button></div></div><form onSubmit={async (e) => { e.preventDefault(); try { const res = await fetch(`https://purti.onrender.com/api/auth/change-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: safeUsername, currentPassword: e.target.currentPass.value, newPassword: e.target.newPass.value }) }); const data = await res.json(); if(res.ok) { setToastMsg('პაროლი შეიცვალა!'); e.target.reset(); } else setError(data.message); } catch(err) { setError('შეცდომა!'); } }} className="space-y-3"><label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Lock size={14}/> {t.changePass}</label><input name="currentPass" type="password" placeholder={t.oldPass} className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required /><input name="newPass" type="password" placeholder={t.newPass} className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required /><button type="submit" className={`w-full py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md`}>{t.change}</button></form><button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">{t.close}</button></div></div> )}
+      {isLeaderboardOpen && ( <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4"><div className="bg-stone-900 border border-yellow-500/30 rounded-[2rem] p-6 max-w-md w-full shadow-[0_0_50px_rgba(234,179,8,0.1)] relative max-h-[80vh] overflow-y-auto custom-scrollbar"><h2 className="text-xl font-black text-stone-100 uppercase mb-6 flex items-center gap-3 justify-center"><Trophy className="text-yellow-500"/> {t.top10}</h2><div className="space-y-3">{leaderboard.map((u, i) => { const rank = getLeague(u.xp); return ( <div key={i} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-500/20 border-yellow-500 text-stone-100 scale-105 shadow-lg' : 'bg-stone-950/50 border-white/5 text-stone-300'}`}><div className="flex items-center gap-3"><span className="text-sm font-black w-4 text-stone-500">{i + 1}.</span><div className="text-2xl drop-shadow-md">{u.avatar}</div><div><div className="text-xs font-black uppercase tracking-wider flex items-center gap-2">{u.username} {u.vipUntil && new Date(u.vipUntil) > new Date() && <span className="text-[10px] bg-yellow-500 text-stone-900 px-1.5 rounded uppercase font-black">VIP</span>}</div><div className={`text-[10px] font-bold mt-0.5 flex items-center gap-1 ${rank.color}`}>{rank.icon} {rank.name} • {u.xp} XP</div></div></div><div className="text-right"><div className="text-xs font-black text-stone-400">{t.wins}</div><div className="text-sm font-black text-yellow-500">{u.stats.gamesWon}</div></div></div> ); })}</div><button onClick={() => setIsLeaderboardOpen(false)} className="w-full mt-6 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all">{t.close}</button></div></div> )}
+      {isAdminOpen && ( <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4"><div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto custom-scrollbar relative"><div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 sticky top-0 bg-stone-900 z-10"><h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Control Panel</h2><button onClick={() => {setIsAdminOpen(false); setAdminUsers([]); setAdminPass(''); setAdminMessage('');}} className="text-stone-500 hover:text-stone-300">{t.close}</button></div>{adminUsers.length === 0 ? ( <form onSubmit={loginAdmin} className="space-y-4 max-w-xs mx-auto py-10"><input type="password" placeholder="ადმინისტრატორის პაროლი" value={adminPass} onChange={e => setAdminPass(e.target.value)} className="w-full bg-stone-950 border border-rose-500/30 rounded-xl px-4 py-3 text-xs text-stone-100 outline-none text-center" /><button type="submit" className="w-full py-3 bg-rose-500 text-stone-950 font-black rounded-xl text-xs uppercase shadow-lg hover:bg-rose-400 transition-all">შესვლა</button>{adminMessage && <p className="text-[10px] text-rose-400 text-center font-bold">{adminMessage}</p>}</form> ) : ( <div>{adminStats && ( <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">სულ მოთამაშე</span><div className="text-3xl font-black text-stone-100">{adminStats.totalUsers}</div></div><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ჯამური თამაშები</span><div className="text-3xl font-black text-blue-400">{adminStats.totalGamesPlayed}</div></div><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ეკონომიკა (ქოინები)</span><div className="text-3xl font-black text-yellow-500">{adminStats.totalCoins} 🪙</div></div></div> )}<div className="bg-red-950/20 border border-red-500/30 rounded-2xl p-4 mb-6 flex flex-col md:flex-row gap-3 items-center"><Megaphone className="text-red-500 shrink-0" size={24}/><input type="text" placeholder="დაწერე გლობალური შეტყობინება ყველასთვის..." value={broadcastText} onChange={(e) => setBroadcastText(e.target.value)} className="flex-1 bg-stone-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-stone-100 outline-none" /><button onClick={() => { if(broadcastText.trim()) { socket.emit('adminBroadcast', broadcastText.trim()); setBroadcastText(''); setToastMsg('გლობალური შეტყობინება გაიგზავნა!'); } }} className="w-full md:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase rounded-xl transition-all shadow-md shrink-0">გაგზავნა</button></div><div className="relative mb-4"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" size={16} /><input type="text" placeholder="მოძებნე მოთამაშე სახელით..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-stone-950 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-stone-100 outline-none" /></div>{adminMessage && <div className="mb-4 p-2 bg-emerald-500/20 text-emerald-400 text-xs text-center rounded-lg font-bold border border-emerald-500/30">{adminMessage}</div>}<div className="grid gap-3">{adminUsers.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase())).map((u, i) => ( <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4 transition-all hover:bg-stone-800/40`}><div className="min-w-[150px]"><div className="text-sm font-black text-stone-100">{u.username}</div><div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">{u.password}</span></div><div className="text-[10px] text-stone-500 font-mono mt-0.5">📅 თარიღი: {u.dateOfBirth} | 📝 სიტყვა: {u.secretWord}</div></div><div className="flex items-center gap-4 text-xs font-black"><div className="text-yellow-500">🪙 {u.coins}</div><div className="text-blue-400">⭐ {u.xp} XP</div></div><div className="flex flex-wrap items-center gap-2"><button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors border border-yellow-500/20">+500 🪙</button><button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors border border-blue-500/20">+1000 XP</button><button onClick={() => handleAdvancedAdminAction(u.username, 'reset')} className="px-3 py-1.5 bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 rounded-lg text-[10px] font-black transition-colors border border-orange-500/20" title="სტატისტიკის განულება">RESET</button>{u.isBanned ? ( <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors shadow-md">UNBAN</button> ) : ( <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors shadow-md">BAN</button> )}<button onClick={() => handleAdvancedAdminAction(u.username, 'delete')} className="p-1.5 bg-red-950 text-red-500 hover:bg-red-900 rounded-lg transition-colors border border-red-500/30" title="ექაუნთის წაშლა"><Trash2 size={14}/></button></div></div> ))}</div></div> )}</div></div> )}
+      {isHistoryOpen && ( <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4"><div className="bg-stone-900 border border-white/10 rounded-[2rem] p-5 md:p-6 max-w-lg w-full shadow-2xl relative max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200"><h2 className={`text-lg md:text-xl font-black text-stone-100 uppercase mb-4 flex items-center gap-3 justify-center border-b border-white/5 pb-4`}><Clock className={activeTheme.accent}/> {t.myHistory}</h2><div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 min-h-[250px]">{profileData?.gameHistory?.length > 0 ? ( profileData.gameHistory.map((game, i) => { const isWin = game.isWinner; return ( <div key={i} className={`p-3 md:p-4 rounded-2xl border flex flex-col gap-2 transition-all hover:scale-[1.01] ${isWin ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}><div className="flex justify-between items-center border-b border-white/5 pb-2"><div className="flex items-center gap-2"><span className={`font-black text-xs md:text-sm uppercase tracking-wider flex items-center gap-1.5 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>{isWin ? `🏆 ${t.wins}` : '💔'}</span><span className="text-[8px] bg-stone-950 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md font-black uppercase flex items-center gap-1">{game.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}</span></div><span className="text-[9px] md:text-[10px] text-stone-400 font-bold bg-stone-950/50 px-2 py-1 rounded-lg">{new Date(game.playedAt).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div><div className="flex justify-between items-center text-[10px] md:text-xs pt-1"><span className="text-stone-400 font-medium truncate max-w-[50%]">{t.opponent}: <span className="font-bold text-stone-200 truncate">{game.opponents?.length ? game.opponents.join(', ') : t.bots}</span></span><span className="font-mono font-black text-stone-400 bg-stone-950/40 px-2 py-1 rounded-md border border-white/5 shrink-0">{t.score}: <span className={isWin ? 'text-emerald-400' : 'text-rose-400'}>{game.myFinalScore}</span> / {game.targetScore}</span></div></div> ) }) ) : ( <div className="flex flex-col items-center justify-center py-12 text-stone-500 opacity-50"><Clock size={40} className="mb-3"/><p className="text-xs font-bold uppercase tracking-widest">{t.emptyHistory}</p></div> )}</div><button onClick={() => setIsHistoryOpen(false)} className="w-full mt-5 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all active:scale-95 shadow-inner">{t.close}</button></div></div> )}
 
       <div className="relative z-10 flex flex-col flex-1 w-full h-full text-stone-100">
         <header className={`${activeTheme.card} flex items-center justify-between border-b border-white/5 backdrop-blur-xl px-4 md:px-8 py-3 md:py-4 sticky top-0 z-40 shadow-lg transition-colors duration-700`}>
           <div className="flex items-center gap-2.5 md:gap-3">
-            <div className={`p-1.5 md:p-2 bg-stone-900/80 rounded-lg md:rounded-xl border border-white/10 shadow-inner`}>
-              <Shield size={18} className={activeTheme.accent} />
-            </div>
+            <div className={`p-1.5 md:p-2 bg-stone-900/80 rounded-lg md:rounded-xl border border-white/10 shadow-inner`}><Shield size={18} className={activeTheme.accent} /></div>
             <span className={`text-sm md:text-lg font-black tracking-widest ${activeTheme.accent}`}>PHURTI ARENA</span>
           </div>
-          
           <div className="flex items-center gap-2 md:gap-3">
-            
             <div className="flex bg-stone-900/80 rounded-lg md:rounded-xl border border-white/5 p-1 gap-1 shadow-md mr-1 md:mr-2">
               <button onClick={() => setLang('ka')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'ka' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇪</button>
               <button onClick={() => setLang('en')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'en' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇧</button>
               <button onClick={() => setLang('ru')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'ru' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇷🇺</button>
             </div>
-
-            <button onClick={loadLeaderboard} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
-              <Trophy size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">{t.top10}</span>
-            </button>
-            
-            {safeUsername.toLowerCase() === 'chachu' && (
-              <button onClick={() => setIsAdminOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
-                <ShieldAlert size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">{t.admin}</span>
-              </button>
-            )}
-
-            <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
-              <ShoppingCart size={15} /> <span className="hidden md:block text-[10px] font-black uppercase">{t.shop}</span>
-            </button>
-            
-            <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-stone-200 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
-              <Settings size={15} className="md:w-4 md:h-4" />
-            </button>
-
-            <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-rose-500 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}>
-              <LogOut size={15} className="md:w-4 md:h-4" />
-            </button>
+            <button onClick={loadLeaderboard} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><Trophy size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">{t.top10}</span></button>
+            {safeUsername.toLowerCase() === 'chachu' && ( <button onClick={() => setIsAdminOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><ShieldAlert size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">{t.admin}</span></button> )}
+            <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><ShoppingCart size={15} /> <span className="hidden md:block text-[10px] font-black uppercase">{t.shop}</span></button>
+            <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-stone-200 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><Settings size={15} className="md:w-4 md:h-4" /></button>
+            <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-rose-500 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}><LogOut size={15} className="md:w-4 md:h-4" /></button>
           </div>
         </header>
 
         <main className="flex-1 w-full max-w-[1340px] mx-auto p-4 md:p-6 lg:p-8 flex items-center justify-center relative">
-          
           {!inRoom ? (
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6 items-start">
               
               <div className="space-y-4 md:space-y-5">
-                
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4 mb-4 md:mb-5">
                     <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all" onClick={() => handleInspectPlayer(safeUsername)}>
@@ -1316,210 +299,84 @@ export default function App() {
                         {myAvatar}
                         <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
                       </div>
-                      
                       <div className="flex flex-col gap-0.5">
-                        <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5">
-                          <VipName name={safeUsername} isVip={amIVip} /> <Eye size={12} className="text-stone-500"/>
-                        </h2>
-                        
+                        <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5"><VipName name={safeUsername} isVip={amIVip} /> <Eye size={12} className="text-stone-500"/></h2>
                         <div className="flex items-center gap-1.5 text-stone-400 mt-1">
-                           <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${myLeague.bg} ${myLeague.border} shadow-sm mr-1`}>
-                             <span className="text-[9px] drop-shadow-md">{myLeague.icon}</span>
-                             <span className={`text-[8px] font-black uppercase tracking-wider ${myLeague.color}`}>{myLeague.name}</span>
-                           </div>
-
-                           <Coins size={12} className="text-yellow-500"/> 
-                           <span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span>
+                           <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${myLeague.bg} ${myLeague.border} shadow-sm mr-1`}><span className="text-[9px] drop-shadow-md">{myLeague.icon}</span><span className={`text-[8px] font-black uppercase tracking-wider ${myLeague.color}`}>{myLeague.name}</span></div>
+                           <Coins size={12} className="text-yellow-500"/> <span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span>
                            {amIVip && <span className="ml-1 text-[8px] font-black bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/30 tracking-wider">VIP ACTIVE</span>}
                         </div>
                       </div>
-
                     </div>
                   </div>
 
                   <div className="space-y-1.5 md:space-y-2 mb-4">
-                    <div className="flex justify-between text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                      <span>{t.xpProgress}</span>
-                      <span>{currentXp} / {targetXp}</span>
-                    </div>
-                    <div className="w-full h-2 md:h-2.5 bg-stone-950 rounded-full overflow-hidden border border-white/5">
-                      <div className={`h-full ${activeTheme.accentBg} rounded-full transition-all duration-1000`} style={{ width: `${xpPercentage}%` }}></div>
-                    </div>
+                    <div className="flex justify-between text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest"><span>{t.xpProgress}</span><span>{currentXp} / {targetXp}</span></div>
+                    <div className="w-full h-2 md:h-2.5 bg-stone-950 rounded-full overflow-hidden border border-white/5"><div className={`h-full ${activeTheme.accentBg} rounded-full transition-all duration-1000`} style={{ width: `${xpPercentage}%` }}></div></div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner">
-                      <p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.matches}</p>
-                      <p className="text-sm md:text-base font-mono font-black text-stone-200 mt-0.5 md:mt-1">{profileData?.stats?.gamesPlayed || 0}</p>
-                    </div>
-                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner">
-                      <p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.wins}</p>
-                      <p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1`}>{profileData?.stats?.gamesWon || 0}</p>
-                    </div>
-                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner">
-                      <p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.winRate}</p>
-                      <p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1`}>{winRate}%</p>
-                    </div>
+                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner"><p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.matches}</p><p className="text-sm md:text-base font-mono font-black text-stone-200 mt-0.5 md:mt-1">{profileData?.stats?.gamesPlayed || 0}</p></div>
+                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner"><p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.wins}</p><p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1`}>{profileData?.stats?.gamesWon || 0}</p></div>
+                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner"><p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.winRate}</p><p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1`}>{winRate}%</p></div>
                   </div>
-                  
-                  <button onClick={() => setIsHistoryOpen(true)} className={`mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-950/60 border border-white/5 hover:bg-stone-900 transition-all text-stone-300 shadow-inner flex items-center justify-center gap-2 active:scale-95`}>
-                    <Clock size={16} className={activeTheme.accent} /> {t.myHistory}
-                  </button>
-
+                  <button onClick={() => setIsHistoryOpen(true)} className={`mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-950/60 border border-white/5 hover:bg-stone-900 transition-all text-stone-300 shadow-inner flex items-center justify-center gap-2 active:scale-95`}><Clock size={16} className={activeTheme.accent} /> {t.myHistory}</button>
                 </div>
 
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                  <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
-                    <Award size={14} className={activeTheme.accent} /> {t.achievements}
-                  </h4>
+                  <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest"><Award size={14} className={activeTheme.accent} /> {t.achievements}</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {AVAILABLE_BADGES.map((badge) => {
                       const isUnlocked = myAchievements.includes(badge.id);
-                      return (
-                        <div key={badge.id} className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${isUnlocked ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current` : 'bg-stone-950/50 border-white/5 opacity-50 grayscale'}`}>
-                          <span className="text-xl md:text-2xl drop-shadow-md">{badge.icon}</span>
-                          <span className={`text-[9px] md:text-[10px] font-bold leading-tight ${isUnlocked ? 'text-stone-200' : 'text-stone-500'}`}>{badge.name}</span>
-                        </div>
-                      );
+                      return ( <div key={badge.id} className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${isUnlocked ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current` : 'bg-stone-950/50 border-white/5 opacity-50 grayscale'}`}><span className="text-xl md:text-2xl drop-shadow-md">{badge.icon}</span><span className={`text-[9px] md:text-[10px] font-bold leading-tight ${isUnlocked ? 'text-stone-200' : 'text-stone-500'}`}>{badge.name}</span></div> );
                     })}
                   </div>
                 </div>
 
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                  
                   <div className="flex border-b border-white/5 gap-4">
-                    <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>
-                      {t.online} ({onlineUser.length})
-                    </button>
-                    <button onClick={() => setSocialTab('friends')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'friends' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>
-                      {t.friends}
-                    </button>
-                    <button onClick={() => setSocialTab('requests')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all relative ${socialTab === 'requests' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>
-                      {t.requests}
-                      {profileData?.friendRequests?.length > 0 && (
-                        <span className="absolute -top-1 -right-3 w-3.5 h-3.5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[8px] font-black">{profileData.friendRequests.length}</span>
-                      )}
-                    </button>
+                    <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>{t.online} ({onlineUser.length})</button>
+                    <button onClick={() => setSocialTab('friends')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'friends' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>{t.friends}</button>
+                    <button onClick={() => setSocialTab('requests')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all relative ${socialTab === 'requests' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>{t.requests}{profileData?.friendRequests?.length > 0 && ( <span className="absolute -top-1 -right-3 w-3.5 h-3.5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[8px] font-black">{profileData.friendRequests.length}</span> )}</button>
                   </div>
-
                   <div className="space-y-1.5 md:space-y-2 max-h-[140px] md:max-h-[160px] overflow-y-auto pr-1 custom-scrollbar pt-2">
-                    
-                    {socialTab === 'online' && (
-                      onlineUser.filter(u => u.username !== safeUsername).length > 0 ? (
-                        onlineUser.filter(u => u.username !== safeUsername).map(u => (
-                          <div key={u.socketId} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-white/10`}>
-                            <div className="flex items-center gap-2 md:gap-2.5 cursor-pointer" onClick={() => handleInspectPlayer(u.username)}>
-                              <div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${activeTheme.accentBg} rounded-full animate-pulse`} />
-                              <span className="font-bold text-stone-200 truncate max-w-[70px] md:max-w-[90px] hover:underline">{u.username}</span>
-                            </div>
-                            <div className="flex gap-1.5">
-                              {!profileData?.friends?.includes(u.username) && (
-                                <button onClick={() => handleSendFriendReq(u.username)} title="მეგობრებში დამატება" className={`p-1.5 md:p-2 rounded-lg bg-stone-800 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95`}><UserPlus size={12} /></button>
-                              )}
-                              <button onClick={() => handleSendInviteClick(u.socketId, u.username)} title="თამაშში მოწვევა" className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}>
-                                <Swords size={12} /> {t.invite}
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">{t.noPlayers}</p>
-                    )}
-
-                    {socialTab === 'friends' && (
-                      profileData?.friends?.length > 0 ? (
-                        profileData.friends.map((friendName, i) => {
-                          const isOnline = onlineUser.find(u => u.username === friendName);
-                          return (
-                            <div key={i} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-white/10`}>
-                              <div className="flex items-center gap-2 md:gap-2.5 cursor-pointer" onClick={() => handleInspectPlayer(friendName)}>
-                                <div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${isOnline ? activeTheme.accentBg : 'bg-stone-600'} rounded-full`} />
-                                <span className={`font-bold truncate max-w-[80px] hover:underline ${isOnline ? 'text-stone-200' : 'text-stone-500'}`}>{friendName}</span>
-                              </div>
-                              {isOnline && (
-                                <button onClick={() => handleSendInviteClick(isOnline.socketId, friendName)} className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}>
-                                  <Swords size={12} /> {t.invite}
-                                </button>
-                              )}
-                            </div>
-                          )
-                        })
-                      ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">მეგობრების სია ცარიელია</p>
-                    )}
-
-                    {socialTab === 'requests' && (
-                      profileData?.friendRequests?.length > 0 ? (
-                        profileData.friendRequests.map((reqName, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs">
-                            <span className="font-bold text-stone-200 truncate cursor-pointer hover:underline" onClick={() => handleInspectPlayer(reqName)}>{reqName}</span>
-                            <div className="flex gap-1.5">
-                              <button onClick={() => handleAcceptFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95"><CheckCircle2 size={12} /></button>
-                              <button onClick={() => handleRejectFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-md active:scale-95"><XCircle size={12} /></button>
-                            </div>
-                          </div>
-                        ))
-                      ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">ახალი თხოვნები არ გაქვს</p>
-                    )}
-
+                    {socialTab === 'online' && ( onlineUser.filter(u => u.username !== safeUsername).length > 0 ? ( onlineUser.filter(u => u.username !== safeUsername).map(u => ( <div key={u.socketId} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-white/10`}><div className="flex items-center gap-2 md:gap-2.5 cursor-pointer" onClick={() => handleInspectPlayer(u.username)}><div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${activeTheme.accentBg} rounded-full animate-pulse`} /><span className="font-bold text-stone-200 truncate max-w-[70px] md:max-w-[90px] hover:underline">{u.username}</span></div><div className="flex gap-1.5">{!profileData?.friends?.includes(u.username) && ( <button onClick={() => handleSendFriendReq(u.username)} title="მეგობრებში დამატება" className={`p-1.5 md:p-2 rounded-lg bg-stone-800 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95`}><UserPlus size={12} /></button> )}<button onClick={() => handleSendInviteClick(u.socketId, u.username)} title="თამაშში მოწვევა" className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}><Swords size={12} /> {t.invite}</button></div></div> )) ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">{t.noPlayers}</p> )}
+                    {socialTab === 'friends' && ( profileData?.friends?.length > 0 ? ( profileData.friends.map((friendName, i) => { const isOnline = onlineUser.find(u => u.username === friendName); return ( <div key={i} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-white/10`}><div className="flex items-center gap-2 md:gap-2.5 cursor-pointer" onClick={() => handleInspectPlayer(friendName)}><div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${isOnline ? activeTheme.accentBg : 'bg-stone-600'} rounded-full`} /><span className={`font-bold truncate max-w-[80px] hover:underline ${isOnline ? 'text-stone-200' : 'text-stone-500'}`}>{friendName}</span></div>{isOnline && ( <button onClick={() => handleSendInviteClick(isOnline.socketId, friendName)} className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}><Swords size={12} /> {t.invite}</button> )}</div> ) }) ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">მეგობრების სია ცარიელია</p> )}
+                    {socialTab === 'requests' && ( profileData?.friendRequests?.length > 0 ? ( profileData.friendRequests.map((reqName, i) => ( <div key={i} className="flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs"><span className="font-bold text-stone-200 truncate cursor-pointer hover:underline" onClick={() => handleInspectPlayer(reqName)}>{reqName}</span><div className="flex gap-1.5"><button onClick={() => handleAcceptFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95"><CheckCircle2 size={12} /></button><button onClick={() => handleRejectFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-md active:scale-95"><XCircle size={12} /></button></div></div> )) ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">ახალი თხოვნები არ გაქვს</p> )}
                   </div>
                 </div>
-
               </div>
 
-              <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full">
+              <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full relative">
                 
+                {/* 🟢 ავტომატური დაწყების ტაიმერის მოდალი (თუ მიმდინარეობს ათვლა) */}
+                {startCountdown !== null && (
+                    <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-2xl md:rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                        <span className={`text-6xl md:text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse ${activeTheme.accent}`}>{startCountdown}</span>
+                        <span className={`text-sm md:text-base font-bold mt-4 uppercase tracking-widest text-white`}>თამაში იწყება...</span>
+                    </div>
+                )}
+
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 relative overflow-hidden`}>
                    <div className={`absolute top-0 right-0 w-32 h-32 ${activeTheme.accentBg} opacity-5 blur-[60px] rounded-full`}></div>
                    <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest mb-3">
                     <Target size={14} className={activeTheme.accent} /> {t.dailyQuests}
                   </h3>
-                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {profileData?.dailyQuests?.map((q, idx) => {
-                      const isDone = q.isCompleted;
-                      const p = Math.min((q.progress / q.target) * 100, 100);
-                      return (
-                        <div key={idx} className={`p-3 md:p-4 rounded-xl border transition-all ${isDone ? 'bg-stone-950/80 border-stone-800' : `bg-stone-950/40 border-white/5`} flex flex-col justify-between`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <p className={`text-[10px] md:text-xs font-bold ${isDone ? 'text-stone-500 line-through' : 'text-stone-200'} leading-snug`}>{q.title}</p>
-                            {isDone ? <CheckCircle2 size={14} className="text-stone-600 shrink-0 ml-2"/> : <Gift size={14} className={`${activeTheme.accent} shrink-0 ml-2`}/>}
-                          </div>
-                          
-                          <div className="space-y-1 mt-auto">
-                            <div className="flex justify-between text-[8px] md:text-[9px] font-black uppercase tracking-wider text-stone-500">
-                              <span>{q.progress} / {q.target}</span>
-                              <span className={isDone ? 'text-stone-600' : activeTheme.accent}>+{q.xpReward} XP</span>
-                            </div>
-                            <div className="w-full h-1.5 md:h-2 bg-stone-900 rounded-full overflow-hidden">
-                              <div className={`h-full ${isDone ? 'bg-stone-700' : activeTheme.accentBg} transition-all duration-1000`} style={{ width: `${p}%` }}></div>
-                            </div>
-                          </div>
-                        </div>
-                      )
+                      const isDone = q.isCompleted; const p = Math.min((q.progress / q.target) * 100, 100);
+                      return ( <div key={idx} className={`p-3 md:p-4 rounded-xl border transition-all ${isDone ? 'bg-stone-950/80 border-stone-800' : `bg-stone-950/40 border-white/5`} flex flex-col justify-between`}><div className="flex justify-between items-start mb-2"><p className={`text-[10px] md:text-xs font-bold ${isDone ? 'text-stone-500 line-through' : 'text-stone-200'} leading-snug`}>{q.title}</p>{isDone ? <CheckCircle2 size={14} className="text-stone-600 shrink-0 ml-2"/> : <Gift size={14} className={`${activeTheme.accent} shrink-0 ml-2`}/>}</div><div className="space-y-1 mt-auto"><div className="flex justify-between text-[8px] md:text-[9px] font-black uppercase tracking-wider text-stone-500"><span>{q.progress} / {q.target}</span><span className={isDone ? 'text-stone-600' : activeTheme.accent}>+{q.xpReward} XP</span></div><div className="w-full h-1.5 md:h-2 bg-stone-900 rounded-full overflow-hidden"><div className={`h-full ${isDone ? 'bg-stone-700' : activeTheme.accentBg} transition-all duration-1000`} style={{ width: `${p}%` }}></div></div></div></div> )
                     })}
                   </div>
                 </div>
 
-                {/* 🟢 განახლებული მენიუ თამაშის ძებნით */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                  
-                  {/* თამაშის ძებნის ღილაკი */}
                   <button onClick={() => setIsMatchmakingOpen(true)} className={`p-4 md:p-5 ${activeTheme.accentBg} hover:opacity-90 text-stone-950 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-[0_0_20px_currentColor] active:scale-95 border-b-4 border-black/20 group`}>
-                      <div>
-                          <h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><Search size={14} className="md:w-4 md:h-4"/> თამაშის ძებნა</h4>
-                          <p className="text-[9px] md:text-xs text-stone-800 mt-1 font-black opacity-80">სწრაფი დაკავშირება</p>
-                      </div>
-                      <Play size={18} className="md:w-5 md:h-5 text-stone-900 group-hover:scale-110 transition-transform" />
+                      <div><h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><Search size={14} className="md:w-4 md:h-4"/> თამაშის ძებნა</h4><p className="text-[9px] md:text-xs text-stone-800 mt-1 font-black opacity-80">სწრაფი დაკავშირება</p></div><Play size={18} className="md:w-5 md:h-5 text-stone-900 group-hover:scale-110 transition-transform" />
                   </button>
-
-                  {/* ოთახის შექმნა */}
                   <button onClick={() => setIsCreateModalOpen(true)} className={`p-4 md:p-5 bg-stone-100 hover:bg-stone-200 border-stone-300 text-stone-900 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-lg active:scale-95 border-b-4 group`}>
-                    <div>
-                      <h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><PlusCircle size={14} className="md:w-4 md:h-4"/> ოთახის შექმნა</h4>
-                      <p className="text-[9px] md:text-xs text-stone-500 mt-1 font-bold">შენი წესებით</p>
-                    </div>
+                    <div><h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><PlusCircle size={14} className="md:w-4 md:h-4"/> ოთახის შექმნა</h4><p className="text-[9px] md:text-xs text-stone-500 mt-1 font-bold">შენი წესებით</p></div>
                   </button>
-
-                  {/* ID-ით შესვლა */}
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-3 md:p-4 flex gap-2 md:gap-2.5 items-center shadow-2xl transition-colors duration-700 col-span-1 md:col-span-2 lg:col-span-1`}>
                     <input type="text" placeholder={t.roomIdPlaceholder} value={roomId} onChange={(e) => setRoomId(e.target.value)} className={`flex-1 w-full rounded-xl bg-stone-950/60 border border-white/5 px-3 md:px-4 py-3 md:py-3.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none transition-all placeholder-stone-600 shadow-inner`} />
                     <button onClick={() => handleJoinSpecificRoom(roomId)} className={`px-4 md:px-5 py-3 md:py-3.5 bg-stone-800 hover:bg-stone-700 border border-white/10 ${activeTheme.accent} rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md`}>{t.join}</button>
@@ -1528,69 +385,31 @@ export default function App() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                    <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest">
-                      <Medal size={14} className={activeTheme.accent} /> {t.top10}
-                    </h3>
+                    <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest"><Medal size={14} className={activeTheme.accent} /> {t.top10}</h3>
                     <div className="space-y-1.5 md:space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                      {leaderboard.map((player, idx) => (
-                        <div key={player._id} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl border transition-all ${player.username === safeUsername ? 'bg-stone-800 border-stone-500 shadow-md' : 'bg-stone-950/40 border-white/5 hover:border-white/10'} text-[10px] md:text-xs`}>
-                          <div className="flex items-center gap-2 md:gap-3 truncate cursor-pointer" onClick={() => handleInspectPlayer(player.username)}>
-                            <span className={`w-5 h-5 md:w-6 md:h-6 flex items-center justify-center font-mono font-black text-[9px] md:text-[11px] rounded-md ${idx === 0 ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30' : idx === 1 ? 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/30' : idx === 2 ? 'bg-amber-700/10 text-amber-500 border border-amber-700/30' : 'bg-stone-800/80 text-stone-500 border border-white/5'}`}>{idx + 1}</span>
-                            
-                            <div className="flex flex-col truncate hover:underline mt-0.5">
-                               <span className="font-bold truncate tracking-wide"><VipName name={player.username} isVip={checkIsVip(player.vipUntil)} className={player.username === safeUsername ? activeTheme.accent : 'text-stone-200'} /></span>
-                               <div className={`text-[8px] font-black flex items-center gap-1 ${getLeague(player.xp || 0).color}`}>
-                                  {getLeague(player.xp || 0).icon} {getLeague(player.xp || 0).name}
-                               </div>
-                            </div>
-                          </div>
-                          <div className="text-stone-400 font-bold font-mono text-[9px] md:text-[11px] bg-stone-950/60 px-1.5 md:px-2 py-0.5 rounded-md border border-white/5 shrink-0">{player.stats?.gamesWon || 0} {t.wins}</div>
-                        </div>
-                      ))}
+                      {leaderboard.map((player, idx) => ( <div key={player._id} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl border transition-all ${player.username === safeUsername ? 'bg-stone-800 border-stone-500 shadow-md' : 'bg-stone-950/40 border-white/5 hover:border-white/10'} text-[10px] md:text-xs`}><div className="flex items-center gap-2 md:gap-3 truncate cursor-pointer" onClick={() => handleInspectPlayer(player.username)}><span className={`w-5 h-5 md:w-6 md:h-6 flex items-center justify-center font-mono font-black text-[9px] md:text-[11px] rounded-md ${idx === 0 ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30' : idx === 1 ? 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/30' : idx === 2 ? 'bg-amber-700/10 text-amber-500 border border-amber-700/30' : 'bg-stone-800/80 text-stone-500 border border-white/5'}`}>{idx + 1}</span><div className="flex flex-col truncate hover:underline mt-0.5"><span className="font-bold truncate tracking-wide"><VipName name={player.username} isVip={checkIsVip(player.vipUntil)} className={player.username === safeUsername ? activeTheme.accent : 'text-stone-200'} /></span><div className={`text-[8px] font-black flex items-center gap-1 ${getLeague(player.xp || 0).color}`}>{getLeague(player.xp || 0).icon} {getLeague(player.xp || 0).name}</div></div></div><div className="text-stone-400 font-bold font-mono text-[9px] md:text-[11px] bg-stone-950/60 px-1.5 md:px-2 py-0.5 rounded-md border border-white/5 shrink-0">{player.stats?.gamesWon || 0} {t.wins}</div></div> ))}
                     </div>
                   </div>
 
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                    <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3">
-                      <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest"><LayoutGrid size={14} className={activeTheme.accent} /> {t.tables}</h3>
-                      <button onClick={() => socket.emit('getLiveRooms')} className={`p-1.5 md:p-2 hover:bg-stone-800 ${activeTheme.accent} rounded-lg bg-stone-950/60 border border-white/5 shadow-md active:scale-95`}><RefreshCw size={12}/></button>
-                    </div>
-                    {liveRooms.length === 0 ? (
-                      <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-stone-950/30">
-                        <p className="text-[10px] md:text-xs text-stone-500 font-bold">{t.noTables}</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                        {liveRooms.map((room) => (
-                          <div key={room.id} className="p-2.5 md:p-3 rounded-xl bg-stone-950/40 border border-white/5 flex justify-between items-center shadow-md">
-                            <div className="flex flex-col gap-1">
-                               <div className={`flex items-center gap-1.5 text-[10px] md:text-xs font-black ${activeTheme.accent} font-mono`}>
-                                 <span className="text-xs">{room.hostAvatar || '😎'}</span> 
-                                 <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> 
-                                 {room.isPrivate && <Lock size={10} className="text-stone-500" />}
-                                 <span className="text-[8px] bg-stone-900 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md uppercase ml-1 shadow-sm flex items-center gap-1">
-                                   {room.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}
-                                 </span>
-                               </div>
-                               <div className="flex gap-1.5 items-center">
-                                 {room.isRanked ? <span className={`text-[8px] font-bold ${activeTheme.accentBg} bg-opacity-10 border-opacity-20 border-current px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}
-                                 <span className="text-[8px] font-bold text-stone-400 bg-stone-900/80 px-1 py-0.5 rounded border border-white/5 font-mono">👥 {room.currentPlayers}/{room.maxPlayers}</span>
-                               </div>
-                            </div>
-                            <button onClick={() => handleRoomClickFromList(room)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all active:scale-95 ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300' : `bg-white text-stone-900 shadow-md`}`}>
-                              {t.join}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3"><h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest"><LayoutGrid size={14} className={activeTheme.accent} /> {t.tables}</h3><button onClick={() => socket.emit('getLiveRooms')} className={`p-1.5 md:p-2 hover:bg-stone-800 ${activeTheme.accent} rounded-lg bg-stone-950/60 border border-white/5 shadow-md active:scale-95`}><RefreshCw size={12}/></button></div>
+                    {liveRooms.length === 0 ? ( <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-stone-950/30"><p className="text-[10px] md:text-xs text-stone-500 font-bold">{t.noTables}</p></div> ) : ( <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">{liveRooms.map((room) => ( <div key={room.id} className="p-2.5 md:p-3 rounded-xl bg-stone-950/40 border border-white/5 flex justify-between items-center shadow-md"><div className="flex flex-col gap-1"><div className={`flex items-center gap-1.5 text-[10px] md:text-xs font-black ${activeTheme.accent} font-mono`}><span className="text-xs">{room.hostAvatar || '😎'}</span> <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> {room.isPrivate && <Lock size={10} className="text-stone-500" />}<span className="text-[8px] bg-stone-900 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md uppercase ml-1 shadow-sm flex items-center gap-1">{room.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}</span></div><div className="flex gap-1.5 items-center">{room.isRanked ? <span className={`text-[8px] font-bold ${activeTheme.accentBg} bg-opacity-10 border-opacity-20 border-current px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}<span className="text-[8px] font-bold text-stone-400 bg-stone-900/80 px-1 py-0.5 rounded border border-white/5 font-mono">👥 {room.currentPlayers}/{room.maxPlayers}</span></div></div><button onClick={() => handleRoomClickFromList(room)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all active:scale-95 ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300' : `bg-white text-stone-900 shadow-md`}`}>{t.join}</button></div> ))}</div> )}
                   </div>
                 </div>
 
               </div>
             </div>
           ) : (
-            <div className="w-full">
+            <div className="w-full relative">
+              
+              {/* 🟢 თამაშის ოთახშიც უნდა გამოჩნდეს ტაიმერი თუ მასპინძელმა დაიწყო ან ავტომატურად დაიწყო */}
+              {startCountdown !== null && (
+                  <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-2xl md:rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                      <span className={`text-6xl md:text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse ${activeTheme.accent}`}>{startCountdown}</span>
+                      <span className={`text-sm md:text-base font-bold mt-4 uppercase tracking-widest text-white`}>თამაში იწყება...</span>
+                  </div>
+              )}
+
               {roomData && (
                 <>
                   {!roomData.gameStarted ? (
@@ -1620,22 +439,20 @@ export default function App() {
                         <div className="grid grid-cols-2 gap-2 md:gap-3 pt-3 md:pt-4 border-t border-white/10">
                           <button onClick={handleResetToLobby} className="py-2.5 md:py-3 bg-stone-800/80 hover:bg-stone-700 border border-white/10 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md">↩️</button>
                           {isHost && (
-                            <button onClick={() => socket.emit('startGame', { roomId: roomData.id })} className={`py-2.5 md:py-3 bg-white hover:bg-stone-200 text-stone-900 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 border-b-2 border-stone-300 shadow-lg`}>🎮</button>
+                            <button disabled={startCountdown !== null} onClick={() => socket.emit('startGame', { roomId: roomData.id })} className={`py-2.5 md:py-3 bg-white hover:bg-stone-200 text-stone-900 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 border-b-2 border-stone-300 shadow-lg ${startCountdown !== null ? 'opacity-50 cursor-not-allowed' : ''}`}>🎮</button>
                           )}
                         </div>
                       </div>
 
                       <div className={`${activeTheme.card} backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-6 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
-                        
                         <div className="space-y-2 md:space-y-2.5">
                           <div className="grid grid-cols-2 gap-2 md:gap-2.5">
                             <button disabled={!isHost || roomData.gameType === 'damka'} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: true })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.isRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'} ${roomData.gameType === 'damka' ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
                             <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: false })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!roomData.isRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
                           </div>
                         </div>
-                        
                         <div className="space-y-2 md:space-y-2.5 mt-2">
-                          <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">🤖 ბოტები</label>
+                          <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🤖 ბოტები</label>
                           <div className="grid grid-cols-2 gap-2 md:gap-2.5">
                             <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: true, isRanked: false })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.allowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🤖 ჩართვა</button>
                             <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!roomData.allowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🤖 გამორთვა</button>
@@ -1646,31 +463,14 @@ export default function App() {
                           <>
                             <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
                               <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">{t.targetScore}</label>
-                              <div className="grid grid-cols-2 gap-2 md:gap-2.5">
-                                {[11, 21].map((score) => (
-                                  <button key={score} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: score, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.targetScore === score ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{score}</button>
-                                ))}
-                              </div>
+                              <div className="grid grid-cols-2 gap-2 md:gap-2.5">{[11, 21].map((score) => ( <button key={score} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: score, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.targetScore === score ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{score}</button> ))}</div>
                             </div>
-                            
                             <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
                               <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">{t.playerLimit}</label>
-                              <div className="grid grid-cols-3 gap-2 md:gap-2.5">
-                                {[2, 3, 4].map((num) => (
-                                  <button key={num} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: num, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.maxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{num}</button>
-                                ))}
-                              </div>
+                              <div className="grid grid-cols-3 gap-2 md:gap-2.5">{[2, 3, 4].map((num) => ( <button key={num} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: num, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.maxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{num}</button> ))}</div>
                             </div>
                           </>
-                        ) : (
-                           <div className="flex flex-col items-center justify-center py-4 mt-2 bg-stone-950/40 rounded-xl border border-white/5 shadow-inner">
-                              <div className="flex -space-x-4 mb-3">
-                                  <DamkaIcon type="red" size="lg" className="z-10" />
-                                  <DamkaIcon type="white" size="lg" className="mt-4" />
-                              </div>
-                              <p className="text-[10px] font-bold text-stone-400 max-w-xs text-center px-4">შაში ითამაშება მხოლოდ 2 მოთამაშეზე. {roomData.allowBots ? 'ბოტები ჩართულია.' : 'ბოტები გამორთულია.'}</p>
-                           </div>
-                        )}
+                        ) : ( <div className="flex flex-col items-center justify-center py-4 mt-2 bg-stone-950/40 rounded-xl border border-white/5 shadow-inner"><div className="flex -space-x-4 mb-3"><DamkaIcon type="red" size="lg" className="z-10" /><DamkaIcon type="white" size="lg" className="mt-4" /></div><p className="text-[10px] font-bold text-stone-400 max-w-xs text-center px-4">შაში ითამაშება მხოლოდ 2 მოთამაშეზე. {roomData.allowBots ? 'ბოტები ჩართულია.' : 'ბოტები გამორთულია.'}</p></div> )}
                       </div>
                     </div>
                   ) : (
@@ -1689,57 +489,46 @@ export default function App() {
         </main>
       </div>
 
-      {/* 🟢 თამაშის ძებნის (Matchmaking) მოდალი */}
       {isMatchmakingOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-5 shadow-2xl relative text-center`}>
-            {isSearching ? (
+            {searchFailed ? (
+              <div className="py-6 flex flex-col items-center">
+                  <XCircle className={`w-12 h-12 mb-4 text-rose-500`} />
+                  <h3 className="text-sm font-black text-stone-100 uppercase tracking-widest text-center">არ მოიძებნა მაგიდა</h3>
+                  <p className="text-[10px] text-stone-400 mt-2 font-bold text-center">გსურთ ახალი მაგიდის შექმნა?</p>
+                  <div className="grid grid-cols-2 gap-3 mt-6 w-full">
+                      <button onClick={cancelSearch} className="py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner uppercase tracking-wider">არა</button>
+                      <button onClick={(e) => { cancelSearch(); handleConfirmCreateRoom(e); }} className={`py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg uppercase tracking-wider`}>კი, შექმნა</button>
+                  </div>
+              </div>
+            ) : isSearching ? (
                <div className="py-8 flex flex-col items-center">
                   <Search className={`w-12 h-12 mb-4 animate-spin-slow ${activeTheme.accent}`} />
                   <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">ვეძებთ მოთამაშეებს...</h3>
                   <p className="text-xs text-stone-400 mt-2 font-bold">გთხოვთ დაელოდოთ</p>
-                  <button onClick={() => setIsSearching(false)} className="mt-8 py-2.5 px-8 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner uppercase tracking-wider">გაუქმება</button>
+                  <button onClick={cancelSearch} className="mt-8 py-2.5 px-8 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner uppercase tracking-wider">გაუქმება</button>
                </div>
             ) : (
               <form onSubmit={handleFindMatchSubmit} className="space-y-4 md:space-y-5 text-left">
                 <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider`}>თამაშის ძებნა</h3>
-                
                 <div className="grid grid-cols-2 gap-3 mt-4">
-                  <button type="button" onClick={() => setMGameType('phurti')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'phurti' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}>
-                    <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-300'}`}>ფურთი</span>
-                  </button>
-                  <button type="button" onClick={() => setMGameType('damka')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}>
-                    <div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2">
-                      <DamkaIcon type="red" size="lg" className="z-10" />
-                      <DamkaIcon type="white" size="lg" className="mt-2" />
-                    </div>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-300'}`}>შაში</span>
-                  </button>
+                  <button type="button" onClick={() => setMGameType('phurti')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'phurti' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}><span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span><span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-300'}`}>ფურთი</span></button>
+                  <button type="button" onClick={() => setMGameType('damka')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}><div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2"><DamkaIcon type="red" size="lg" className="z-10" /><DamkaIcon type="white" size="lg" className="mt-2" /></div><span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-300'}`}>შაში</span></button>
                 </div>
-
                 <div className="space-y-2 md:space-y-2.5">
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" disabled={mGameType === 'damka'} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mGameType === 'damka' ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 რეიტინგული</button>
                     <button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 გასართობი</button>
                   </div>
                 </div>
-
                 {mGameType === 'phurti' && (
                   <div className="space-y-2 md:space-y-2.5">
                     <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">მოთამაშეების რაოდენობა</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[2, 3, 4].map(num => (
-                        <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button>
-                      ))}
-                    </div>
+                    <div className="grid grid-cols-3 gap-2">{[2, 3, 4].map(num => ( <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button> ))}</div>
                   </div>
                 )}
-
-                <div className="grid grid-cols-2 gap-2 md:gap-3 pt-3 border-t border-white/5 mt-4">
-                  <button type="button" onClick={() => setIsMatchmakingOpen(false)} className="py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase tracking-wider">გაუქმება</button>
-                  <button type="submit" className={`py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg uppercase tracking-wider`}>ძებნა 🔍</button>
-                </div>
+                <div className="grid grid-cols-2 gap-2 md:gap-3 pt-3 border-t border-white/5 mt-4"><button type="button" onClick={() => setIsMatchmakingOpen(false)} className="py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase tracking-wider">გაუქმება</button><button type="submit" className={`py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg uppercase tracking-wider`}>ძებნა 🔍</button></div>
               </form>
             )}
           </div>
@@ -1750,68 +539,24 @@ export default function App() {
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-2xl font-sans relative`}>
             <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} border-b border-white/10 pb-2.5 md:pb-3 uppercase tracking-wider`}>თამაშის შექმნა</h3>
-            
             <div className="grid grid-cols-2 gap-3 mt-4">
-              <button type="button" onClick={() => setMGameType('phurti')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'phurti' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}>
-                 <span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span>
-                 <span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-300'}`}>ფურთი</span>
-              </button>
-              <button type="button" onClick={() => setMGameType('damka')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}>
-                 <div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2">
-                     <DamkaIcon type="red" size="lg" className="z-10" />
-                     <DamkaIcon type="white" size="lg" className="mt-2" />
-                 </div>
-                 <span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-300'}`}>შაში (დამკა)</span>
-              </button>
+              <button type="button" onClick={() => setMGameType('phurti')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'phurti' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}><span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span><span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-300'}`}>ფურთი</span></button>
+              <button type="button" onClick={() => setMGameType('damka')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}><div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2"><DamkaIcon type="red" size="lg" className="z-10" /><DamkaIcon type="white" size="lg" className="mt-2" /></div><span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-300'}`}>შაში (დამკა)</span></button>
             </div>
-
             <div className="space-y-2 md:space-y-2.5">
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" disabled={mAllowBots || mGameType === 'damka'} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots || mGameType === 'damka' ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
-                <button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
-              </div>
+              <div className="grid grid-cols-2 gap-2"><button type="button" disabled={mAllowBots || mGameType === 'damka'} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots || mGameType === 'damka' ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button><button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 {t.casual}</button></div>
               {mGameType === 'damka' && <p className="text-[9px] text-stone-500 font-bold text-center pt-1">შაში ითამაშება მხოლოდ გასართობ რეჟიმში (Casual)</p>}
             </div>
-
             <div className="space-y-2 md:space-y-2.5">
               <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🤖 {t.bots}</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => { setMAllowBots(true); setMIsRanked(false); }} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mAllowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.on}</button>
-                <button type="button" onClick={() => setMAllowBots(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mAllowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.off}</button>
-              </div>
+              <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => { setMAllowBots(true); setMIsRanked(false); }} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mAllowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.on}</button><button type="button" onClick={() => setMAllowBots(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mAllowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.off}</button></div>
               {mAllowBots && <p className="text-[9px] text-stone-500 font-bold text-center pt-1 w-full col-span-2">ბოტებთან თამაშისას რეიტინგი (XP) არ ითვლება</p>}
             </div>
-
             {mGameType === 'phurti' && (
-              <>
-                <div className="space-y-2 md:space-y-2.5 mt-2">
-                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.targetScore}</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[11, 21].map(sc => (
-                      <button type="button" key={sc} onClick={() => setMTargetScore(sc)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mTargetScore === sc ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{sc}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2 md:space-y-2.5">
-                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.playerLimit}</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[2, 3, 4].map(num => (
-                      <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button>
-                    ))}
-                  </div>
-                </div>
-              </>
+              <><div className="space-y-2 md:space-y-2.5 mt-2"><label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.targetScore}</label><div className="grid grid-cols-2 gap-2">{[11, 21].map(sc => ( <button type="button" key={sc} onClick={() => setMTargetScore(sc)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mTargetScore === sc ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{sc}</button> ))}</div></div><div className="space-y-2 md:space-y-2.5"><label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.playerLimit}</label><div className="grid grid-cols-3 gap-2">{[2, 3, 4].map(num => ( <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button> ))}</div></div></>
             )}
-
-            <div className="space-y-1.5 md:space-y-2 mt-2">
-              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.password}</label>
-              <input type="password" value={mRoomPassword} onChange={(e) => setMRoomPassword(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none placeholder-stone-700 shadow-inner`} placeholder="••••••••" />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 md:gap-3 pt-2 md:pt-3 border-t border-white/5">
-              <button type="button" onClick={() => setIsCreateModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">{t.cancel}</button>
-              <button type="submit" className={`py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg`}>{t.create}</button>
-            </div>
+            <div className="space-y-1.5 md:space-y-2 mt-2"><label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.password}</label><input type="password" value={mRoomPassword} onChange={(e) => setMRoomPassword(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none placeholder-stone-700 shadow-inner`} placeholder="••••••••" /></div>
+            <div className="grid grid-cols-2 gap-2 md:gap-3 pt-2 md:pt-3 border-t border-white/5"><button type="button" onClick={() => setIsCreateModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">{t.cancel}</button><button type="submit" className={`py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg`}>{t.create}</button></div>
           </form>
         </div>
       )}
