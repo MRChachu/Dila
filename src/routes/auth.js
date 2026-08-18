@@ -346,4 +346,25 @@ router.post('/daily-reward', async (req, res) => {
   }
 });
 
+// ============================================
+// 📧 საკონტაქტო / გასაჩივრება (Contact Us)
+// ============================================
+router.post('/contact', async (req, res) => {
+  try {
+    const { email, subject, message } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({ message: 'შეტყობინების ტექსტი სავალდებულოა!' });
+    }
+
+    // ლოგირება კონსოლში (რეალურ გარემოში შეგიძლიათ ბაზაში შეინახოთ ან მეილზე გააგზავნოთ)
+    console.log(`[CONTACT] ახალი მესიჯი: თემა - ${subject}, ელ-ფოსტა - ${email}, ტექსტი - ${message}`);
+
+    res.json({ success: true, message: 'თქვენი შეტყობინება წარმატებით გაიგზავნა! მადლობა.' });
+  } catch (err) {
+    console.error("Contact Error:", err);
+    res.status(500).json({ message: 'სერვერის შეცდომა შეტყობინების გაგზავნისას' });
+  }
+});
+
 module.exports = router;
