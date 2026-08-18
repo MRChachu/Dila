@@ -241,7 +241,7 @@ io.on('connection', (socket) => {
         if (!room.gameStarted) {
           room.players.splice(pIdx, 1);
           if (room.players.length === 0) { delete rooms[roomId]; if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]); } 
-          else { io.to(roomId).emit('roomUpdated', room); checkAutoStart(roomId); } // შევამოწმოთ თუ შეიცვალა სიტუაცია
+          else { io.to(roomId).emit('roomUpdated', room); checkAutoStart(roomId); } 
         } else {
           const p = room.players[pIdx]; const oName = p.name; const isOver = room.roundSummary && room.roundSummary.matchWinner;
           if (!p.isBot && room.isRanked && !isOver) {
@@ -283,10 +283,9 @@ io.on('connection', (socket) => {
     
     r.players.push({ id: socket.id, name: playerName, avatar: uAv, vipUntil: uVip, xp: uXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
     io.to(roomId).emit('roomUpdated', r); broadcastActiveRooms();
-    checkAutoStart(roomId); // 🟢 Auto-start check
+    checkAutoStart(roomId); 
   });
 
-  // 🟢 თამაშის ძებნის ლოგიკა
   socket.on('tryFindMatch', async ({ playerName, gameType, maxPlayers, isRanked }) => {
     if (!playerName) return;
     let foundRoomId = null;
@@ -305,7 +304,7 @@ io.on('connection', (socket) => {
         room.players.push({ id: socket.id, name: playerName, avatar: uAv, vipUntil: uVip, xp: uXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
         socket.join(foundRoomId); io.to(foundRoomId).emit('roomUpdated', room); broadcastActiveRooms();
         socket.emit('joinedMatchedRoom', foundRoomId);
-        checkAutoStart(foundRoomId); // 🟢 Auto-start check
+        checkAutoStart(foundRoomId); 
     }
   });
 
@@ -315,14 +314,24 @@ io.on('connection', (socket) => {
     r.targetScore = targetScore; r.maxPlayers = maxPlayers; r.allowBots = allowBots; r.isRanked = allowBots ? false : (isRanked !== undefined ? isRanked : r.isRanked);
     if (r.players.length > maxPlayers) r.players = r.players.slice(0, maxPlayers);
     io.to(roomId).emit('roomUpdated', r); broadcastActiveRooms();
-    checkAutoStart(roomId); // 🟢 Auto-start check on update
+    checkAutoStart(roomId); 
   });
 
   socket.on('leaveRoom', () => { handlePlayerLeave(socket.id); socket.rooms.forEach(r => { if (r !== socket.id) socket.leave(r); }); });
   socket.on('sendMessage', ({ roomId, message }) => { const r = rooms[roomId]; if (r) { const p = r.players.find(pl => pl.id === socket.id); if (p) io.to(roomId).emit('receiveMessage', { sender: p.name, senderId: p.id, isVip: p.vipUntil, text: message, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }); } });
   socket.on('sendEmote', ({ roomId, emote }) => { socket.to(roomId).emit('receiveEmote', { playerId: socket.id, emote }); });
 
-  socket.on('startGame', ({ roomId }) => { startGameLogic(roomId); });
+  socket.on('startGame', ({ roomId }) => { 
+    const r = rooms[roomId];
+    if (!r || r.gameStarted) return;
+    
+    // 🟢 აქ დამატებულია მოთამაშეების რაოდენობის კონტროლი
+    if (!r.allowBots && r.players.length < r.maxPlayers) {
+        return socket.emit('error', `საჭიროა ${r.maxPlayers} მოთამაშე!`);
+    }
+
+    startGameLogic(roomId); 
+  });
 
   socket.on('playCard', ({ roomId, cardFromHand, cardsFromTable }) => {
     const r = rooms[roomId]; if (!r || !r.gameStarted || r.gameType !== 'phurti') return;
