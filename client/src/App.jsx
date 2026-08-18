@@ -303,294 +303,65 @@ export default function App() {
         </div>
       )}
 
+      {/* Settings / Leaderboard / History Modals (minified) */}
       {isSettingsOpen && ( <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4"><div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-6 shadow-2xl font-sans relative`}><h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> {t.settings}</h3><div className="space-y-3 border-b border-white/10 pb-4"><label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> {t.music}</label><div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5"><button onClick={() => setIsMusicPlaying(true)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${isMusicPlaying ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500'}`}>{t.on}</button><button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>{t.off}</button></div></div><form onSubmit={async (e) => { e.preventDefault(); try { const res = await fetch(`https://purti.onrender.com/api/auth/change-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: safeUsername, currentPassword: e.target.currentPass.value, newPassword: e.target.newPass.value }) }); const data = await res.json(); if(res.ok) { setToastMsg('პაროლი შეიცვალა!'); e.target.reset(); } else setError(data.message); } catch(err) { setError('შეცდომა!'); } }} className="space-y-3"><label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Lock size={14}/> {t.changePass}</label><input name="currentPass" type="password" placeholder={t.oldPass} className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required /><input name="newPass" type="password" placeholder={t.newPass} className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required /><button type="submit" className={`w-full py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md`}>{t.change}</button></form><button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">{t.close}</button></div></div> )}
       {isLeaderboardOpen && ( <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4"><div className="bg-stone-900 border border-yellow-500/30 rounded-[2rem] p-6 max-w-md w-full shadow-[0_0_50px_rgba(234,179,8,0.1)] relative max-h-[80vh] overflow-y-auto custom-scrollbar"><h2 className="text-xl font-black text-stone-100 uppercase mb-6 flex items-center gap-3 justify-center"><Trophy className="text-yellow-500"/> {t.top10}</h2><div className="space-y-3">{leaderboard.map((u, i) => { const rank = getLeague(u.xp); return ( <div key={i} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-500/20 border-yellow-500 text-stone-100 scale-105 shadow-lg' : 'bg-stone-950/50 border-white/5 text-stone-300'}`}><div className="flex items-center gap-3"><span className="text-sm font-black w-4 text-stone-500">{i + 1}.</span><div className="text-2xl drop-shadow-md">{u.avatar}</div><div><div className="text-xs font-black uppercase tracking-wider flex items-center gap-2">{u.username} {u.vipUntil && new Date(u.vipUntil) > new Date() && <span className="text-[10px] bg-yellow-500 text-stone-900 px-1.5 rounded uppercase font-black">VIP</span>}</div><div className={`text-[10px] font-bold mt-0.5 flex items-center gap-1 ${rank.color}`}>{rank.icon} {rank.name} • {u.xp} XP</div></div></div><div className="text-right"><div className="text-xs font-black text-stone-400">{t.wins}</div><div className="text-sm font-black text-yellow-500">{u.stats.gamesWon}</div></div></div> ); })}</div><button onClick={() => setIsLeaderboardOpen(false)} className="w-full mt-6 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all">{t.close}</button></div></div> )}
       {isAdminOpen && ( <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4"><div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto custom-scrollbar relative"><div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 sticky top-0 bg-stone-900 z-10"><h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Control Panel</h2><button onClick={() => {setIsAdminOpen(false); setAdminUsers([]); setAdminPass(''); setAdminMessage('');}} className="text-stone-500 hover:text-stone-300">{t.close}</button></div>{adminUsers.length === 0 ? ( <form onSubmit={loginAdmin} className="space-y-4 max-w-xs mx-auto py-10"><input type="password" placeholder="ადმინისტრატორის პაროლი" value={adminPass} onChange={e => setAdminPass(e.target.value)} className="w-full bg-stone-950 border border-rose-500/30 rounded-xl px-4 py-3 text-xs text-stone-100 outline-none text-center" /><button type="submit" className="w-full py-3 bg-rose-500 text-stone-950 font-black rounded-xl text-xs uppercase shadow-lg hover:bg-rose-400 transition-all">შესვლა</button>{adminMessage && <p className="text-[10px] text-rose-400 text-center font-bold">{adminMessage}</p>}</form> ) : ( <div>{adminStats && ( <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">სულ მოთამაშე</span><div className="text-3xl font-black text-stone-100">{adminStats.totalUsers}</div></div><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ჯამური თამაშები</span><div className="text-3xl font-black text-blue-400">{adminStats.totalGamesPlayed}</div></div><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ეკონომიკა (ქოინები)</span><div className="text-3xl font-black text-yellow-500">{adminStats.totalCoins} 🪙</div></div></div> )}<div className="bg-red-950/20 border border-red-500/30 rounded-2xl p-4 mb-6 flex flex-col md:flex-row gap-3 items-center"><Megaphone className="text-red-500 shrink-0" size={24}/><input type="text" placeholder="დაწერე გლობალური შეტყობინება ყველასთვის..." value={broadcastText} onChange={(e) => setBroadcastText(e.target.value)} className="flex-1 bg-stone-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-stone-100 outline-none" /><button onClick={() => { if(broadcastText.trim()) { socket.emit('adminBroadcast', broadcastText.trim()); setBroadcastText(''); setToastMsg('გლობალური შეტყობინება გაიგზავნა!'); } }} className="w-full md:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase rounded-xl transition-all shadow-md shrink-0">გაგზავნა</button></div><div className="relative mb-4"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" size={16} /><input type="text" placeholder="მოძებნე მოთამაშე სახელით..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-stone-950 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-stone-100 outline-none" /></div>{adminMessage && <div className="mb-4 p-2 bg-emerald-500/20 text-emerald-400 text-xs text-center rounded-lg font-bold border border-emerald-500/30">{adminMessage}</div>}<div className="grid gap-3">{adminUsers.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase())).map((u, i) => ( <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4 transition-all hover:bg-stone-800/40`}><div className="min-w-[150px]"><div className="text-sm font-black text-stone-100">{u.username}</div><div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">{u.password}</span></div><div className="text-[10px] text-stone-500 font-mono mt-0.5">📅 თარიღი: {u.dateOfBirth} | 📝 სიტყვა: {u.secretWord}</div></div><div className="flex items-center gap-4 text-xs font-black"><div className="text-yellow-500">🪙 {u.coins}</div><div className="text-blue-400">⭐ {u.xp} XP</div></div><div className="flex flex-wrap items-center gap-2"><button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors border border-yellow-500/20">+500 🪙</button><button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors border border-blue-500/20">+1000 XP</button><button onClick={() => handleAdvancedAdminAction(u.username, 'reset')} className="px-3 py-1.5 bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 rounded-lg text-[10px] font-black transition-colors border border-orange-500/20" title="სტატისტიკის განულება">RESET</button>{u.isBanned ? ( <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors shadow-md">UNBAN</button> ) : ( <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors shadow-md">BAN</button> )}<button onClick={() => handleAdvancedAdminAction(u.username, 'delete')} className="p-1.5 bg-red-950 text-red-500 hover:bg-red-900 rounded-lg transition-colors border border-red-500/30" title="ექაუნთის წაშლა"><Trash2 size={14}/></button></div></div> ))}</div></div> )}</div></div> )}
       {isHistoryOpen && ( <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4"><div className="bg-stone-900 border border-white/10 rounded-[2rem] p-5 md:p-6 max-w-lg w-full shadow-2xl relative max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200"><h2 className={`text-lg md:text-xl font-black text-stone-100 uppercase mb-4 flex items-center gap-3 justify-center border-b border-white/5 pb-4`}><Clock className={activeTheme.accent}/> {t.myHistory}</h2><div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 min-h-[250px]">{profileData?.gameHistory?.length > 0 ? ( profileData.gameHistory.map((game, i) => { const isWin = game.isWinner; return ( <div key={i} className={`p-3 md:p-4 rounded-2xl border flex flex-col gap-2 transition-all hover:scale-[1.01] ${isWin ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}><div className="flex justify-between items-center border-b border-white/5 pb-2"><div className="flex items-center gap-2"><span className={`font-black text-xs md:text-sm uppercase tracking-wider flex items-center gap-1.5 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>{isWin ? `🏆 ${t.wins}` : '💔'}</span><span className="text-[8px] bg-stone-950 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md font-black uppercase flex items-center gap-1">{game.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}</span></div><span className="text-[9px] md:text-[10px] text-stone-400 font-bold bg-stone-950/50 px-2 py-1 rounded-lg">{new Date(game.playedAt).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div><div className="flex justify-between items-center text-[10px] md:text-xs pt-1"><span className="text-stone-400 font-medium truncate max-w-[50%]">{t.opponent}: <span className="font-bold text-stone-200 truncate">{game.opponents?.length ? game.opponents.join(', ') : t.bots}</span></span><span className="font-mono font-black text-stone-400 bg-stone-950/40 px-2 py-1 rounded-md border border-white/5 shrink-0">{t.score}: <span className={isWin ? 'text-emerald-400' : 'text-rose-400'}>{game.myFinalScore}</span> / {game.targetScore}</span></div></div> ) }) ) : ( <div className="flex flex-col items-center justify-center py-12 text-stone-500 opacity-50"><Clock size={40} className="mb-3"/><p className="text-xs font-bold uppercase tracking-widest">{t.emptyHistory}</p></div> )}</div><button onClick={() => setIsHistoryOpen(false)} className="w-full mt-5 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all active:scale-95 shadow-inner">{t.close}</button></div></div> )}
 
-      <div className="relative z-10 flex flex-col flex-1 w-full h-full text-stone-100">
-        <header className={`${activeTheme.card} flex items-center justify-between border-b border-white/5 backdrop-blur-xl px-4 md:px-8 py-3 md:py-4 sticky top-0 z-40 shadow-lg transition-colors duration-700`}>
-          <div className="flex items-center gap-2.5 md:gap-3">
-            <div className={`p-1.5 md:p-2 bg-stone-900/80 rounded-lg md:rounded-xl border border-white/10 shadow-inner`}><Shield size={18} className={activeTheme.accent} /></div>
-            <span className={`text-sm md:text-lg font-black tracking-widest ${activeTheme.accent}`}>PHURTI ARENA</span>
-          </div>
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="flex bg-stone-900/80 rounded-lg md:rounded-xl border border-white/5 p-1 gap-1 shadow-md mr-1 md:mr-2">
-              <button onClick={() => setLang('ka')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'ka' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇪</button>
-              <button onClick={() => setLang('en')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'en' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇧</button>
-              <button onClick={() => setLang('ru')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'ru' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇷🇺</button>
-            </div>
-            <button onClick={loadLeaderboard} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><Trophy size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">{t.top10}</span></button>
-            {safeUsername.toLowerCase() === 'chachu' && ( <button onClick={() => setIsAdminOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><ShieldAlert size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">{t.admin}</span></button> )}
-            <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><ShoppingCart size={15} /> <span className="hidden md:block text-[10px] font-black uppercase">{t.shop}</span></button>
-            <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-stone-200 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><Settings size={15} className="md:w-4 md:h-4" /></button>
-            <button onClick={handleLogout} className={`p-2 md:p-2.5 bg-stone-900/80 border border-white/5 text-stone-400 hover:text-rose-500 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md`}><LogOut size={15} className="md:w-4 md:h-4" /></button>
-          </div>
-        </header>
-
-        <main className="flex-1 w-full max-w-[1340px] mx-auto p-4 md:p-6 lg:p-8 flex items-center justify-center relative">
-          {!inRoom ? (
-            <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6 items-start">
+      {/* 🟢 3-სვეტიანი Footer შიდა დაფისთვის (როცა თამაშში არ ვართ) */}
+      {!inRoom && (
+        <footer className="w-full bg-stone-950/60 backdrop-blur-md pt-10 pb-6 border-t border-white/5 mt-auto z-10 relative">
+          <div className="max-w-[1340px] mx-auto px-4 md:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mb-8">
               
-              <div className="space-y-4 md:space-y-5">
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700`}>
-                  <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4 mb-4 md:mb-5">
-                    <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all" onClick={() => handleInspectPlayer(safeUsername)}>
-                      <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-3xl md:text-4xl border border-white/10 shadow-xl relative`}>
-                        {myAvatar}
-                        <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5"><VipName name={safeUsername} isVip={amIVip} /> <Eye size={12} className="text-stone-500"/></h2>
-                        <div className="flex items-center gap-1.5 text-stone-400 mt-1">
-                           <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${myLeague.bg} ${myLeague.border} shadow-sm mr-1`}><span className="text-[9px] drop-shadow-md">{myLeague.icon}</span><span className={`text-[8px] font-black uppercase tracking-wider ${myLeague.color}`}>{myLeague.name}</span></div>
-                           <Coins size={12} className="text-yellow-500"/> <span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span>
-                           {amIVip && <span className="ml-1 text-[8px] font-black bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/30 tracking-wider">VIP ACTIVE</span>}
-                        </div>
-                      </div>
-                    </div>
+              <div className="flex flex-col items-start gap-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
+                     <Shield size={18} className="text-yellow-500" />
                   </div>
-
-                  <div className="space-y-1.5 md:space-y-2 mb-4">
-                    <div className="flex justify-between text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest"><span>{t.xpProgress}</span><span>{currentXp} / {targetXp}</span></div>
-                    <div className="w-full h-2 md:h-2.5 bg-stone-950 rounded-full overflow-hidden border border-white/5"><div className={`h-full ${activeTheme.accentBg} rounded-full transition-all duration-1000`} style={{ width: `${xpPercentage}%` }}></div></div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner"><p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.matches}</p><p className="text-sm md:text-base font-mono font-black text-stone-200 mt-0.5 md:mt-1">{profileData?.stats?.gamesPlayed || 0}</p></div>
-                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner"><p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.wins}</p><p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1`}>{profileData?.stats?.gamesWon || 0}</p></div>
-                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner"><p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.winRate}</p><p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1`}>{winRate}%</p></div>
-                  </div>
-                  <button onClick={() => setIsHistoryOpen(true)} className={`mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-950/60 border border-white/5 hover:bg-stone-900 transition-all text-stone-300 shadow-inner flex items-center justify-center gap-2 active:scale-95`}><Clock size={16} className={activeTheme.accent} /> {t.myHistory}</button>
+                  <span className="text-sm font-black tracking-widest text-stone-100">PHURTI.GE</span>
                 </div>
-
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                  <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest"><Award size={14} className={activeTheme.accent} /> {t.achievements}</h4>
-                  <div className="flex flex-nowrap items-center justify-between w-full gap-1 md:gap-2">
-                    {AVAILABLE_BADGES.map((badge) => {
-                      const isUnlocked = myAchievements.includes(badge.id);
-                      return ( 
-                        <div 
-                          key={badge.id} 
-                          onClick={() => setToastMsg(isUnlocked ? `🏆 მიღწეულია: ${badge.name}` : `🔒 დასაბლოკია: ${badge.name}`)}
-                          className={`cursor-pointer shrink-0 w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-xl border transition-all hover:scale-110 active:scale-95 ${isUnlocked ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current ${activeTheme.accent} text-base sm:text-lg md:text-xl shadow-[0_0_15px_currentColor]` : 'bg-stone-950/50 border-white/5 opacity-40 grayscale text-sm sm:text-base md:text-lg hover:opacity-80'}`}
-                        >
-                          <span className="drop-shadow-md">{badge.icon}</span>
-                        </div> 
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                  <div className="flex border-b border-white/5 gap-4">
-                    <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>{t.online} ({onlineUser.length})</button>
-                    <button onClick={() => setSocialTab('friends')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'friends' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>{t.friends}</button>
-                    <button onClick={() => setSocialTab('requests')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all relative ${socialTab === 'requests' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>{t.requests}{profileData?.friendRequests?.length > 0 && ( <span className="absolute -top-1 -right-3 w-3.5 h-3.5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[8px] font-black">{profileData.friendRequests.length}</span> )}</button>
-                  </div>
-                  <div className="space-y-1.5 md:space-y-2 max-h-[140px] md:max-h-[160px] overflow-y-auto pr-1 custom-scrollbar pt-2">
-                    {socialTab === 'online' && ( onlineUser.filter(u => u.username !== safeUsername).length > 0 ? ( onlineUser.filter(u => u.username !== safeUsername).map(u => ( <div key={u.socketId} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-white/10`}><div className="flex items-center gap-2 md:gap-2.5 cursor-pointer" onClick={() => handleInspectPlayer(u.username)}><div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${u.inGame ? 'bg-rose-500 animate-pulse' : activeTheme.accentBg + ' animate-pulse'} rounded-full`} /><span className="font-bold text-stone-200 truncate max-w-[70px] md:max-w-[90px] hover:underline">{u.username}</span>{u.inGame && <span className="text-[8px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/30 ml-1 animate-pulse">თამაშობს</span>}</div><div className="flex gap-1.5">{!profileData?.friends?.includes(u.username) && ( <button onClick={() => handleSendFriendReq(u.username)} title="მეგობრებში დამატება" className={`p-1.5 md:p-2 rounded-lg bg-stone-800 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95`}><UserPlus size={12} /></button> )}{!u.inGame && <button onClick={() => handleSendInviteClick(u.socketId, u.username)} title="თამაშში მოწვევა" className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}><Swords size={12} /> {t.invite}</button>}</div></div> )) ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">{t.noPlayers}</p> )}
-                    {socialTab === 'friends' && ( profileData?.friends?.length > 0 ? ( profileData.friends.map((friendName, i) => { const isOnline = onlineUser.find(u => u.username === friendName); return ( <div key={i} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-white/10`}><div className="flex items-center gap-2 md:gap-2.5 cursor-pointer" onClick={() => handleInspectPlayer(friendName)}><div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${isOnline ? (isOnline.inGame ? 'bg-rose-500 animate-pulse' : activeTheme.accentBg) : 'bg-stone-600'} rounded-full`} /><span className={`font-bold truncate max-w-[80px] hover:underline ${isOnline ? 'text-stone-200' : 'text-stone-500'}`}>{friendName}</span>{isOnline?.inGame && <span className="text-[8px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/30 ml-1 animate-pulse">თამაშობს</span>}</div>{isOnline && !isOnline.inGame && ( <button onClick={() => handleSendInviteClick(isOnline.socketId, friendName)} className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}><Swords size={12} /> {t.invite}</button> )}</div> ) }) ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">მეგობრების სია ცარიელია</p> )}
-                    {socialTab === 'requests' && ( profileData?.friendRequests?.length > 0 ? ( profileData.friendRequests.map((reqName, i) => ( <div key={i} className="flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs"><span className="font-bold text-stone-200 truncate cursor-pointer hover:underline" onClick={() => handleInspectPlayer(reqName)}>{reqName}</span><div className="flex gap-1.5"><button onClick={() => handleAcceptFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95"><CheckCircle2 size={12} /></button><button onClick={() => handleRejectFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-md active:scale-95"><XCircle size={12} /></button></div></div> )) ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">ახალი თხოვნები არ გაქვს</p> )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full relative">
-                {startCountdown !== null && (
-                    <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-2xl md:rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-                        <span className={`text-6xl md:text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse ${activeTheme.accent}`}>{startCountdown}</span>
-                        <span className={`text-sm md:text-base font-bold mt-4 uppercase tracking-widest text-white`}>თამაში იწყება...</span>
-                    </div>
-                )}
-
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 relative overflow-hidden`}>
-                   <div className={`absolute top-0 right-0 w-32 h-32 ${activeTheme.accentBg} opacity-5 blur-[60px] rounded-full`}></div>
-                   <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest mb-3">
-                    <Target size={14} className={activeTheme.accent} /> {t.dailyQuests}
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {profileData?.dailyQuests?.map((q, idx) => {
-                      const isDone = q.isCompleted; const p = Math.min((q.progress / q.target) * 100, 100);
-                      return ( <div key={idx} className={`p-3 md:p-4 rounded-xl border transition-all ${isDone ? 'bg-stone-950/80 border-stone-800' : `bg-stone-950/40 border-white/5`} flex flex-col justify-between`}><div className="flex justify-between items-start mb-2"><p className={`text-[10px] md:text-xs font-bold ${isDone ? 'text-stone-500 line-through' : 'text-stone-200'} leading-snug`}>{q.title}</p>{isDone ? <CheckCircle2 size={14} className="text-stone-600 shrink-0 ml-2"/> : <Gift size={14} className={`${activeTheme.accent} shrink-0 ml-2`}/>}</div><div className="space-y-1 mt-auto"><div className="flex justify-between text-[8px] md:text-[9px] font-black uppercase tracking-wider text-stone-500"><span>{q.progress} / {q.target}</span><span className={isDone ? 'text-stone-600' : activeTheme.accent}>+{q.xpReward} XP</span></div><div className="w-full h-1.5 md:h-2 bg-stone-900 rounded-full overflow-hidden"><div className={`h-full ${isDone ? 'bg-stone-700' : activeTheme.accentBg} transition-all duration-1000`} style={{ width: `${p}%` }}></div></div></div></div> )
-                    })}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                  <button onClick={() => setIsMatchmakingOpen(true)} className={`p-4 md:p-5 ${activeTheme.accentBg} hover:opacity-90 text-stone-950 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-[0_0_20px_currentColor] active:scale-95 border-b-4 border-black/20 group`}>
-                      <div><h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><Search size={14} className="md:w-4 md:h-4"/> თამაშის ძებნა</h4><p className="text-[9px] md:text-xs text-stone-800 mt-1 font-black opacity-80">სწრაფი დაკავშირება</p></div><Play size={18} className="md:w-5 md:h-5 text-stone-900 group-hover:scale-110 transition-transform" />
-                  </button>
-                  <button onClick={() => setIsCreateModalOpen(true)} className={`p-4 md:p-5 bg-stone-100 hover:bg-stone-200 border-stone-300 text-stone-900 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-lg active:scale-95 border-b-4 group`}>
-                    <div><h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><PlusCircle size={14} className="md:w-4 md:h-4"/> ოთახის შექმნა</h4><p className="text-[9px] md:text-xs text-stone-500 mt-1 font-bold">შენი წესებით</p></div>
-                  </button>
-                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-3 md:p-4 flex gap-2 md:gap-2.5 items-center shadow-2xl transition-colors duration-700 col-span-1 md:col-span-2 lg:col-span-1`}>
-                    <input type="text" placeholder={t.roomIdPlaceholder} value={roomId} onChange={(e) => setRoomId(e.target.value)} className={`flex-1 w-full rounded-xl bg-stone-950/60 border border-white/5 px-3 md:px-4 py-3 md:py-3.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none transition-all placeholder-stone-600 shadow-inner`} />
-                    <button onClick={() => handleJoinSpecificRoom(roomId)} className={`px-4 md:px-5 py-3 md:py-3.5 bg-stone-800 hover:bg-stone-700 border border-white/10 ${activeTheme.accent} rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md`}>{t.join}</button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                    <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest"><Medal size={14} className={activeTheme.accent} /> {t.top10}</h3>
-                    <div className="space-y-1.5 md:space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                      {leaderboard.map((player, idx) => ( <div key={player._id} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl border transition-all ${player.username === safeUsername ? 'bg-stone-800 border-stone-500 shadow-md' : 'bg-stone-950/40 border-white/5 hover:border-white/10'} text-[10px] md:text-xs`}><div className="flex items-center gap-2 md:gap-3 truncate cursor-pointer" onClick={() => handleInspectPlayer(player.username)}><span className={`w-5 h-5 md:w-6 md:h-6 flex items-center justify-center font-mono font-black text-[9px] md:text-[11px] rounded-md ${idx === 0 ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30' : idx === 1 ? 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/30' : idx === 2 ? 'bg-amber-700/10 text-amber-500 border border-amber-700/30' : 'bg-stone-800/80 text-stone-500 border border-white/5'}`}>{idx + 1}</span><div className="flex flex-col truncate hover:underline mt-0.5"><span className="font-bold truncate tracking-wide"><VipName name={player.username} isVip={checkIsVip(player.vipUntil)} className={player.username === safeUsername ? activeTheme.accent : 'text-stone-200'} /></span><div className={`text-[8px] font-black flex items-center gap-1 ${getLeague(player.xp || 0).color}`}>{getLeague(player.xp || 0).icon} {getLeague(player.xp || 0).name}</div></div></div><div className="text-stone-400 font-bold font-mono text-[9px] md:text-[11px] bg-stone-950/60 px-1.5 md:px-2 py-0.5 rounded-md border border-white/5 shrink-0">{player.stats?.gamesWon || 0} {t.wins}</div></div> ))}
-                    </div>
-                  </div>
-
-                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                    <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3"><h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest"><LayoutGrid size={14} className={activeTheme.accent} /> {t.tables}</h3><button onClick={() => socket.emit('getLiveRooms')} className={`p-1.5 md:p-2 hover:bg-stone-800 ${activeTheme.accent} rounded-lg bg-stone-950/60 border border-white/5 shadow-md active:scale-95`}><RefreshCw size={12}/></button></div>
-                    {liveRooms.length === 0 ? ( <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-stone-950/30"><p className="text-[10px] md:text-xs text-stone-500 font-bold">{t.noTables}</p></div> ) : ( <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">{liveRooms.map((room) => ( <div key={room.id} className="p-2.5 md:p-3 rounded-xl bg-stone-950/40 border border-white/5 flex justify-between items-center shadow-md"><div className="flex flex-col gap-1"><div className={`flex items-center gap-1.5 text-[10px] md:text-xs font-black ${activeTheme.accent} font-mono`}><span className="text-xs">{room.hostAvatar || '😎'}</span> <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> {room.isPrivate && <Lock size={10} className="text-stone-500" />}<span className="text-[8px] bg-stone-900 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md uppercase ml-1 shadow-sm flex items-center gap-1">{room.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}</span></div><div className="flex gap-1.5 items-center">{room.isRanked ? <span className={`text-[8px] font-bold ${activeTheme.accentBg} bg-opacity-10 border-opacity-20 border-current px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}<span className="text-[8px] font-bold text-stone-400 bg-stone-900/80 px-1 py-0.5 rounded border border-white/5 font-mono">👥 {room.currentPlayers}/{room.maxPlayers}</span></div></div><button onClick={() => handleRoomClickFromList(room)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all active:scale-95 ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300' : `bg-white text-stone-900 shadow-md`}`}>{t.join}</button></div> ))}</div> )}
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          ) : (
-            <div className="w-full relative">
-              {startCountdown !== null && (
-                  <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-2xl md:rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-                      <span className={`text-6xl md:text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse ${activeTheme.accent}`}>{startCountdown}</span>
-                      <span className={`text-sm md:text-base font-bold mt-4 uppercase tracking-widest text-white`}>თამაში იწყება...</span>
-                  </div>
-              )}
-              {roomData && (
-                <>
-                  {!roomData.gameStarted ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto py-2 md:py-4">
-                      <div className={`${activeTheme.card} backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-6 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
-                        <div className="border-b border-white/10 pb-3 md:pb-4 flex justify-between items-start">
-                          <div className="flex flex-col gap-1">
-                             <h3 className={`text-lg md:text-xl font-black ${activeTheme.accent} font-mono`}>ROOM #{roomData.id}</h3>
-                             <span className="text-[10px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400 w-max shadow-inner flex items-center gap-1.5">
-                               {roomData.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში (Damka)</> : '🃏 ფურთი (Phurti)'}
-                             </span>
-                          </div>
-                          <span className="text-[9px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400">{roomData.hostTheme || 'wood'} Theme</span>
-                        </div>
-                        
-                        <div className="space-y-1.5 md:space-y-2 max-h-[180px] md:max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
-                          {roomData.players?.map((p, idx) => (
-                            <div key={idx} className="flex items-center justify-between rounded-xl bg-stone-950/60 p-2.5 md:p-3.5 border border-white/5 shadow-inner">
-                              <div className="flex items-center gap-2 cursor-pointer hover:opacity-80" onClick={() => handleInspectPlayer(p.name)}>
-                                <span className="text-xl">{p.avatar || '😎'}</span>
-                                <span className="font-bold text-[10px] md:text-xs text-stone-200"><VipName name={p.name} isVip={checkIsVip(p.vipUntil)} className={p.id === socket.id ? activeTheme.accent : 'text-stone-200'} /></span>
-                              </div>
-                              <span className={`text-[8px] md:text-[10px] font-black px-3 py-1 rounded-md tracking-wider shadow-sm transition-all ${idx === 0 ? `${activeTheme.accentBg} text-stone-950` : 'bg-stone-800 border border-white/5 text-stone-400'}`}>{idx === 0 ? 'HOST' : 'READY'}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 md:gap-3 pt-3 md:pt-4 border-t border-white/10">
-                          <button onClick={handleResetToLobby} className="py-2.5 md:py-3 bg-stone-800/80 hover:bg-stone-700 border border-white/10 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md">↩️</button>
-                          {isHost && (
-                            <button disabled={startCountdown !== null} onClick={() => socket.emit('startGame', { roomId: roomData.id })} className={`py-2.5 md:py-3 bg-white hover:bg-stone-200 text-stone-900 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 border-b-2 border-stone-300 shadow-lg ${startCountdown !== null ? 'opacity-50 cursor-not-allowed' : ''}`}>🎮</button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className={`${activeTheme.card} backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-6 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
-                        <div className="space-y-2 md:space-y-2.5">
-                          <div className="grid grid-cols-2 gap-2 md:gap-2.5">
-                            <button disabled={!isHost || roomData.gameType === 'damka'} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: true })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.isRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'} ${roomData.gameType === 'damka' ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
-                            <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: false })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!roomData.isRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
-                          </div>
-                        </div>
-                        <div className="space-y-2 md:space-y-2.5 mt-2">
-                          <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🤖 ბოტები</label>
-                          <div className="grid grid-cols-2 gap-2 md:gap-2.5">
-                            <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: true, isRanked: false })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.allowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🤖 ჩართვა</button>
-                            <button disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: roomData.maxPlayers, allowBots: false, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!roomData.allowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>🤖 გამორთვა</button>
-                          </div>
-                        </div>
-
-                        {roomData.gameType === 'phurti' ? (
-                          <>
-                            <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
-                              <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">{t.targetScore}</label>
-                              <div className="grid grid-cols-2 gap-2 md:gap-2.5">
-                                {[11, 21].map((score) => ( <button key={score} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: score, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.targetScore === score ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{score}</button> ))}
-                              </div>
-                            </div>
-                            <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
-                              <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">{t.playerLimit}</label>
-                              <div className="grid grid-cols-3 gap-2 md:gap-2.5">
-                                {[2, 3, 4].map((num) => ( <button key={num} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: num, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.maxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{num}</button> ))}
-                              </div>
-                            </div>
-                          </>
-                        ) : ( <div className="flex flex-col items-center justify-center py-4 mt-2 bg-stone-950/40 rounded-xl border border-white/5 shadow-inner"><div className="flex -space-x-4 mb-3"><DamkaIcon type="red" size="lg" className="z-10" /><DamkaIcon type="white" size="lg" className="mt-4" /></div><p className="text-[10px] font-bold text-stone-400 max-w-xs text-center px-4">შაში ითამაშება მხოლოდ 2 მოთამაშეზე. {roomData.allowBots ? 'ბოტები ჩართულია.' : 'ბოტები გამორთულია.'}</p></div> )}
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {roomData.gameType === 'damka' ? (
-                         <DamkaBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} checkIsVip={checkIsVip} VipName={VipName} DamkaIcon={DamkaIcon} />
-                      ) : (
-                         <GameBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} checkIsVip={checkIsVip} VipName={VipName} />
-                      )}
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </main>
-
-        {/* 🟢 აქ დაემატა 3-სვეტიანი Footer შიდა დაფისთვის (როცა თამაშში არ ვართ) */}
-        {!inRoom && (
-          <footer className="w-full bg-stone-950/60 backdrop-blur-md pt-10 pb-6 border-t border-white/5 mt-auto z-10 relative">
-            <div className="max-w-[1340px] mx-auto px-4 md:px-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mb-8">
-                
-                <div className="flex flex-col items-start gap-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
-                       <Shield size={18} className="text-yellow-500" />
-                    </div>
-                    <span className="text-sm font-black tracking-widest text-stone-100">PHURTI.GE</span>
-                  </div>
-                  <p className="text-[10px] md:text-xs text-stone-500 leading-relaxed font-medium max-w-xs">
-                    ქართული დეველოპერული პროექტი. კლასიკური ბანქოს თამაშის თანამედროვე, სანდო და აზარტული ონლაინ სივრცე.
-                  </p>
-                </div>
-
-                <div className="flex flex-col items-start md:items-center gap-4">
-                  <h4 className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t.socials}</h4>
-                  <div className="flex items-center gap-3">
-                    <a href="https://facebook.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#1877F2] hover:bg-[#1877F2]/10 hover:border-[#1877F2]/30 transition-all">
-                      <Facebook size={18}/>
-                    </a>
-                    <a href="https://instagram.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#E4405F] hover:bg-[#E4405F]/10 hover:border-[#E4405F]/30 transition-all">
-                      <Instagram size={18}/>
-                    </a>
-                    <a href="https://discord.gg/phurti" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#5865F2] hover:bg-[#5865F2]/10 hover:border-[#5865F2]/30 transition-all">
-                      <MessageSquare size={18}/>
-                    </a>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-start md:items-end gap-4">
-                  <h4 className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t.contactUs}</h4>
-                  <p className="text-[10px] text-stone-500 text-left md:text-right max-w-[200px] mb-1">გაქვთ იდეა ან გსურთ მოთამაშის გასაჩივრება?</p>
-                  <button onClick={() => setIsContactOpen(true)} className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 border border-white/10 text-stone-200 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 active:scale-95 shadow-lg">
-                    <Mail size={14} className="text-yellow-500"/> {t.contactUs}
-                  </button>
-                </div>
-              </div>
-              <div className="pt-6 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-4">
-                <p className="text-[9px] text-stone-600 font-bold tracking-widest uppercase">
-                  &copy; {new Date().getFullYear()} PHURTI.GE. ყველა უფლება დაცულია.
+                <p className="text-[10px] md:text-xs text-stone-500 leading-relaxed font-medium max-w-xs">
+                  ქართული დეველოპერული პროექტი. კლასიკური ბანქოს თამაშის თანამედროვე, სანდო და აზარტული ონლაინ სივრცე.
                 </p>
-                <div className="flex gap-4 text-[9px] font-bold text-stone-600 uppercase tracking-widest">
-                  <span className="hover:text-stone-300 cursor-pointer">წესები</span>
-                  <span className="hover:text-stone-300 cursor-pointer">კონფიდენციალურობა</span>
+              </div>
+
+              <div className="flex flex-col items-start md:items-center gap-4">
+                <h4 className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t.socials}</h4>
+                <div className="flex items-center gap-3">
+                  <a href="https://facebook.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#1877F2] hover:bg-[#1877F2]/10 hover:border-[#1877F2]/30 transition-all">
+                    <Facebook size={18}/>
+                  </a>
+                  <a href="https://instagram.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#E4405F] hover:bg-[#E4405F]/10 hover:border-[#E4405F]/30 transition-all">
+                    <Instagram size={18}/>
+                  </a>
+                  <a href="https://discord.gg/phurti" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#5865F2] hover:bg-[#5865F2]/10 hover:border-[#5865F2]/30 transition-all">
+                    <MessageSquare size={18}/>
+                  </a>
                 </div>
               </div>
-            </div>
-          </footer>
-        )}
 
-      </div>
+              <div className="flex flex-col items-start md:items-end gap-4">
+                <h4 className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t.contactUs}</h4>
+                <p className="text-[10px] text-stone-500 text-left md:text-right max-w-[200px] mb-1">გაქვთ იდეა ან გსურთ მოთამაშის გასაჩივრება?</p>
+                <button onClick={() => setIsContactOpen(true)} className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 border border-white/10 text-stone-200 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 active:scale-95 shadow-lg">
+                  <Mail size={14} className="text-yellow-500"/> {t.contactUs}
+                </button>
+              </div>
+            </div>
+            <div className="pt-6 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-[9px] text-stone-600 font-bold tracking-widest uppercase">
+                &copy; {new Date().getFullYear()} PHURTI.GE. ყველა უფლება დაცულია.
+              </p>
+              <div className="flex gap-4 text-[9px] font-bold text-stone-600 uppercase tracking-widest">
+                <span className="hover:text-stone-300 cursor-pointer">წესები</span>
+                <span className="hover:text-stone-300 cursor-pointer">კონფიდენციალურობა</span>
+              </div>
+            </div>
+          </div>
+        </footer>
+      )}
 
       {/* 🟢 საკონტაქტო მოდალური ფანჯარა */}
       {isContactOpen && (
