@@ -182,6 +182,7 @@ function startGameLogic(roomId) {
     startTurnTimer(room, roomId); io.to(roomId).emit('gameStarted', room); broadcastActiveRooms(); checkAndTriggerBotTurn(room, roomId);
 }
 
+// 🟢 3 წამიანი ავტომატური დაწყების ფუნქცია
 function checkAutoStart(roomId) {
     const room = rooms[roomId];
     if (room && !room.gameStarted && room.players.length === room.maxPlayers) {
@@ -273,36 +274,68 @@ io.on('connection', (socket) => {
 
     if (!rooms[roomId]) {
       if (action === 'join' || !maxPlayers) return socket.emit('joinError', 'ასეთი მაგიდა არ არსებობს!');
-      rooms[roomId] = { id: roomId, players: [], gameStarted: false, deck: [], tableCards: [], currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null, targetScore: targetScore || 11, maxPlayers: maxPlayers || 4, allowBots: allowBots !== undefined ? allowBots : true, isRanked: allowBots ? false : (isRanked !== undefined ? isRanked : true), readyForNextRound: [], turnExpiresAt: null, password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword, hostTheme: hTh, hostCardBack: hCB, gameType: gameType || 'phurti', damkaBoard: null, lastDamkaMove: null };
+      let finalIsRanked = isRanked !== undefined ? isRanked : true;
+      if (allowBots) finalIsRanked = false; 
+
+      rooms[roomId] = {
+        id: roomId, players: [], gameStarted: false, deck: [], tableCards: [], currentTurn: 0, roundSummary: null, lastAction: null, lastCapturerId: null,
+        targetScore: parseInt(targetScore) || 11, maxPlayers: parseInt(maxPlayers) || 4, allowBots: allowBots !== undefined ? allowBots : true, isRanked: finalIsRanked, 
+        readyForNextRound: [], turnExpiresAt: null, password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword, hostTheme: hTh, hostCardBack: hCB, gameType: gameType || 'phurti', damkaBoard: null, lastDamkaMove: null 
+      };
     }
-    const r = rooms[roomId];
-    if (r.isPrivate && !r.gameStarted && !r.players.some(p => p.name === playerName) && r.password !== roomPassword?.trim()) return socket.emit('joinError', 'არასწორი ოთახის პაროლი!');
-    const pEx = r.players.find(p => p.name === playerName);
-    if (pEx) { pEx.id = socket.id; pEx.avatar = uAv; pEx.vipUntil = uVip; pEx.xp = uXp; if (r.gameStarted) socket.emit('gameStarted', r); else socket.emit('roomUpdated', r); broadcastActiveRooms(); return; }
-    if (r.players.length >= r.maxPlayers && !r.gameStarted) return socket.emit('joinError', 'ოთახი უკვე სავსეა!');
+
+    const room = rooms[roomId];
+
+    if (room.isPrivate && !room.gameStarted) {
+      const isAlreadyIn = room.players.some(p => p.name === playerName);
+      if (!isAlreadyIn && room.password !== roomPassword?.trim()) return socket.emit('joinError', 'არასწორი ოთახის პაროლი!');
+    }
+
+    const playerExists = room.players.find(p => p.name === playerName);
+    if (playerExists) {
+      playerExists.id = socket.id; playerExists.avatar = userAvatar; playerExists.vipUntil = userVip; playerExists.xp = userXp;
+      if (room.gameStarted) socket.emit('gameStarted', room); else socket.emit('roomUpdated', room);
+      broadcastActiveRooms(); return;
+    }
+
+    if (room.players.length >= room.maxPlayers && !room.gameStarted) return socket.emit('joinError', 'ოთახი უკვე სავსეა!');
     
-    r.players.push({ id: socket.id, name: playerName, avatar: uAv, vipUntil: uVip, xp: uXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
-    io.to(roomId).emit('roomUpdated', r); broadcastActiveRooms();
+    room.players.push({ id: socket.id, name: playerName, avatar: userAvatar, vipUntil: userVip, xp: userXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
+    io.to(roomId).emit('roomUpdated', room); broadcastActiveRooms();
     checkAutoStart(roomId); 
   });
 
-  socket.on('tryFindMatch', async ({ playerName, gameType, maxPlayers, isRanked }) => {
+  // 🟢 თამაშის ძებნის ლოგიკა (გასწორდა ექაუნთის და მოთამაშეების ტესტირების პრობლემა)
+  socket.on('tryFindMatch', async ({ playerName, gameType, maxPlayers, targetScore, isRanked }) => {
     if (!playerName) return;
     let foundRoomId = null;
+
     for (const rId in rooms) {
         const r = rooms[rId];
+        // ვამოწმებთ, რომ იყოს იგივე პარამეტრების მქონე ოთახი
         if (!r.gameStarted && !r.isPrivate && r.gameType === gameType && r.isRanked === isRanked && r.players.length < r.maxPlayers && !r.allowBots) {
-            if (gameType === 'damka' || r.maxPlayers === maxPlayers) { foundRoomId = rId; break; }
+            if (gameType === 'damka' || (parseInt(r.maxPlayers) === parseInt(maxPlayers) && parseInt(r.targetScore) === parseInt(targetScore))) { 
+                foundRoomId = rId; break; 
+            }
         }
     }
+
     if (foundRoomId) {
         const room = rooms[foundRoomId];
-        if (room.players.find(p => p.name === playerName)) return; 
-        let uAv = '😎'; let uVip = null; let uXp = 0;
-        try { const dbU = await User.findOne({ username: playerName }); if (dbU) { uAv = dbU.avatar || '😎'; uVip = dbU.vipUntil; uXp = dbU.xp || 0; } } catch(e) {}
+        const playerExists = room.players.find(p => p.name === playerName);
         
-        room.players.push({ id: socket.id, name: playerName, avatar: uAv, vipUntil: uVip, xp: uXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
-        socket.join(foundRoomId); io.to(foundRoomId).emit('roomUpdated', room); broadcastActiveRooms();
+        if (!playerExists) {
+            let uAv = '😎'; let uVip = null; let uXp = 0;
+            try { const dbU = await User.findOne({ username: playerName }); if (dbU) { uAv = dbU.avatar || '😎'; uVip = dbU.vipUntil; uXp = dbU.xp || 0; } } catch(e) {}
+            room.players.push({ id: socket.id, name: playerName, avatar: uAv, vipUntil: uVip, xp: uXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
+        } else {
+            // თუ მომხმარებელი (იგივე ექაუნთით ტესტირებისას) უკვე ოთახშია, უბრალოდ socket.id განახლდება და პირდაპირ შეუყვანს
+            playerExists.id = socket.id;
+        }
+
+        socket.join(foundRoomId); 
+        io.to(foundRoomId).emit('roomUpdated', room); 
+        broadcastActiveRooms();
         socket.emit('joinedMatchedRoom', foundRoomId);
         checkAutoStart(foundRoomId); 
     }
@@ -311,7 +344,7 @@ io.on('connection', (socket) => {
   socket.on('getLiveRooms', () => broadcastActiveRooms());
   socket.on('updateConfig', ({ roomId, targetScore, maxPlayers, allowBots, isRanked }) => {
     const r = rooms[roomId]; if (!r || r.gameStarted || (r.players[0] && r.players[0].id !== socket.id)) return;
-    r.targetScore = targetScore; r.maxPlayers = maxPlayers; r.allowBots = allowBots; r.isRanked = allowBots ? false : (isRanked !== undefined ? isRanked : r.isRanked);
+    r.targetScore = parseInt(targetScore); r.maxPlayers = parseInt(maxPlayers); r.allowBots = allowBots; r.isRanked = allowBots ? false : (isRanked !== undefined ? isRanked : r.isRanked);
     if (r.players.length > maxPlayers) r.players = r.players.slice(0, maxPlayers);
     io.to(roomId).emit('roomUpdated', r); broadcastActiveRooms();
     checkAutoStart(roomId); 
@@ -321,15 +354,13 @@ io.on('connection', (socket) => {
   socket.on('sendMessage', ({ roomId, message }) => { const r = rooms[roomId]; if (r) { const p = r.players.find(pl => pl.id === socket.id); if (p) io.to(roomId).emit('receiveMessage', { sender: p.name, senderId: p.id, isVip: p.vipUntil, text: message, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }); } });
   socket.on('sendEmote', ({ roomId, emote }) => { socket.to(roomId).emit('receiveEmote', { playerId: socket.id, emote }); });
 
+  // 🟢 Manual Start Game Check
   socket.on('startGame', ({ roomId }) => { 
     const r = rooms[roomId];
     if (!r || r.gameStarted) return;
-    
-    // 🟢 აქ დამატებულია მოთამაშეების რაოდენობის კონტროლი
     if (!r.allowBots && r.players.length < r.maxPlayers) {
         return socket.emit('error', `საჭიროა ${r.maxPlayers} მოთამაშე!`);
     }
-
     startGameLogic(roomId); 
   });
 
@@ -352,6 +383,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('playDamkaMove', ({ roomId, from, to }) => { const res = processDamkaMove(roomId, socket.id, from, to, io); if (res && res.error) socket.emit('error', res.error); });
+  
   socket.on('surrender', ({ roomId }) => {
     const r = rooms[roomId]; if (!r || !r.gameStarted) return;
     const sIdx = r.players.findIndex(p => p.id === socket.id); if (sIdx === -1) return; const s = r.players[sIdx];
