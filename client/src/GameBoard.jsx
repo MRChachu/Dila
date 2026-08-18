@@ -29,8 +29,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const isMyTurn = room?.players?.[room.currentTurn]?.id === socket.id;
   const amIVip = checkIsVip(me?.vipUntil);
 
-  const standardEmotes = ['🔥', '😂', '😎', '🤯', '🃏', '⏳', '👏', '💀'];
-  const vipEmotes = ['🤑', '🤬', '🍻', '🤡', '👽'];
+  const standardEmotes = ['😁', '😝', '😉', '😤', '😂'];
+  const vipEmotes = ['💩', '🖕', '🫦', '🤬', '😎', '😲', '🫶'];
 
   const QUICK_PHRASES = [
     "გამარჯობა! 👋",
