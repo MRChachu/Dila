@@ -206,15 +206,15 @@ export default function App() {
             </div>
             <h4 className={`text-[10px] font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2 uppercase tracking-widest mb-3`}><Award size={14} className={activeTheme.accent} /> {t.achievements}</h4>
             
-            {/* 🟢 Inspect Profile: მხოლოდ სიმბოლოები და დაკლიკება */}
-            <div className="flex flex-wrap gap-2">
+            {/* 🟢 Inspect Profile: მორგებული ზომები */}
+            <div className="flex flex-nowrap items-center justify-between w-full gap-1">
               {AVAILABLE_BADGES.map(b => { 
                 const hasIt = inspectProfile.achievements?.includes(b.id); 
                 return ( 
                   <div 
                     key={b.id} 
                     onClick={() => setToastMsg(hasIt ? `🏆 აქვს: ${b.name}` : `🔒 არ აქვს: ${b.name}`)}
-                    className={`cursor-pointer w-10 h-10 flex items-center justify-center rounded-xl border transition-all hover:scale-110 active:scale-95 ${hasIt ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-50 border-current ${activeTheme.accent} text-xl shadow-[0_0_10px_currentColor]` : 'bg-stone-950/50 border-white/5 text-lg opacity-30 grayscale hover:opacity-80'}`}
+                    className={`cursor-pointer shrink-0 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg md:rounded-xl border transition-all hover:scale-110 active:scale-95 ${hasIt ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-50 border-current ${activeTheme.accent} text-sm sm:text-base md:text-lg shadow-[0_0_10px_currentColor]` : 'bg-stone-950/50 border-white/5 text-xs sm:text-sm md:text-base opacity-30 grayscale hover:opacity-80'}`}
                   >
                     <span className="drop-shadow-md">{b.icon}</span>
                   </div> 
@@ -337,15 +337,15 @@ export default function App() {
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
                   <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest"><Award size={14} className={activeTheme.accent} /> {t.achievements}</h4>
                   
-                  {/* 🟢 Main Dashboard: მხოლოდ სიმბოლოები და დაკლიკება */}
-                  <div className="flex flex-wrap gap-2 md:gap-3">
+                  {/* 🟢 Main Dashboard: დაპატარავებული და ერთ ხაზზე გადაყვანილი მიღწევები */}
+                  <div className="flex flex-nowrap items-center justify-between w-full gap-1 md:gap-2">
                     {AVAILABLE_BADGES.map((badge) => {
                       const isUnlocked = myAchievements.includes(badge.id);
                       return ( 
                         <div 
                           key={badge.id} 
                           onClick={() => setToastMsg(isUnlocked ? `🏆 მიღწეულია: ${badge.name}` : `🔒 დასაბლოკია: ${badge.name}`)}
-                          className={`cursor-pointer w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl border transition-all hover:scale-110 active:scale-95 ${isUnlocked ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-50 border-current ${activeTheme.accent} text-2xl md:text-3xl shadow-[0_0_15px_currentColor]` : 'bg-stone-950/50 border-white/5 opacity-40 grayscale text-xl md:text-2xl hover:opacity-80'}`}
+                          className={`cursor-pointer shrink-0 w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-xl border transition-all hover:scale-110 active:scale-95 ${isUnlocked ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current ${activeTheme.accent} text-base sm:text-lg md:text-xl shadow-[0_0_10px_currentColor]` : 'bg-stone-950/50 border-white/5 opacity-40 grayscale text-sm sm:text-base md:text-lg hover:opacity-80'}`}
                         >
                           <span className="drop-shadow-md">{badge.icon}</span>
                         </div> 
@@ -369,8 +369,6 @@ export default function App() {
               </div>
 
               <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full relative">
-                
-                {/* 🟢 ავტომატური დაწყების ტაიმერის მოდალი (თუ მიმდინარეობს ათვლა) */}
                 {startCountdown !== null && (
                     <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-2xl md:rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                         <span className={`text-6xl md:text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse ${activeTheme.accent}`}>{startCountdown}</span>
@@ -422,15 +420,12 @@ export default function App() {
             </div>
           ) : (
             <div className="w-full relative">
-              
-              {/* 🟢 თამაშის ოთახშიც უნდა გამოჩნდეს ტაიმერი თუ მასპინძელმა დაიწყო ან ავტომატურად დაიწყო */}
               {startCountdown !== null && (
                   <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-2xl md:rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                       <span className={`text-6xl md:text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse ${activeTheme.accent}`}>{startCountdown}</span>
                       <span className={`text-sm md:text-base font-bold mt-4 uppercase tracking-widest text-white`}>თამაში იწყება...</span>
                   </div>
               )}
-
               {roomData && (
                 <>
                   {!roomData.gameStarted ? (
