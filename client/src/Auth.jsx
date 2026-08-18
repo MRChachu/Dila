@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound, Calendar, Key, Facebook, Instagram, Mail, Send, X, MessageSquare } from 'lucide-react';
+import { Shield, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound, Calendar, Key } from 'lucide-react';
 
 const translations = {
   ka: {
@@ -15,15 +15,13 @@ const translations = {
     forgot: "დაგავიწყდა პაროლი?", back: "უკან", backMain: "მთავარზე დაბრუნება",
     errFields: "შეავსეთ ყველა ველი!", errPassMatch: "პაროლები არ ემთხვევა!", errPassRule: "პაროლი უნდა შეიცავდეს მინ. 6 სიმბოლოს, 1 ასოს და 1 ციფრს!", errServer: "სერვერთან კავშირი ვერ მოხერხდა",
     errData: "მონაცემები არასწორია",
-    errUserRule: "სახელი: მინ 3 ლათინური ასო/ციფრი, სფეისის გარეშე!", errAgeRule: "რეგისტრაციისთვის აუცილებელია იყოთ 16 წლის!",
     howToPlay: "როგორ ვითამაშოთ?", goal: "მიზანი", goalDesc: "მოთამაშეების მიზანია დააგროვონ 11 ან 21 ქულა დადგენილი წესებით.", scoring: "ქულების სისტემა", scoringDesc: "ბევრი კარტი (2 ქულა), მეტი ჯვარი (1 ქულა), 10 აგური (1 ქულა), 2 ჯვარი (1 ქულა).", capture: "მოჭრა / გასუფთავება", captureDesc: "ვალეტი (J) ჭრის ნებისმიერ კარტს და ასუფთავებს მაგიდას.",
     economy: "ეკონომიკა", shopQuests: "მაღაზია & მისიები", economyDesc: "შეასრულე ყოველდღიური 3 მისია, გამოიმუშავე ოქროს მონეტები და გადაცვალე ისინი პრემიუმ კონტენტში.",
     dailyQuests: "დღიური მისიები", dailyQuestsDesc: "განახლებადი 24 სთ-ში", designs: "დიზაინები", designsDesc: "მაგიდა და კარტები", premiumAvatar: "პრემიუმ ავატარი", premiumAvatarDesc: "უნიკალური ემოჯი", vipStatus: "VIP სტატუსი", vipStatusDesc: "მანათობელი სახელი",
     achievementsSys: "მიღწევების სისტემა", achievementsDesc: "ბეჯების მოპოვება მხოლოდ რჩეულებს შეუძლიათ. პირობები ითვლება მხოლოდ და მხოლოდ მოგებულ მატჩებში!",
     achVet: "ვეტერანი", achVetDesc: "მოიგე 100 რეიტინგული მატჩი.", ach10D: "10 აგური", ach10DDesc: "50-ჯერ წაიღე მოგებულ მატჩში.", ach2C: "2 ჯვარი", ach2CDesc: "50-ჯერ წაიღე მოგებულ მატჩში.", achSweep: "მესუფთავე", achSweepDesc: "50-ჯერ წაიღე 4+ კარტი ვალეტით.",
     footerDesc: "ქართული დეველოპერული პროექტი. კლასიკური ბანქოს თამაშის თანამედროვე, სანდო და აზარტული ონლაინ სივრცე.",
-    allRights: "ყველა უფლება დაცულია.",
-    contactUs: "საკონტაქტო", socials: "სოციალური ქსელები", sendMessage: "გაგზავნა", contactDesc: "მოგვწერეთ თქვენი იდეები, შეფასება ან გაასაჩივრეთ მოთამაშე.", subject: "თემა", complaint: "გასაჩივრება / რეპორტი", feedback: "იდეა / რჩევა", messagePlaceholder: "აღწერეთ დეტალურად...", emailPlaceholder: "თქვენი ელ-ფოსტა (პასუხისთვის)...", close: "დახურვა", contactSuccess: "მადლობა! შეტყობინება მიღებულია."
+    allRights: "ყველა უფლება დაცულია."
   },
   en: {
     rules: "Rules", system: "System", about: "About Us",
@@ -38,15 +36,13 @@ const translations = {
     forgot: "Forgot password?", back: "Back", backMain: "Back to main",
     errFields: "Fill in all fields!", errPassMatch: "Passwords do not match!", errPassRule: "Password must contain min 6 chars, 1 letter, and 1 number!", errServer: "Server connection failed",
     errData: "Incorrect details",
-    errUserRule: "Username: min 3 Latin chars/nums, no spaces!", errAgeRule: "You must be at least 16 years old!",
     howToPlay: "How to play?", goal: "Goal", goalDesc: "Players aim to score 11 or 21 points by the rules.", scoring: "Scoring System", scoringDesc: "Most cards (2 pts), Most clubs (1 pt), 10 of Diamonds (1 pt), 2 of Clubs (1 pt).", capture: "Capture / Sweep", captureDesc: "Jack (J) captures any card and sweeps the table.",
     economy: "Economy", shopQuests: "Shop & Quests", economyDesc: "Complete 3 daily quests, earn gold coins, and exchange them for premium content.",
     dailyQuests: "Daily Quests", dailyQuestsDesc: "Refreshes in 24h", designs: "Designs", designsDesc: "Table & Cards", premiumAvatar: "Premium Avatar", premiumAvatarDesc: "Unique Emoji", vipStatus: "VIP Status", vipStatusDesc: "Glowing Name",
     achievementsSys: "Achievement System", achievementsDesc: "Badges are for the elite. Conditions only count in won matches!",
     achVet: "Veteran", achVetDesc: "Win 100 ranked matches.", ach10D: "10 of Diamonds", ach10DDesc: "Capture 50 times in a won match.", ach2C: "2 of Clubs", ach2CDesc: "Capture 50 times in a won match.", achSweep: "Sweeper", achSweepDesc: "Capture 4+ cards with a Jack 50 times.",
     footerDesc: "A modern, reliable, and exciting online platform for the classic card game.",
-    allRights: "All rights reserved.",
-    contactUs: "Contact Us", socials: "Social Media", sendMessage: "Send", contactDesc: "Send us your feedback, ideas, or report a player.", subject: "Subject", complaint: "Report Player", feedback: "Feedback / Idea", messagePlaceholder: "Describe in detail...", emailPlaceholder: "Your Email (optional)...", close: "Close", contactSuccess: "Thanks! Message received."
+    allRights: "All rights reserved."
   },
   ru: {
     rules: "Правила", system: "Система", about: "О нас",
@@ -61,15 +57,13 @@ const translations = {
     forgot: "Забыли пароль?", back: "Назад", backMain: "На главную",
     errFields: "Заполните все поля!", errPassMatch: "Пароли не совпадают!", errPassRule: "Пароль: мин 6 символов, 1 буква и 1 цифра!", errServer: "Ошибка подключения к серверу",
     errData: "Неверные данные",
-    errUserRule: "Имя: мин 3 лат. символа/цифры, без пробелов!", errAgeRule: "Вам должно быть минимум 16 лет!",
     howToPlay: "Как играть?", goal: "Цель", goalDesc: "Цель — набрать 11 или 21 очко по правилам.", scoring: "Система очков", scoringDesc: "Больше карт (2 оч.), Больше треф (1 оч.), 10 Бубен (1 оч.), 2 Треф (1 оч.).", capture: "Взятие / Очистка", captureDesc: "Валет (J) берет любую карту и очищает стол.",
     economy: "Экономика", shopQuests: "Магазин и Квесты", economyDesc: "Выполняйте 3 задания в день, зарабатывайте монеты и покупайте премиум контент.",
     dailyQuests: "Ежедневные задания", dailyQuestsDesc: "Обновление 24ч", designs: "Дизайны", designsDesc: "Стол и Карты", premiumAvatar: "Премиум Аватар", premiumAvatarDesc: "Уникальное эмодзи", vipStatus: "VIP Статус", vipStatusDesc: "Светящееся имя",
     achievementsSys: "Система Достижений", achievementsDesc: "Значки для избранных. Учитываются только в выигранных матчах!",
     achVet: "Ветеран", achVetDesc: "Выиграть 100 рейтинговых матчей.", ach10D: "10 Бубен", ach10DDesc: "Взять 50 раз в победном матче.", ach2C: "2 Треф", ach2CDesc: "Взять 50 раз в победном матче.", achSweep: "Уборщик", achSweepDesc: "Взять 4+ карт Валетом 50 раз.",
     footerDesc: "Современная, надежная и увлекательная онлайн-платформа для классической карточной игры.",
-    allRights: "Все права защищены.",
-    contactUs: "Контакты", socials: "Соц. сети", sendMessage: "Отправить", contactDesc: "Напишите нам свои идеи, отзывы или подайте жалобу.", subject: "Тема", complaint: "Жалоба / Репорт", feedback: "Идея / Отзыв", messagePlaceholder: "Опишите подробно...", emailPlaceholder: "Ваш Email (необязательно)...", close: "Закрыть", contactSuccess: "Спасибо! Сообщение получено."
+    allRights: "Все права защищены."
   }
 };
 
@@ -90,12 +84,6 @@ export default function Auth({ onAuthSuccess }) {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // საკონტაქტო მოდალის მდგომარეობები
-  const [isContactOpen, setIsContactOpen] = useState(false);
-  const [contactData, setContactData] = useState({ email: '', subject: 'feedback', message: '' });
-  const [isSending, setIsSending] = useState(false);
-  const [contactStatus, setContactStatus] = useState('');
 
   const validatePassword = (pass) => {
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
@@ -139,27 +127,8 @@ export default function Auth({ onAuthSuccess }) {
     e.preventDefault();
     setError(''); setSuccessMsg('');
 
-    if (authMode === 'register') {
-      const userRegex = /^[a-zA-Z0-9]+$/;
-      if (username.length < 3 || !userRegex.test(username)) {
-        return setError(t.errUserRule);
-      }
-      
-      if (!dob) return setError(t.errFields);
-      const birthDate = new Date(dob);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      if (age < 16) {
-        return setError(t.errAgeRule);
-      }
-
-      if (!validatePassword(password)) {
-        return setError(t.errPassRule);
-      }
+    if (authMode === 'register' && !validatePassword(password)) {
+      return setError(t.errPassRule);
     }
 
     if (authMode === 'forgot' && password !== confirmPassword) {
@@ -211,31 +180,6 @@ export default function Auth({ onAuthSuccess }) {
     }
   };
 
-  const handleContactSubmit = async (e) => {
-    e.preventDefault();
-    setIsSending(true);
-    setContactStatus('');
-    try {
-      const res = await fetch(`https://purti.onrender.com/api/auth/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(contactData)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setContactStatus(t.contactSuccess);
-        setContactData({ email: '', subject: 'feedback', message: '' });
-        setTimeout(() => { setIsContactOpen(false); setContactStatus(''); }, 3000);
-      } else {
-        setContactStatus(data.message || 'Error');
-      }
-    } catch (err) {
-      setContactStatus(t.errServer);
-    } finally {
-      setIsSending(false);
-    }
-  };
-
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
@@ -257,6 +201,7 @@ export default function Auth({ onAuthSuccess }) {
               <a href="#about" className="hover:text-yellow-500 transition-colors">{t.about}</a>
             </div>
             
+            {/* 🟢 ენის გადამრთველი ღილაკები რეგისტრაციისას */}
             <div className="flex bg-stone-900/80 rounded-lg border border-white/5 p-1 gap-1 shadow-md ml-2 md:ml-4">
               <button onClick={() => setLang('ka')} className={`p-1 rounded transition-all text-[10px] md:text-xs ${lang === 'ka' ? 'bg-yellow-500 text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇪</button>
               <button onClick={() => setLang('en')} className={`p-1 rounded transition-all text-[10px] md:text-xs ${lang === 'en' ? 'bg-yellow-500 text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇧</button>
@@ -367,6 +312,7 @@ export default function Auth({ onAuthSuccess }) {
         </div>
       </section>
 
+      {/* 🟢 წესები */}
       <section id="rules" className="py-10 border-t border-white/5 bg-stone-950/30">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <h2 className="text-xl font-black text-stone-100 uppercase tracking-wider mb-6 flex items-center gap-2"><Target size={18} className="text-yellow-500"/> {t.howToPlay}</h2>
@@ -390,6 +336,7 @@ export default function Auth({ onAuthSuccess }) {
         </div>
       </section>
 
+      {/* 🟢 ეკონომიკა და მიღწევები */}
       <section id="features" className="py-10 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -452,91 +399,27 @@ export default function Auth({ onAuthSuccess }) {
         </div>
       </section>
 
-      {/* 🟢 განახლებული Footer (სარდაფი) სოციალური ქსელებით და საკონტაქტოთი */}
-      <footer id="about" className="bg-[#050505] pt-12 pb-8 border-t border-white/5 mt-4 relative z-10">
+      {/* 🟢 Footer */}
+      <footer id="about" className="bg-[#050505] pt-10 pb-6 border-t border-white/5 mt-4">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mb-10">
-            
-            <div className="flex flex-col items-start gap-4">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
-                   <Shield size={18} className="text-yellow-500" />
-                </div>
-                <span className="text-sm font-black tracking-widest text-stone-100">PHURTI.GE</span>
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
+            <div className="max-w-xs">
+              <div className="flex items-center gap-2 mb-3">
+                <Shield size={16} className="text-yellow-500" />
+                <span className="text-xs font-black tracking-widest text-stone-200">PHURTI ARENA</span>
               </div>
-              <p className="text-[10px] md:text-xs text-stone-500 leading-relaxed font-medium max-w-xs">
+              <p className="text-[10px] text-stone-500 leading-relaxed font-medium">
                 {t.footerDesc}
               </p>
             </div>
-
-            <div className="flex flex-col items-start md:items-center gap-4">
-              <h4 className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t.socials}</h4>
-              <div className="flex items-center gap-3">
-                <a href="https://facebook.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#1877F2] hover:bg-[#1877F2]/10 hover:border-[#1877F2]/30 transition-all">
-                  <Facebook size={18}/>
-                </a>
-                <a href="https://instagram.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#E4405F] hover:bg-[#E4405F]/10 hover:border-[#E4405F]/30 transition-all">
-                  <Instagram size={18}/>
-                </a>
-                <a href="https://discord.gg/phurti" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#5865F2] hover:bg-[#5865F2]/10 hover:border-[#5865F2]/30 transition-all">
-                  <MessageSquare size={18}/>
-                </a>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-start md:items-end gap-4">
-              <h4 className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t.contactUs}</h4>
-              <p className="text-[10px] text-stone-500 text-left md:text-right max-w-[200px] mb-1">გაქვთ იდეა ან გსურთ მოთამაშის გასაჩივრება?</p>
-              <button onClick={() => setIsContactOpen(true)} className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 border border-white/10 text-stone-200 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 active:scale-95 shadow-lg">
-                <Mail size={14} className="text-yellow-500"/> {t.contactUs}
-              </button>
-            </div>
-
           </div>
-
-          <div className="pt-6 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="pt-4 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-3">
             <p className="text-[9px] text-stone-600 font-bold tracking-widest uppercase">
-              &copy; {new Date().getFullYear()} PHURTI.GE. {t.allRights}
+              &copy; {new Date().getFullYear()} PHURTI ARENA. {t.allRights}
             </p>
-            <div className="flex gap-4 text-[9px] font-bold text-stone-600 uppercase tracking-widest">
-              <a href="#" className="hover:text-stone-300">წესები</a>
-              <a href="#" className="hover:text-stone-300">კონფიდენციალურობა</a>
-            </div>
           </div>
         </div>
       </footer>
-
-      {/* 🟢 საკონტაქტო მოდალური ფანჯარა */}
-      {isContactOpen && (
-        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-           <div className="bg-stone-900 border border-white/10 p-6 rounded-3xl w-full max-w-md shadow-2xl relative animate-in zoom-in-95">
-              <button onClick={() => setIsContactOpen(false)} className="absolute top-4 right-4 text-stone-500 hover:text-white"><X size={20}/></button>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center text-yellow-500 border border-yellow-500/30"><Mail size={20}/></div>
-                <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">{t.contactUs}</h3>
-              </div>
-              <p className="text-[10px] text-stone-400 mb-5 font-medium">{t.contactDesc}</p>
-              
-              {contactStatus && <div className={`mb-4 p-2 text-[10px] font-bold text-center border rounded-lg ${contactStatus.includes('მადლობა') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>{contactStatus}</div>}
-              
-              <form onSubmit={handleContactSubmit} className="space-y-3">
-                <input type="email" placeholder={t.emailPlaceholder} value={contactData.email} onChange={e=>setContactData({...contactData, email: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" />
-                
-                <select value={contactData.subject} onChange={e=>setContactData({...contactData, subject: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all cursor-pointer">
-                  <option value="feedback">{t.feedback}</option>
-                  <option value="complaint">{t.complaint}</option>
-                  <option value="other">სხვა...</option>
-                </select>
-                
-                <textarea placeholder={t.messagePlaceholder} value={contactData.message} onChange={e=>setContactData({...contactData, message: e.target.value})} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600 min-h-[100px] resize-none" required></textarea>
-                
-                <button type="submit" disabled={isSending} className="w-full bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-black text-[11px] uppercase tracking-widest py-3 rounded-xl mt-2 transition-all active:scale-95 flex items-center justify-center gap-2">
-                  {isSending ? t.wait : <><Send size={14}/> {t.sendMessage}</>}
-                </button>
-              </form>
-           </div>
-        </div>
-      )}
 
     </div>
   );
