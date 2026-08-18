@@ -15,6 +15,7 @@ const translations = {
     forgot: "დაგავიწყდა პაროლი?", back: "უკან", backMain: "მთავარზე დაბრუნება",
     errFields: "შეავსეთ ყველა ველი!", errPassMatch: "პაროლები არ ემთხვევა!", errPassRule: "პაროლი უნდა შეიცავდეს მინ. 6 სიმბოლოს, 1 ასოს და 1 ციფრს!", errServer: "სერვერთან კავშირი ვერ მოხერხდა",
     errData: "მონაცემები არასწორია",
+    errUserRule: "სახელი: მინ 3 ლათინური ასო/ციფრი, სფეისის გარეშე!", errAgeRule: "რეგისტრაციისთვის აუცილებელია იყოთ 16 წლის!",
     howToPlay: "როგორ ვითამაშოთ?", goal: "მიზანი", goalDesc: "მოთამაშეების მიზანია დააგროვონ 11 ან 21 ქულა დადგენილი წესებით.", scoring: "ქულების სისტემა", scoringDesc: "ბევრი კარტი (2 ქულა), მეტი ჯვარი (1 ქულა), 10 აგური (1 ქულა), 2 ჯვარი (1 ქულა).", capture: "მოჭრა / გასუფთავება", captureDesc: "ვალეტი (J) ჭრის ნებისმიერ კარტს და ასუფთავებს მაგიდას.",
     economy: "ეკონომიკა", shopQuests: "მაღაზია & მისიები", economyDesc: "შეასრულე ყოველდღიური 3 მისია, გამოიმუშავე ოქროს მონეტები და გადაცვალე ისინი პრემიუმ კონტენტში.",
     dailyQuests: "დღიური მისიები", dailyQuestsDesc: "განახლებადი 24 სთ-ში", designs: "დიზაინები", designsDesc: "მაგიდა და კარტები", premiumAvatar: "პრემიუმ ავატარი", premiumAvatarDesc: "უნიკალური ემოჯი", vipStatus: "VIP სტატუსი", vipStatusDesc: "მანათობელი სახელი",
@@ -36,6 +37,7 @@ const translations = {
     forgot: "Forgot password?", back: "Back", backMain: "Back to main",
     errFields: "Fill in all fields!", errPassMatch: "Passwords do not match!", errPassRule: "Password must contain min 6 chars, 1 letter, and 1 number!", errServer: "Server connection failed",
     errData: "Incorrect details",
+    errUserRule: "Username: min 3 Latin chars/nums, no spaces!", errAgeRule: "You must be at least 16 years old!",
     howToPlay: "How to play?", goal: "Goal", goalDesc: "Players aim to score 11 or 21 points by the rules.", scoring: "Scoring System", scoringDesc: "Most cards (2 pts), Most clubs (1 pt), 10 of Diamonds (1 pt), 2 of Clubs (1 pt).", capture: "Capture / Sweep", captureDesc: "Jack (J) captures any card and sweeps the table.",
     economy: "Economy", shopQuests: "Shop & Quests", economyDesc: "Complete 3 daily quests, earn gold coins, and exchange them for premium content.",
     dailyQuests: "Daily Quests", dailyQuestsDesc: "Refreshes in 24h", designs: "Designs", designsDesc: "Table & Cards", premiumAvatar: "Premium Avatar", premiumAvatarDesc: "Unique Emoji", vipStatus: "VIP Status", vipStatusDesc: "Glowing Name",
@@ -57,6 +59,7 @@ const translations = {
     forgot: "Забыли пароль?", back: "Назад", backMain: "На главную",
     errFields: "Заполните все поля!", errPassMatch: "Пароли не совпадают!", errPassRule: "Пароль: мин 6 символов, 1 буква и 1 цифра!", errServer: "Ошибка подключения к серверу",
     errData: "Неверные данные",
+    errUserRule: "Имя: мин 3 лат. символа/цифры, без пробелов!", errAgeRule: "Вам должно быть минимум 16 лет!",
     howToPlay: "Как играть?", goal: "Цель", goalDesc: "Цель — набрать 11 или 21 очко по правилам.", scoring: "Система очков", scoringDesc: "Больше карт (2 оч.), Больше треф (1 оч.), 10 Бубен (1 оч.), 2 Треф (1 оч.).", capture: "Взятие / Очистка", captureDesc: "Валет (J) берет любую карту и очищает стол.",
     economy: "Экономика", shopQuests: "Магазин и Квесты", economyDesc: "Выполняйте 3 задания в день, зарабатывайте монеты и покупайте премиум контент.",
     dailyQuests: "Ежедневные задания", dailyQuestsDesc: "Обновление 24ч", designs: "Дизайны", designsDesc: "Стол и Карты", premiumAvatar: "Премиум Аватар", premiumAvatarDesc: "Уникальное эмодзи", vipStatus: "VIP Статус", vipStatusDesc: "Светящееся имя",
@@ -127,8 +130,28 @@ export default function Auth({ onAuthSuccess }) {
     e.preventDefault();
     setError(''); setSuccessMsg('');
 
-    if (authMode === 'register' && !validatePassword(password)) {
-      return setError(t.errPassRule);
+    // 🟢 სახელის და ასაკის ვალიდაცია რეგისტრაციისას
+    if (authMode === 'register') {
+      const userRegex = /^[a-zA-Z0-9]+$/;
+      if (username.length < 3 || !userRegex.test(username)) {
+        return setError(t.errUserRule);
+      }
+      
+      if (!dob) return setError(t.errFields);
+      const birthDate = new Date(dob);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      if (age < 16) {
+        return setError(t.errAgeRule);
+      }
+
+      if (!validatePassword(password)) {
+        return setError(t.errPassRule);
+      }
     }
 
     if (authMode === 'forgot' && password !== confirmPassword) {
@@ -201,7 +224,6 @@ export default function Auth({ onAuthSuccess }) {
               <a href="#about" className="hover:text-yellow-500 transition-colors">{t.about}</a>
             </div>
             
-            {/* 🟢 ენის გადამრთველი ღილაკები რეგისტრაციისას */}
             <div className="flex bg-stone-900/80 rounded-lg border border-white/5 p-1 gap-1 shadow-md ml-2 md:ml-4">
               <button onClick={() => setLang('ka')} className={`p-1 rounded transition-all text-[10px] md:text-xs ${lang === 'ka' ? 'bg-yellow-500 text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇪</button>
               <button onClick={() => setLang('en')} className={`p-1 rounded transition-all text-[10px] md:text-xs ${lang === 'en' ? 'bg-yellow-500 text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇧</button>
@@ -312,7 +334,6 @@ export default function Auth({ onAuthSuccess }) {
         </div>
       </section>
 
-      {/* 🟢 წესები */}
       <section id="rules" className="py-10 border-t border-white/5 bg-stone-950/30">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <h2 className="text-xl font-black text-stone-100 uppercase tracking-wider mb-6 flex items-center gap-2"><Target size={18} className="text-yellow-500"/> {t.howToPlay}</h2>
@@ -336,7 +357,6 @@ export default function Auth({ onAuthSuccess }) {
         </div>
       </section>
 
-      {/* 🟢 ეკონომიკა და მიღწევები */}
       <section id="features" className="py-10 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -399,7 +419,6 @@ export default function Auth({ onAuthSuccess }) {
         </div>
       </section>
 
-      {/* 🟢 Footer */}
       <footer id="about" className="bg-[#050505] pt-10 pb-6 border-t border-white/5 mt-4">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">

@@ -19,6 +19,27 @@ const caseInsensitive = (str) => ({ $regex: new RegExp('^' + str + '$', 'i') });
 router.post('/register', async (req, res) => {
   try {
     const { username, dateOfBirth, secretWord, password } = req.body;
+
+    // 🟢 1. სახელის ვალიდაცია (მინ 3 სიმბოლო, ლათინური/ციფრები, სფეისის გარეშე)
+    const usernameRegex = /^[a-zA-Z0-9]+$/;
+    if (!username || username.length < 3 || !usernameRegex.test(username)) {
+      return res.status(400).json({ message: 'სახელი უნდა შეიცავდეს მინ. 3 ლათინურ სიმბოლოს, სფეისის გარეშე!' });
+    }
+
+    // 🟢 2. ასაკის ვალიდაცია (მინიმუმ 16 წელი)
+    if (!dateOfBirth) {
+      return res.status(400).json({ message: 'მიუთითეთ დაბადების თარიღი!' });
+    }
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    if (age < 16) {
+      return res.status(400).json({ message: 'რეგისტრაციისთვის აუცილებელია იყოთ მინიმუმ 16 წლის!' });
+    }
     
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
     if (!regex.test(password)) {
