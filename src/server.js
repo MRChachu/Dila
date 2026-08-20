@@ -142,21 +142,34 @@ const broadcastActiveRooms = () => {
     }))); 
 };
 
-// 🟢 მომხმარებლების სტატუსის (თამაშობს თუ არა) გამომთვლელი და გამგზავნი
+// 🟢 მომხმარებლების ფილტრაცია და სტატუსის გაგზავნა
 const broadcastOnlineUsers = () => {
-    const usersList = Object.entries(onlineUsersMap).map(([id, name]) => {
+    const uniqueUsers = {}; // აქ შევინახავთ უნიკალურ მოთამაშეებს
+    
+    for (const [id, name] of Object.entries(onlineUsersMap)) {
         let inGame = false;
+        
+        // ვამოწმებთ, თამაშობს თუ არა მოთამაშე (სახელით ვამოწმებთ, რადგან სხვადასხვა ტაბს სხვადასხვა id აქვს)
         for (const rId in rooms) {
             const r = rooms[rId];
             const isMatchOver = r.roundSummary && r.roundSummary.matchWinner;
-            if (r.gameStarted && !isMatchOver && r.players.some(p => p.id === id)) {
+            if (r.gameStarted && !isMatchOver && r.players.some(p => p.name === name)) {
                 inGame = true; 
                 break;
             }
         }
-        return { socketId: id, username: name, inGame };
-    });
-    io.emit('updateOnlineUsers', usersList);
+        
+        // თუ მოთამაშე ჯერ არ დაგვიმატებია უნიკალურ სიაში
+        if (!uniqueUsers[name]) {
+            uniqueUsers[name] = { socketId: id, username: name, inGame };
+        } else {
+            // თუ უკვე დამატებულია, უბრალოდ ვამოწმებთ, რომელიმე ტაბით თუ თამაშობს, სტატუსი მაინც განუახლდეს
+            if (inGame) uniqueUsers[name].inGame = true;
+        }
+    }
+    
+    // ვაგზავნით მხოლოდ გაფილტრულ (უნიკალურ) სიას
+    io.emit('updateOnlineUsers', Object.values(uniqueUsers));
 };
 
 function getDamkaBotMove(board, playerIndex, multiCapturePos) {
