@@ -3,24 +3,90 @@ import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
 import DamkaBoard from './DamkaBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download } from 'lucide-react';
+import Rules from './Rules';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Mail, Send, X, MessageSquare } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
-const AVAILABLE_BADGES = [{ id: 'first_win', icon: '🥇', name: 'პირველი მოგება' }, { id: 'diamond_10', icon: '💎', name: '10 აგური' }, { id: 'club_2', icon: '♣️', name: '2 ჯვარი' }, { id: 'veteran', icon: '🛡️', name: 'ვეტერანი (10 მატჩი)' }, { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' }, { id: 'collector', icon: '🛍️', name: 'კოლექციონერი (20+ ემოჯი)' }, { id: 'legionnaire', icon: '🔥', name: 'ლეგიონერი (10 Win Streak)' }];
-const SHOP_ITEMS = { avatars: [{ id: '😎', price: 0, name: 'სტანდარტული' }, { id: '😉', price: 50, name: 'თვალი' }, { id: '🤪', price: 100, name: 'გიჟი' }, { id: '🥷', price: 100, name: 'ნინძა' }, { id: '🤓', price: 150, name: 'ჭკვიანი' }, { id: '🧐', price: 150, name: 'მონოკლი' }, { id: '🤠', price: 200, name: 'კოვბოი' }, { id: '🥳', price: 200, name: 'წვეულება' }, { id: '🧙‍♂️', price: 250, name: 'ჯადოქარი' }, { id: '👽', price: 250, name: 'უცხოპლანეტელი' }, { id: '👻', price: 300, name: 'მოჩვენება' }, { id: '🤖', price: 300, name: 'რობოტი' }, { id: '🤡', price: 350, name: 'ჯამბაზი' }, { id: '💩', price: 350, name: 'პუპ' }, { id: '💀', price: 400, name: 'თავის ქალა' }, { id: '🧛', price: 400, name: 'ვამპირი' }, { id: '🎃', price: 450, name: 'გოგრა' }, { id: '😺', price: 500, name: 'კატა' }, { id: '🐶', price: 500, name: 'ძაღლი' }, { id: '🐭', price: 500, name: 'თაგვი' }, { id: '🦊', price: 600, name: 'მელია' }, { id: '🐻', price: 600, name: 'დათვი' }, { id: '🐼', price: 650, name: 'პანდა' }, { id: '🐨', price: 700, name: 'კოალა' }, { id: '🐯', price: 700, name: 'ვეფხვი' }, { id: '🐮', price: 750, name: 'ძროხა' }, { id: '🐷', price: 750, name: 'ღორი' }, { id: '👑', price: 800, name: 'მეფე' }, { id: '🐸', price: 800, name: 'ბაყაყი' }, { id: '🐵', price: 850, name: 'მაიმუნი' }, { id: '🐔', price: 850, name: 'ქათამი' }, { id: '🐧', price: 900, name: 'პინგვინი' }, { id: '🐦', price: 900, name: 'ჩიტი' }, { id: '🦆', price: 950, name: 'იხვი' }, { id: '🦉', price: 1000, name: 'ბუ' }, { id: '🦇', price: 1000, name: 'ღამურა' }, { id: '🐺', price: 1100, name: 'მგელი' }, { id: '🐗', price: 1100, name: 'ტახი' }, { id: '🐴', price: 1200, name: 'ცხენი' }, { id: '🦁', price: 1200, name: 'ლომი' }, { id: '🐝', price: 1300, name: 'ფუტკარი' }, { id: '🐛', price: 1300, name: 'მუხლუხო' }, { id: '🦋', price: 1400, name: 'პეპელა' }, { id: '🐌', price: 1400, name: 'ლოკოკინა' }, { id: '🐞', price: 1500, name: 'ჭიამაია' }, { id: '🦅', price: 1500, name: 'არწივი' }, { id: '🎱', price: 1500, name: 'რვიანი' }, { id: '🇬🇪', price: 1500, name: 'საქართველო' }, { id: '🐜', price: 1600, name: 'ჭიანჭველა' }, { id: '🐢', price: 1600, name: 'კუ' }, { id: '🐍', price: 1700, name: 'გველი' }, { id: '🐙', price: 1700, name: 'რვაფეხა' }, { id: '🦑', price: 1800, name: 'კალმარი' }, { id: '🦀', price: 1800, name: 'კიბორჩხალა' }, { id: '🐡', price: 1900, name: 'ფუგუ' }, { id: '🐠', price: 1900, name: 'თევზი' }, { id: '🐬', price: 2000, name: 'დელფინი' }, { id: '🦄', price: 2000, name: 'მარტორქა' }, { id: '🐳', price: 2100, name: 'ვეშაპი' }, { id: '🦈', price: 2200, name: 'ზვიგენი' }, { id: '🐊', price: 2300, name: 'ნიანგი' }, { id: '🐅', price: 2400, name: 'ვეფხვი 2' }, { id: '🐆', price: 2400, name: 'ლეოპარდი' }, { id: '🐉', price: 2500, name: 'დრაკონი' }, { id: '🦍', price: 2600, name: 'გორილა' }, { id: '🐘', price: 2700, name: 'სპილო' }, { id: '🦏', price: 2800, name: 'მარტორქა 2' }, { id: '🐪', price: 2900, name: 'აქლემი' }, { id: '🦒', price: 3000, name: 'ჟირაფი' }, { id: '🦘', price: 3200, name: 'კენგურუ' }, { id: '🦚', price: 3500, name: 'ფარშევანგი' }, { id: '🦢', price: 3800, name: 'გედი' }, { id: '🦩', price: 4000, name: 'ფლამინგო' }, { id: '🐲', price: 4500, name: 'დრაკონის თავი' }, { id: '🍎', price: 500, name: 'ვაშლი' }, { id: '🍓', price: 600, name: 'მარწყვი' }, { id: '🍉', price: 700, name: 'საზამთრო' }, { id: '🍌', price: 800, name: 'ბანანი' }, { id: '🍍', price: 900, name: 'ანანასი' }, { id: '🥝', price: 1000, name: 'კივი' }, { id: '🍔', price: 1200, name: 'ბურგერი' }, { id: '🍕', price: 1500, name: 'პიცა' }, { id: '🌮', price: 1800, name: 'ტაკო' }, { id: '🍣', price: 2000, name: 'სუში' }, { id: '🍩', price: 2200, name: 'დონატი' }, { id: '☕', price: 2500, name: 'ყავა' }, { id: '🍹', price: 2800, name: 'კოქტეილი' }, { id: '🍺', price: 3000, name: 'ლუდი' }, { id: '🍷', price: 3500, name: 'ღვინო' }, { id: '⚽', price: 1000, name: 'ფეხბურთი' }, { id: '🏀', price: 1200, name: 'კალათბურთი' }, { id: '🏈', price: 1500, name: 'რაგბი' }, { id: '🎾', price: 1800, name: 'ჩოგბურთი' }, { id: '🎸', price: 2500, name: 'გიტარა' }, { id: '🎷', price: 3000, name: 'საქსოფონი' }, { id: '🚀', price: 4000, name: 'რაკეტა' }, { id: '🛸', price: 5000, name: 'მფრინავი თეფში' }, { id: '🚁', price: 6000, name: 'ვერტმფრენი' }, { id: '⛵', price: 7000, name: 'იალქნიანი' }, { id: '⚓', price: 8000, name: 'ღუზა' }, { id: '❤️', price: 25000, name: 'გული' }, { id: '♦️', price: 25000, name: 'აგური' }, { id: '♠️', price: 25000, name: 'ყვავი' }, { id: '♣️', price: 25000, name: 'ჯვარი' }], tables: [{ id: 'wood', price: 0, name: 'Classic Wood' }, { id: 'lavender', price: 0, name: 'Soft Lavender' }, { id: 'casino', price: 1500, name: 'Dark Casino' }, { id: 'midnight', price: 2500, name: 'Midnight Gold' }, { id: 'neon', price: 4000, name: 'Cyberpunk Neon' }, { id: 'dark_club', price: 5000, name: 'VIP Dark Club' }, { id: 'vip_gold', price: 'VIP', name: '👑 Royal Gold', isVipExclusive: true }, { id: 'vip_diamond', price: 'VIP', name: '💎 Diamond Lounge', isVipExclusive: true }], cards: [{ id: 'classic', price: 0, name: 'Classic Blue' }, { id: 'crimson', price: 500, name: 'Deep Crimson' }, { id: 'gold', price: 1000, name: 'Solid Gold' }, { id: 'obsidian', price: 2000, name: 'Obsidian Black' }, { id: 'cyber', price: 3000, name: 'Neon Cyber' }, { id: 'royal', price: 4000, name: 'Royal Purple' }, { id: 'hacker', price: 5000, name: 'Matrix Hacker' }] };
+const AVAILABLE_BADGES = [
+  { id: 'first_win', icon: '🥇', name: 'პირველი მოგება' }, { id: 'diamond_10', icon: '💎', name: '10 აგური' }, 
+  { id: 'club_2', icon: '♣️', name: '2 ჯვარი' }, { id: 'veteran', icon: '🛡️', name: 'ვეტერანი (10 მატჩი)' }, 
+  { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' }, { id: 'collector', icon: '🛍️', name: 'კოლექციონერი (20+ ემოჯი)' }, 
+  { id: 'legionnaire', icon: '🔥', name: 'ლეგიონერი (10 Win Streak)' }
+];
 
-// 🟢 აქ დავა-update-ე ტექსტები შენი წესების მიხედვით
+const SHOP_ITEMS = { 
+  avatars: [
+    { id: '😎', price: 0, name: 'სტანდარტული' }, { id: '😉', price: 50, name: 'თვალი' }, { id: '🤪', price: 100, name: 'გიჟი' }, 
+    { id: '🥷', price: 100, name: 'ნინძა' }, { id: '🤓', price: 150, name: 'ჭკვიანი' }, { id: '🧐', price: 150, name: 'მონოკლი' }, 
+    { id: '🤠', price: 200, name: 'კოვბოი' }, { id: '🥳', price: 200, name: 'წვეულება' }, { id: '🧙‍♂️', price: 250, name: 'ჯადოქარი' }, 
+    { id: '👽', price: 250, name: 'უცხოპლანეტელი' }, { id: '👻', price: 300, name: 'მოჩვენება' }, { id: '🤖', price: 300, name: 'რობოტი' }, 
+    { id: '🤡', price: 350, name: 'ჯამბაზი' }, { id: '💩', price: 350, name: 'პუპ' }, { id: '💀', price: 400, name: 'თავის ქალა' }, 
+    { id: '🧛', price: 400, name: 'ვამპირი' }, { id: '🎃', price: 450, name: 'გოგრა' }, { id: '😺', price: 500, name: 'კატა' }, 
+    { id: '🐶', price: 500, name: 'ძაღლი' }, { id: '🐭', price: 500, name: 'თაგვი' }, { id: '🦊', price: 600, name: 'მელია' }, 
+    { id: '🐻', price: 600, name: 'დათვი' }, { id: '🐼', price: 650, name: 'პანდა' }, { id: '🐨', price: 700, name: 'კოალა' }, 
+    { id: '🐯', price: 700, name: 'ვეფხვი' }, { id: '🐮', price: 750, name: 'ძროხა' }, { id: '🐷', price: 750, name: 'ღორი' }, 
+    { id: '👑', price: 800, name: 'მეფე' }, { id: '🐸', price: 800, name: 'ბაყაყი' }, { id: '🐵', price: 850, name: 'მაიმუნი' }, 
+    { id: '🐔', price: 850, name: 'ქათამი' }, { id: '🐧', price: 900, name: 'პინგვინი' }, { id: '🐦', price: 900, name: 'ჩიტი' }, 
+    { id: '🦆', price: 950, name: 'იხვი' }, { id: '🦉', price: 1000, name: 'ბუ' }, { id: '🦇', price: 1000, name: 'ღამურა' }, 
+    { id: '🐺', price: 1100, name: 'მგელი' }, { id: '🐗', price: 1100, name: 'ტახი' }, { id: '🐴', price: 1200, name: 'ცხენი' }, 
+    { id: '🦁', price: 1200, name: 'ლომი' }, { id: '🐝', price: 1300, name: 'ფუტკარი' }, { id: '🐛', price: 1300, name: 'მუხლუხო' }, 
+    { id: '🦋', price: 1400, name: 'პეპელა' }, { id: '🐌', price: 1400, name: 'ლოკოკინა' }, { id: '🐞', price: 1500, name: 'ჭიამაია' }, 
+    { id: '🦅', price: 1500, name: 'არწივი' }, { id: '🎱', price: 1500, name: 'რვიანი' }, { id: '🇬🇪', price: 1500, name: 'საქართველო' }, 
+    { id: '❤️', price: 25000, name: 'გული' }, { id: '♦️', price: 25000, name: 'აგური' }, { id: '♠️', price: 25000, name: 'ყვავი' }, 
+    { id: '♣️', price: 25000, name: 'ჯვარი' }
+  ], 
+  tables: [
+    { id: 'wood', price: 0, name: 'Classic Wood' }, { id: 'lavender', price: 0, name: 'Soft Lavender' }, 
+    { id: 'casino', price: 1500, name: 'Dark Casino' }, { id: 'midnight', price: 2500, name: 'Midnight Gold' }, 
+    { id: 'neon', price: 4000, name: 'Cyberpunk Neon' }, { id: 'dark_club', price: 5000, name: 'VIP Dark Club' }, 
+    { id: 'vip_gold', price: 'VIP', name: '👑 Royal Gold', isVipExclusive: true }, 
+    { id: 'vip_diamond', price: 'VIP', name: '💎 Diamond Lounge', isVipExclusive: true }
+  ], 
+  cards: [
+    { id: 'classic', price: 0, name: 'Classic Blue' }, { id: 'crimson', price: 500, name: 'Deep Crimson' }, 
+    { id: 'gold', price: 1000, name: 'Solid Gold' }, { id: 'obsidian', price: 2000, name: 'Obsidian Black' }, 
+    { id: 'cyber', price: 3000, name: 'Neon Cyber' }, { id: 'royal', price: 4000, name: 'Royal Purple' }, 
+    { id: 'hacker', price: 5000, name: 'Matrix Hacker' }
+  ] 
+};
+
 const translations = { 
   ka: { top10: "ტოპ 10", shop: "მაღაზია", admin: "ადმინ", settings: "პარამეტრები", xpProgress: "XP პროგრესი", matches: "მატჩი", wins: "მოგება", winRate: "Win %", myHistory: "📜 ჩემი ისტორია", achievements: "მიღწევები", online: "ონლაინ", friends: "მეგობრები", requests: "თხოვნები", noPlayers: "სხვა მოთამაშეები არ არიან", dailyQuests: "ყოველდღიური მისიები", createTable: "მაგიდის შექმნა", customRules: "შენი წესებით და დიზაინით!", join: "შესვლა", tables: "მაგიდები", noTables: "მაგიდები არ არის", music: "ფონური მუსიკა", on: "ჩართული", off: "გამორთული", changePass: "პაროლის შეცვლა", oldPass: "ძველი პაროლი", newPass: "ახალი პაროლი", change: "შეცვლა", close: "დახურვა", ranked: "რეიტინგული", casual: "გასართობი", invite: "მოწვევა", room: "ოთახი", password: "პაროლი", cancel: "გაუქმება", create: "შექმნა", bots: "რობოტები", targetScore: "მიზნობრივი ქულა", playerLimit: "მოთამაშეების ლიმიტი", roomIdPlaceholder: "ოთახის ID...", active: "აქტიურია", emptyHistory: "ისტორია ცარიელია", opponent: "წინააღმდეგ", score: "ქულა", captureDesc: "ჯამი უნდა იყოს 11 (მაგ: 4+7=11, ან 2+4+5=11). კაროლს მიაქვს კაროლი, დამას - დამა. ვალეტს (J) მიაქვს ყველაფერი გარდა ცალად დადებული დამისა ან კაროლისა." }, 
   en: { top10: "Top 10", shop: "Shop", admin: "Admin", settings: "Settings", xpProgress: "XP Progress", matches: "Matches", wins: "Wins", winRate: "Win %", myHistory: "📜 My History", achievements: "Achievements", online: "Online", friends: "Friends", requests: "Requests", noPlayers: "No other players", dailyQuests: "Daily Quests", createTable: "Create Table", customRules: "With your rules & design!", join: "Join", tables: "Tables", noTables: "No tables available", music: "BG Music", on: "On", off: "Off", changePass: "Change Password", oldPass: "Old Password", newPass: "New Password", change: "Change", close: "Close", ranked: "Ranked", casual: "Casual", invite: "Invite", room: "Room", password: "Password", cancel: "Cancel", create: "Create", bots: "Bots", targetScore: "Target Score", playerLimit: "Player Limit", roomIdPlaceholder: "Room ID...", active: "Active", emptyHistory: "History is empty", opponent: "Versus", score: "Score", captureDesc: "Kings take Kings, Queens take Queens. Jacks sweep all except a single King/Queen. Numbers sum to 11 (e.g. 4+7=11, 2+4+5=11)." }, 
   ru: { top10: "Топ 10", shop: "Магазин", admin: "Админ", settings: "Настройки", xpProgress: "Прогресс XP", matches: "Матчи", wins: "Победы", winRate: "Победы %", myHistory: "📜 Моя история", achievements: "Достижения", online: "Онлайн", friends: "Друзья", requests: "Запросы", noPlayers: "Нет других игроков", dailyQuests: "Ежедневные задания", createTable: "Создать стол", customRules: "С вашими правилами!", join: "Войти", tables: "Столы", noTables: "Нет доступных столов", music: "Музыка", on: "Вкл", off: "Выкл", changePass: "Изменить пароль", oldPass: "Старый пароль", newPass: "Новый пароль", change: "Изменить", close: "Закрыть", ranked: "Рейтинг", casual: "Обычная", invite: "Пригласить", room: "Комната", password: "Пароль", cancel: "Отмена", create: "Создать", bots: "Боты", targetScore: "Целевой счет", playerLimit: "Лимит игроков", roomIdPlaceholder: "ID Комнаты...", active: "Активен", emptyHistory: "История пуста", opponent: "Против", score: "Счет", captureDesc: "Король берет короля, дама - даму. Валет забирает все, кроме одиночной дамы/короля. Сумма чисел равна 11 (напр. 4+7=11, 2+4+5=11)." } 
 };
 
-export const getLeague = (xp = 0) => { if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' }; if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' }; if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' }; if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' }; return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' }; };
+export const getLeague = (xp = 0) => { 
+  if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' }; 
+  if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' }; 
+  if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' }; 
+  if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' }; 
+  return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' }; 
+};
 export const checkIsVip = (vipDate) => { return vipDate && new Date(vipDate) > new Date(); };
-export const VipName = ({ name, isVip, className = '' }) => { if (isVip) { return ( <span className={`bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-600 bg-clip-text text-transparent font-black drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] animate-pulse ${className}`}> 👑 {name} </span> ); } return <span className={className}>{name}</span>; };
-export const DamkaIcon = ({ type = 'red', size = 'md', className = '' }) => { const dims = { sm: 'w-3.5 h-3.5', md: 'w-5 h-5', lg: 'w-10 h-10', xl: 'w-16 h-16' }[size]; const cs = { sm: 6, md: 10, lg: 20, xl: 32 }[size]; const ibw = size === 'sm' ? 'border-[0.5px]' : size === 'xl' ? 'border-2' : 'border-[1px]'; const obw = size === 'sm' ? 'border-[1px]' : size === 'xl' ? 'border-[3px]' : 'border-[2px]'; const cols = type === 'red' ? 'bg-gradient-to-br from-red-500 to-red-800 border-red-950 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.4),0_2px_4px_rgba(0,0,0,0.6)]' : 'bg-gradient-to-br from-stone-100 to-stone-300 border-stone-400 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.6)]'; const ib = type === 'red' ? 'border-red-950' : 'border-stone-400'; const cc = type === 'red' ? 'text-amber-400' : 'text-amber-500'; return ( <div className={`${dims} ${obw} rounded-full flex items-center justify-center shrink-0 ${cols} ${className}`}> <div className={`w-[65%] h-[65%] rounded-full ${ibw} flex items-center justify-center opacity-80 ${ib}`}> <Crown size={cs} strokeWidth={3} className={`${cc} drop-shadow-md`} /> </div> </div> ); };
+export const VipName = ({ name, isVip, className = '' }) => { 
+  if (isVip) { 
+    return ( <span className={`bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-600 bg-clip-text text-transparent font-black drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] animate-pulse ${className}`}> 👑 {name} </span> ); 
+  } 
+  return <span className={className}>{name}</span>; 
+};
+export const DamkaIcon = ({ type = 'red', size = 'md', className = '' }) => { 
+  const dims = { sm: 'w-3.5 h-3.5', md: 'w-5 h-5', lg: 'w-10 h-10', xl: 'w-16 h-16' }[size]; 
+  const cs = { sm: 6, md: 10, lg: 20, xl: 32 }[size]; 
+  const ibw = size === 'sm' ? 'border-[0.5px]' : size === 'xl' ? 'border-2' : 'border-[1px]'; 
+  const obw = size === 'sm' ? 'border-[1px]' : size === 'xl' ? 'border-[3px]' : 'border-[2px]'; 
+  const cols = type === 'red' ? 'bg-gradient-to-br from-red-500 to-red-800 border-red-950 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.4),0_2px_4px_rgba(0,0,0,0.6)]' : 'bg-gradient-to-br from-stone-100 to-stone-300 border-stone-400 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.6)]'; 
+  const ib = type === 'red' ? 'border-red-950' : 'border-stone-400'; 
+  const cc = type === 'red' ? 'text-amber-400' : 'text-amber-500'; 
+  return ( 
+    <div className={`${dims} ${obw} rounded-full flex items-center justify-center shrink-0 ${cols} ${className}`}> 
+      <div className={`w-[65%] h-[65%] rounded-full ${ibw} flex items-center justify-center opacity-80 ${ib}`}> 
+        <Crown size={cs} strokeWidth={3} className={`${cc} drop-shadow-md`} /> 
+      </div> 
+    </div> 
+  ); 
+};
 
 export default function App() {
   const [userState, setUserState] = useState(() => { const s = localStorage.getItem('phurti_user'); return s ? JSON.parse(s) : null; });
@@ -28,6 +94,8 @@ export default function App() {
   const [lang, setLang] = useState(() => localStorage.getItem('phurti_lang') || 'ka');
   useEffect(() => { localStorage.setItem('phurti_lang', lang); }, [lang]);
   const t = translations[lang];
+
+  const [showRules, setShowRules] = useState(false);
 
   const [roomId, setRoomId] = useState(() => localStorage.getItem('phurti_roomId') || '');
   const [inRoom, setInRoom] = useState(() => localStorage.getItem('phurti_inRoom') === 'true');
@@ -54,6 +122,11 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false); const [adminPass, setAdminPass] = useState(''); const [adminUsers, setAdminUsers] = useState([]); const [adminMessage, setAdminMessage] = useState(''); const [adminStats, setAdminStats] = useState(null); const [searchQuery, setSearchQuery] = useState(''); const [broadcastText, setBroadcastText] = useState(''); const [systemAlert, setSystemAlert] = useState(null);
   const [dailyReward, setDailyReward] = useState(null); const [vipDailyReward, setVipDailyReward] = useState(null);
   const [deferredPrompt, setDeferredPrompt] = useState(null); const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [contactData, setContactData] = useState({ email: '', subject: 'feedback', message: '' });
+  const [isSending, setIsSending] = useState(false);
+  const [contactStatus, setContactStatus] = useState('');
 
   useEffect(() => { const h = (e) => { e.preventDefault(); setDeferredPrompt(e); setShowInstallPrompt(true); }; window.addEventListener('beforeinstallprompt', h); return () => window.removeEventListener('beforeinstallprompt', h); }, []);
   const handleInstallApp = async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { setDeferredPrompt(null); setShowInstallPrompt(false); } };
@@ -136,6 +209,25 @@ export default function App() {
   const handleBuyItem = (t, i, p) => socket.emit('buyItem', { type: t, itemId: i, price: p }); const handleEquipItem = (t, i) => socket.emit('equipItem', { type: t, itemId: i }); const handleBuyVip = (d, p) => socket.emit('buyVip', { days: d, price: p }); const handleInspectPlayer = (u) => socket.emit('getUserProfile', { username: u }); const handleRoomClickFromList = (r) => { if (r.isPrivate) { setSelectedRoomIdForJoin(r.id); setIsPasswordModalOpen(true); } else handleJoinSpecificRoom(r.id); };
   const handleLogout = () => { socket.emit('leaveRoom'); setUserState(null); setInRoom(false); setRoomId(''); setRoomData(null); setProfileData(null); localStorage.clear(); socket.disconnect(); socket.connect(); };
   const handleResetToLobby = () => { socket.emit('leaveRoom'); setInRoom(false); setRoomId(''); setRoomData(null); setStartCountdown(null); localStorage.removeItem('phurti_roomId'); localStorage.removeItem('phurti_inRoom'); };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault(); setIsSending(true); setContactStatus('');
+    try {
+      const res = await fetch(`https://purti.onrender.com/api/auth/contact`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(contactData)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setContactStatus(t.contactSuccess); setContactData({ email: '', subject: 'feedback', message: '' });
+        setTimeout(() => { setIsContactOpen(false); setContactStatus(''); }, 3000);
+      } else setContactStatus(data.message || 'Error');
+    } catch (err) { setContactStatus('სერვერთან კავშირი ვერ მოხერხდა'); } 
+    finally { setIsSending(false); }
+  };
+
+  if (showRules) {
+    return <Rules onBack={() => setShowRules(false)} />;
+  }
 
   if (!userState) return <Auth onAuthSuccess={handleAuthSuccess} />;
 

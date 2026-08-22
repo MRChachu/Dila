@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound, Calendar, Key } from 'lucide-react';
-import Rules from './Rules'; // 🟢 აქ დავაიმპორტეთ ჩვენი ახალი წესების გვერდი
+import { Shield, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound, Calendar, Key, Mail, Send, X, MessageSquare } from 'lucide-react';
+import Rules from './Rules';
 
 const translations = {
   ka: {
@@ -22,7 +22,8 @@ const translations = {
     achievementsSys: "მიღწევების სისტემა", achievementsDesc: "ბეჯების მოპოვება მხოლოდ რჩეულებს შეუძლიათ. პირობები ითვლება მხოლოდ და მხოლოდ მოგებულ მატჩებში!",
     achVet: "ვეტერანი", achVetDesc: "მოიგე 100 რეიტინგული მატჩი.", ach10D: "10 აგური", ach10DDesc: "50-ჯერ წაიღე მოგებულ მატჩში.", ach2C: "2 ჯვარი", ach2CDesc: "50-ჯერ წაიღე მოგებულ მატჩში.", achSweep: "მესუფთავე", achSweepDesc: "50-ჯერ წაიღე 4+ კარტი ვალეტით.",
     footerDesc: "ქართული დეველოპერული პროექტი. კლასიკური ბანქოს თამაშის თანამედროვე, სანდო და აზარტული ონლაინ სივრცე.",
-    allRights: "ყველა უფლება დაცულია."
+    allRights: "ყველა უფლება დაცულია.",
+    contactUs: "საკონტაქტო", socials: "სოციალური ქსელები", sendMessage: "გაგზავნა", contactDesc: "მოგვწერეთ თქვენი იდეები, შეფასება ან გაასაჩივრეთ მოთამაშე.", complaint: "გასაჩივრება / რეპორტი", feedback: "იდეა / რჩევა", messagePlaceholder: "აღწერეთ დეტალურად...", emailPlaceholder: "თქვენი ელ-ფოსტა (პასუხისთვის)...", contactSuccess: "მადლობა! შეტყობინება მიღებულია."
   },
   en: {
     rules: "Rules", system: "System", about: "About Us",
@@ -43,7 +44,8 @@ const translations = {
     achievementsSys: "Achievement System", achievementsDesc: "Badges are for the elite. Conditions only count in won matches!",
     achVet: "Veteran", achVetDesc: "Win 100 ranked matches.", ach10D: "10 of Diamonds", ach10DDesc: "Capture 50 times in a won match.", ach2C: "2 of Clubs", ach2CDesc: "Capture 50 times in a won match.", achSweep: "Sweeper", achSweepDesc: "Capture 4+ cards with a Jack 50 times.",
     footerDesc: "A modern, reliable, and exciting online platform for the classic card game.",
-    allRights: "All rights reserved."
+    allRights: "All rights reserved.",
+    contactUs: "Contact Us", socials: "Social Media", sendMessage: "Send", contactDesc: "Send us your feedback, ideas, or report a player.", complaint: "Report Player", feedback: "Feedback / Idea", messagePlaceholder: "Describe in detail...", emailPlaceholder: "Your Email (optional)...", contactSuccess: "Thanks! Message received."
   },
   ru: {
     rules: "Правила", system: "Система", about: "О нас",
@@ -64,7 +66,8 @@ const translations = {
     achievementsSys: "Система Достижений", achievementsDesc: "Значки для избранных. Учитываются только в выигранных матчах!",
     achVet: "Ветеран", achVetDesc: "Выиграть 100 рейтинговых матчей.", ach10D: "10 Бубен", ach10DDesc: "Взять 50 раз в победном матче.", ach2C: "2 Треф", ach2CDesc: "Взять 50 раз в победном матче.", achSweep: "Уборщик", achSweepDesc: "Взять 4+ карт Валетом 50 раз.",
     footerDesc: "Современная, надежная и увлекательная онлайн-платформа для классической карточной игры.",
-    allRights: "Все права защищены."
+    allRights: "Все права защищены.",
+    contactUs: "Контакты", socials: "Соц. сети", sendMessage: "Отправить", contactDesc: "Напишите нам свои идеи, отзывы или подайте жалобу.", complaint: "Жалоба / Репорт", feedback: "Идея / Отзыв", messagePlaceholder: "Опишите подробно...", emailPlaceholder: "Ваш Email (необязательно)...", contactSuccess: "Спасибо! Сообщение получено."
   }
 };
 
@@ -73,9 +76,7 @@ export default function Auth({ onAuthSuccess }) {
   useEffect(() => { localStorage.setItem('phurti_lang', lang); }, [lang]);
   const t = translations[lang] || translations['ka'];
 
-  // 🟢 ლოგიკა: ვაჩვენოთ თუ არა სრული წესების გვერდი
   const [showRules, setShowRules] = useState(false);
-
   const [authMode, setAuthMode] = useState('login'); 
   const [recoveryStep, setRecoveryStep] = useState(1); 
 
@@ -88,6 +89,11 @@ export default function Auth({ onAuthSuccess }) {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [contactData, setContactData] = useState({ email: '', subject: 'feedback', message: '' });
+  const [isSending, setIsSending] = useState(false);
+  const [contactStatus, setContactStatus] = useState('');
 
   const validatePassword = (pass) => {
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
@@ -131,15 +137,34 @@ export default function Auth({ onAuthSuccess }) {
     e.preventDefault();
     setError(''); setSuccessMsg('');
 
-    if (authMode === 'register' && !validatePassword(password)) {
-      return setError(t.errPassRule);
+    if (authMode === 'register') {
+      const userRegex = /^[a-zA-Z0-9]+$/;
+      if (username.length < 3 || !userRegex.test(username)) {
+        return setError(t.errUserRule);
+      }
+      
+      if (!dob) return setError(t.errFields);
+      
+      const birthDate = new Date(dob);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      
+      if (age < 16) {
+        return setError(t.errAgeRule);
+      }
+
+      if (!validatePassword(password)) {
+        return setError(t.errPassRule);
+      }
     }
 
-    if (authMode === 'forgot' && password !== confirmPassword) {
-      return setError(t.errPassMatch);
-    }
-    if (authMode === 'forgot' && !validatePassword(password)) {
-      return setError(t.errPassRule);
+    if (authMode === 'forgot') {
+      if (password !== confirmPassword) return setError(t.errPassMatch);
+      if (!validatePassword(password)) return setError(t.errPassRule);
     }
 
     setIsLoading(true);
@@ -184,15 +209,39 @@ export default function Auth({ onAuthSuccess }) {
     }
   };
 
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setIsSending(true);
+    setContactStatus('');
+    try {
+      const res = await fetch(`https://purti.onrender.com/api/auth/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contactData)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setContactStatus(t.contactSuccess);
+        setContactData({ email: '', subject: 'feedback', message: '' });
+        setTimeout(() => { setIsContactOpen(false); setContactStatus(''); }, 3000);
+      } else {
+        setContactStatus(data.message || 'Error');
+      }
+    } catch (err) {
+      setContactStatus(t.errServer);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // 🟢 თუ წესების გვერდი ჩართულია, ვხატავთ მხოლოდ მას
   if (showRules) {
     return <Rules onBack={() => setShowRules(false)} />;
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-stone-200 font-sans selection:bg-yellow-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-[#0a0a0a] text-stone-200 font-sans selection:bg-yellow-500/30 overflow-x-hidden flex flex-col">
       
       <nav className="fixed top-0 w-full z-50 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/5 transition-all">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
@@ -205,7 +254,6 @@ export default function Auth({ onAuthSuccess }) {
           
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-6 text-[10px] font-black tracking-widest text-stone-400 uppercase">
-              {/* 🟢 აქაც ღილაკად ვაქციეთ წესების ლინკი */}
               <button onClick={() => setShowRules(true)} className="hover:text-yellow-500 transition-colors uppercase font-black">{t.rules}</button>
               <a href="#features" className="hover:text-yellow-500 transition-colors">{t.system}</a>
               <a href="#about" className="hover:text-yellow-500 transition-colors">{t.about}</a>
@@ -220,211 +268,237 @@ export default function Auth({ onAuthSuccess }) {
         </div>
       </nav>
 
-      <section className="relative pt-24 pb-12 md:pt-32 md:pb-16 px-4 md:px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-        <div className="absolute top-0 -left-20 w-72 h-72 bg-yellow-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+      <main className="flex-1">
+        <section className="relative pt-24 pb-12 md:pt-32 md:pb-16 px-4 md:px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+          <div className="absolute top-0 -left-20 w-72 h-72 bg-yellow-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-        <div className="flex-1 space-y-5 z-10 text-center lg:text-left">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-900/80 border border-yellow-500/20 text-yellow-500 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
-            <Sparkles size={12} /> {t.onlinePlatform}
+          <div className="flex-1 space-y-5 z-10 text-center lg:text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-900/80 border border-yellow-500/20 text-yellow-500 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
+              <Sparkles size={12} /> {t.onlinePlatform}
+            </div>
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-stone-100 leading-[1.1] tracking-tight">
+              {t.heroTitle1} <br/>
+              <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-500 bg-clip-text text-transparent">{t.heroTitle2}</span>
+            </h1>
+            <p className="text-xs md:text-sm text-stone-400 max-w-lg mx-auto lg:mx-0 leading-relaxed font-medium">
+              {t.heroDesc}
+            </p>
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2 text-stone-500 text-[11px] font-bold">
+              <div className="flex items-center gap-1.5"><Trophy size={14} className="text-yellow-500"/> {t.ranked}</div>
+              <div className="flex items-center gap-1.5"><Swords size={14} className="text-rose-500"/> 2v2 / 1v1</div>
+              <div className="flex items-center gap-1.5"><Gem size={14} className="text-emerald-500"/> {t.shop}</div>
+            </div>
           </div>
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-stone-100 leading-[1.1] tracking-tight">
-            {t.heroTitle1} <br/>
-            <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-500 bg-clip-text text-transparent">{t.heroTitle2}</span>
-          </h1>
-          <p className="text-xs md:text-sm text-stone-400 max-w-lg mx-auto lg:mx-0 leading-relaxed font-medium">
-            {t.heroDesc}
-          </p>
-          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2 text-stone-500 text-[11px] font-bold">
-            <div className="flex items-center gap-1.5"><Trophy size={14} className="text-yellow-500"/> {t.ranked}</div>
-            <div className="flex items-center gap-1.5"><Swords size={14} className="text-rose-500"/> 2v2 / 1v1</div>
-            <div className="flex items-center gap-1.5"><Gem size={14} className="text-emerald-500"/> {t.shop}</div>
-          </div>
-        </div>
 
-        <div className="w-full max-w-sm z-10">
-          <div className="bg-stone-900/80 backdrop-blur-xl border border-white/10 p-5 md:p-6 rounded-[1.5rem] shadow-2xl relative transition-all duration-300">
-            
-            {authMode !== 'forgot' && (
-              <div className="flex gap-2 p-1 bg-stone-950/50 rounded-lg mb-5 border border-white/5">
-                <button onClick={() => {setAuthMode('login'); resetState();}} className={`flex-1 py-2 rounded-md text-[11px] font-black transition-all ${authMode === 'login' ? 'bg-stone-800 text-yellow-500 shadow-sm border border-white/5' : 'text-stone-500'}`}>{t.login}</button>
-                <button onClick={() => {setAuthMode('register'); resetState();}} className={`flex-1 py-2 rounded-md text-[11px] font-black transition-all ${authMode === 'register' ? 'bg-stone-800 text-yellow-500 shadow-sm border border-white/5' : 'text-stone-500'}`}>{t.register}</button>
-              </div>
-            )}
-
-            {authMode === 'forgot' && (
-               <div className="text-center mb-5 animate-in fade-in">
-                  <div className="w-12 h-12 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-yellow-500/20">
-                     <KeyRound size={20} className="text-yellow-500" />
-                  </div>
-                  <h3 className="text-sm font-black uppercase text-stone-100">{t.passRecovery}</h3>
-                  <p className="text-[10px] text-stone-400 mt-1">{recoveryStep === 1 ? t.step1Desc : t.step2Desc}</p>
-               </div>
-            )}
-
-            {error && <div className="mb-3 p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[10px] font-bold text-rose-400 text-center animate-in fade-in">{error}</div>}
-            {successMsg && <div className="mb-3 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-bold text-emerald-400 text-center animate-in fade-in">{successMsg}</div>}
-
-            <form onSubmit={authMode === 'forgot' && recoveryStep === 1 ? handleNextStep : handleSubmit} className="space-y-3">
+          <div className="w-full max-w-sm z-10">
+            <div className="bg-stone-900/80 backdrop-blur-xl border border-white/10 p-5 md:p-6 rounded-[1.5rem] shadow-2xl relative transition-all duration-300">
               
-              {(authMode === 'login' || authMode === 'register' || (authMode === 'forgot' && recoveryStep === 1)) && (
-                <div className="relative animate-in fade-in">
-                  <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
-                  <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder={t.phUsername} required />
+              {authMode !== 'forgot' && (
+                <div className="flex gap-2 p-1 bg-stone-950/50 rounded-lg mb-5 border border-white/5">
+                  <button onClick={() => {setAuthMode('login'); resetState();}} className={`flex-1 py-2 rounded-md text-[11px] font-black transition-all ${authMode === 'login' ? 'bg-stone-800 text-yellow-500 shadow-sm border border-white/5' : 'text-stone-500'}`}>{t.login}</button>
+                  <button onClick={() => {setAuthMode('register'); resetState();}} className={`flex-1 py-2 rounded-md text-[11px] font-black transition-all ${authMode === 'register' ? 'bg-stone-800 text-yellow-500 shadow-sm border border-white/5' : 'text-stone-500'}`}>{t.register}</button>
                 </div>
               )}
 
-              {(authMode === 'register' || (authMode === 'forgot' && recoveryStep === 1)) && (
-                <>
-                  <div className="relative animate-in slide-in-from-top-2">
-                    <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
-                    <input type="date" value={dob} onChange={e => setDob(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-400 outline-none transition-all" required />
+              {authMode === 'forgot' && (
+                 <div className="text-center mb-5 animate-in fade-in">
+                    <div className="w-12 h-12 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-yellow-500/20">
+                       <KeyRound size={20} className="text-yellow-500" />
+                    </div>
+                    <h3 className="text-sm font-black uppercase text-stone-100">{t.passRecovery}</h3>
+                    <p className="text-[10px] text-stone-400 mt-1">{recoveryStep === 1 ? t.step1Desc : t.step2Desc}</p>
+                 </div>
+              )}
+
+              {error && <div className="mb-3 p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[10px] font-bold text-rose-400 text-center animate-in fade-in">{error}</div>}
+              {successMsg && <div className="mb-3 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-bold text-emerald-400 text-center animate-in fade-in">{successMsg}</div>}
+
+              <form onSubmit={authMode === 'forgot' && recoveryStep === 1 ? handleNextStep : handleSubmit} className="space-y-3">
+                
+                {(authMode === 'login' || authMode === 'register' || (authMode === 'forgot' && recoveryStep === 1)) && (
+                  <div className="relative animate-in fade-in">
+                    <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                    <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder={t.phUsername} required />
                   </div>
-                  <div className="relative animate-in slide-in-from-top-2">
-                    <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
-                    <input type="text" value={secretWord} onChange={e => setSecretWord(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder={t.phSecret} required />
+                )}
+
+                {(authMode === 'register' || (authMode === 'forgot' && recoveryStep === 1)) && (
+                  <>
+                    <div className="relative animate-in slide-in-from-top-2">
+                      <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                      <input type="date" value={dob} onChange={e => setDob(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-400 outline-none transition-all" required />
+                    </div>
+                    <div className="relative animate-in slide-in-from-top-2">
+                      <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                      <input type="text" value={secretWord} onChange={e => setSecretWord(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder={t.phSecret} required />
+                    </div>
+                  </>
+                )}
+
+                {(authMode === 'login' || authMode === 'register' || (authMode === 'forgot' && recoveryStep === 2)) && (
+                  <div className="relative animate-in slide-in-from-right-4">
+                    <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder={authMode === 'login' ? t.phPass : t.phPassRule} required />
                   </div>
-                </>
+                )}
+
+                {authMode === 'forgot' && recoveryStep === 2 && (
+                  <div className="relative animate-in slide-in-from-right-4">
+                    <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder={t.phConfirm} required />
+                  </div>
+                )}
+
+                <button type="submit" disabled={isLoading} className="w-full bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-black text-[11px] uppercase tracking-widest py-3 rounded-lg mt-4 transition-all active:scale-95 flex items-center justify-center gap-2">
+                  {isLoading ? t.wait : (authMode === 'login' ? t.login : authMode === 'register' ? t.register : recoveryStep === 1 ? t.continue : t.changePass)} 
+                  <Play size={12} className={isLoading ? 'hidden' : ''} />
+                </button>
+              </form>
+
+              {authMode === 'login' && (
+                 <div className="text-center mt-4">
+                   <button onClick={() => {setAuthMode('forgot'); resetState();}} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">{t.forgot}</button>
+                 </div>
               )}
-
-              {(authMode === 'login' || authMode === 'register' || (authMode === 'forgot' && recoveryStep === 2)) && (
-                <div className="relative animate-in slide-in-from-right-4">
-                  <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder={authMode === 'login' ? t.phPass : t.phPassRule} required />
-                </div>
+              {authMode === 'forgot' && (
+                 <div className="text-center mt-4 flex items-center justify-center gap-4">
+                   {recoveryStep === 2 && <button onClick={() => setRecoveryStep(1)} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">{t.back}</button>}
+                   <button onClick={() => {setAuthMode('login'); resetState();}} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">{t.backMain}</button>
+                 </div>
               )}
-
-              {authMode === 'forgot' && recoveryStep === 2 && (
-                <div className="relative animate-in slide-in-from-right-4">
-                  <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
-                  <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full bg-stone-950 border border-white/5 focus:border-yellow-500/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-stone-200 outline-none transition-all placeholder-stone-600" placeholder={t.phConfirm} required />
-                </div>
-              )}
-
-              <button type="submit" disabled={isLoading} className="w-full bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-black text-[11px] uppercase tracking-widest py-3 rounded-lg mt-4 transition-all active:scale-95 flex items-center justify-center gap-2">
-                {isLoading ? t.wait : (authMode === 'login' ? t.login : authMode === 'register' ? t.register : recoveryStep === 1 ? t.continue : t.changePass)} 
-                <Play size={12} className={isLoading ? 'hidden' : ''} />
-              </button>
-            </form>
-
-            {authMode === 'login' && (
-               <div className="text-center mt-4">
-                 <button onClick={() => {setAuthMode('forgot'); resetState();}} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">{t.forgot}</button>
-               </div>
-            )}
-            {authMode === 'forgot' && (
-               <div className="text-center mt-4 flex items-center justify-center gap-4">
-                 {recoveryStep === 2 && <button onClick={() => setRecoveryStep(1)} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">{t.back}</button>}
-                 <button onClick={() => {setAuthMode('login'); resetState();}} className="text-[10px] text-stone-500 hover:text-yellow-500 font-bold transition-colors">{t.backMain}</button>
-               </div>
-            )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="rules" className="py-10 border-t border-white/5 bg-stone-950/30">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <h2 className="text-xl font-black text-stone-100 uppercase tracking-wider mb-6 flex items-center gap-2"><Target size={18} className="text-yellow-500"/> {t.howToPlay}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { icon: Target, title: t.goal, desc: t.goalDesc },
-              { icon: BookOpen, title: t.scoring, desc: t.scoringDesc },
-              { icon: Shield, title: t.capture, desc: t.captureDesc }
-            ].map((rule, i) => (
-              <div key={i} className="bg-stone-900/40 p-4 rounded-2xl border border-white/5 flex gap-3 items-start">
-                <div className="w-8 h-8 bg-stone-950 rounded-lg flex items-center justify-center border border-white/5 text-yellow-500 shrink-0">
-                  <rule.icon size={16} />
+        <section id="rules" className="py-10 border-t border-white/5 bg-stone-950/30">
+          <div className="max-w-7xl mx-auto px-4 md:px-6">
+            <h2 className="text-xl font-black text-stone-100 uppercase tracking-wider mb-6 flex items-center gap-2"><Target size={18} className="text-yellow-500"/> {t.howToPlay}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { icon: Target, title: t.goal, desc: t.goalDesc },
+                { icon: BookOpen, title: t.scoring, desc: t.scoringDesc },
+                { icon: Shield, title: t.capture, desc: t.captureDesc }
+              ].map((rule, i) => (
+                <div key={i} className="bg-stone-900/40 p-4 rounded-2xl border border-white/5 flex gap-3 items-start">
+                  <div className="w-8 h-8 bg-stone-950 rounded-lg flex items-center justify-center border border-white/5 text-yellow-500 shrink-0">
+                    <rule.icon size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-[11px] font-black text-stone-200 mb-1 uppercase">{rule.title}</h3>
+                    <p className="text-[10px] text-stone-400 font-medium">{rule.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-[11px] font-black text-stone-200 mb-1 uppercase">{rule.title}</h3>
-                  <p className="text-[10px] text-stone-400 font-medium">{rule.desc}</p>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="features" className="py-10 border-t border-white/5">
+          <div className="max-w-7xl mx-auto px-4 md:px-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-stone-900/60 to-stone-950/40 p-6 rounded-[2rem] border border-white/5 space-y-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-yellow-500 mb-1">
+                      <Coins size={14}/> <span className="text-[9px] font-black uppercase tracking-widest">{t.economy}</span>
+                    </div>
+                    <h3 className="text-xl font-black text-stone-100 uppercase tracking-tight">{t.shopQuests}</h3>
+                  </div>
+                </div>
+                <p className="text-[11px] text-stone-400 font-medium leading-relaxed">
+                  {t.economyDesc}
+                </p>
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  {[
+                    { icon: Target, title: t.dailyQuests, desc: t.dailyQuestsDesc },
+                    { icon: Palette, title: t.designs, desc: t.designsDesc },
+                    { icon: Store, title: t.premiumAvatar, desc: t.premiumAvatarDesc },
+                    { icon: Crown, title: t.vipStatus, desc: t.vipStatusDesc }
+                  ].map((f, i) => (
+                    <div key={i} className="bg-stone-950/50 p-3 rounded-xl border border-white/5">
+                      <f.icon size={14} className="text-yellow-500 mb-1.5" />
+                      <h4 className="text-[10px] font-black text-stone-200 uppercase">{f.title}</h4>
+                      <p className="text-[9px] text-stone-500 mt-0.5">{f.desc}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      <section id="features" className="py-10 border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-stone-900/60 to-stone-950/40 p-6 rounded-[2rem] border border-white/5 space-y-5">
-              <div className="flex items-center justify-between">
+              <div className="bg-gradient-to-br from-stone-900/60 to-stone-950/40 p-6 rounded-[2rem] border border-white/5 space-y-5">
                 <div>
                   <div className="flex items-center gap-1.5 text-yellow-500 mb-1">
-                    <Coins size={14}/> <span className="text-[9px] font-black uppercase tracking-widest">{t.economy}</span>
+                    <Star size={14}/> <span className="text-[9px] font-black uppercase tracking-widest">Hardcore</span>
                   </div>
-                  <h3 className="text-xl font-black text-stone-100 uppercase tracking-tight">{t.shopQuests}</h3>
+                  <h3 className="text-xl font-black text-stone-100 uppercase tracking-tight">{t.achievementsSys}</h3>
                 </div>
-              </div>
-              <p className="text-[11px] text-stone-400 font-medium leading-relaxed">
-                {t.economyDesc}
-              </p>
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                {[
-                  { icon: Target, title: t.dailyQuests, desc: t.dailyQuestsDesc },
-                  { icon: Palette, title: t.designs, desc: t.designsDesc },
-                  { icon: Store, title: t.premiumAvatar, desc: t.premiumAvatarDesc },
-                  { icon: Crown, title: t.vipStatus, desc: t.vipStatusDesc }
-                ].map((f, i) => (
-                  <div key={i} className="bg-stone-950/50 p-3 rounded-xl border border-white/5">
-                    <f.icon size={14} className="text-yellow-500 mb-1.5" />
-                    <h4 className="text-[10px] font-black text-stone-200 uppercase">{f.title}</h4>
-                    <p className="text-[9px] text-stone-500 mt-0.5">{f.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-stone-900/60 to-stone-950/40 p-6 rounded-[2rem] border border-white/5 space-y-5">
-              <div>
-                <div className="flex items-center gap-1.5 text-yellow-500 mb-1">
-                  <Star size={14}/> <span className="text-[9px] font-black uppercase tracking-widest">Hardcore</span>
-                </div>
-                <h3 className="text-xl font-black text-stone-100 uppercase tracking-tight">{t.achievementsSys}</h3>
-              </div>
-              <p className="text-[11px] text-stone-400 font-medium leading-relaxed">
-                {t.achievementsDesc}
-              </p>
-              <div className="space-y-2 pt-2">
-                {[
-                  { icon: '🛡️', title: t.achVet, desc: t.achVetDesc },
-                  { icon: '💎', title: t.ach10D, desc: t.ach10DDesc },
-                  { icon: '♣️', title: t.ach2C, desc: t.ach2CDesc },
-                  { icon: '🧹', title: t.achSweep, desc: t.achSweepDesc }
-                ].map((ach, i) => (
-                  <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-stone-950/50 border border-white/5">
-                    <span className="text-xl drop-shadow-md bg-stone-900 p-1.5 rounded-lg border border-white/5">{ach.icon}</span>
-                    <div>
-                      <h4 className="text-[10px] font-black text-stone-200 uppercase">{ach.title}</h4>
-                      <p className="text-[9px] text-stone-500">{ach.desc}</p>
+                <p className="text-[11px] text-stone-400 font-medium leading-relaxed">
+                  {t.achievementsDesc}
+                </p>
+                <div className="space-y-2 pt-2">
+                  {[
+                    { icon: '🛡️', title: t.achVet, desc: t.achVetDesc },
+                    { icon: '💎', title: t.ach10D, desc: t.ach10DDesc },
+                    { icon: '♣️', title: t.ach2C, desc: t.ach2CDesc },
+                    { icon: '🧹', title: t.achSweep, desc: t.achSweepDesc }
+                  ].map((ach, i) => (
+                    <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-stone-950/50 border border-white/5">
+                      <span className="text-xl drop-shadow-md bg-stone-900 p-1.5 rounded-lg border border-white/5">{ach.icon}</span>
+                      <div>
+                        <h4 className="text-[10px] font-black text-stone-200 uppercase">{ach.title}</h4>
+                        <p className="text-[9px] text-stone-500">{ach.desc}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* 🟢 Footer */}
-      <footer id="about" className="bg-[#050505] pt-10 pb-6 border-t border-white/5 mt-4">
+      <footer id="about" className="bg-[#050505] pt-12 pb-8 border-t border-white/5 mt-auto relative z-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
-            <div className="max-w-xs">
-              <div className="flex items-center gap-2 mb-3">
-                <Shield size={16} className="text-yellow-500" />
-                <span className="text-xs font-black tracking-widest text-stone-200">PHURTI ARENA</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mb-10">
+            <div className="flex flex-col items-start gap-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
+                   <Shield size={18} className="text-yellow-500" />
+                </div>
+                <span className="text-sm font-black tracking-widest text-stone-100">PHURTI.GE</span>
               </div>
-              <p className="text-[10px] text-stone-500 leading-relaxed font-medium">
+              <p className="text-[10px] md:text-xs text-stone-500 leading-relaxed font-medium max-w-xs">
                 {t.footerDesc}
               </p>
             </div>
+
+            <div className="flex flex-col items-start md:items-center gap-4">
+              <h4 className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t.socials}</h4>
+              <div className="flex items-center gap-3">
+                <a href="https://facebook.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#1877F2] hover:bg-[#1877F2]/10 hover:border-[#1877F2]/30 transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                </a>
+                <a href="https://instagram.com/phurti.ge" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#E4405F] hover:bg-[#E4405F]/10 hover:border-[#E4405F]/30 transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                </a>
+                <a href="https://discord.gg/phurti" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-stone-900 border border-white/5 flex items-center justify-center text-stone-400 hover:text-[#5865F2] hover:bg-[#5865F2]/10 hover:border-[#5865F2]/30 transition-all">
+                  <MessageSquare size={18}/>
+                </a>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-start md:items-end gap-4">
+              <h4 className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t.contactUs}</h4>
+              <p className="text-[10px] text-stone-500 text-left md:text-right max-w-[200px] mb-1">გაქვთ იდეა ან გსურთ მოთამაშის გასაჩივრება?</p>
+              <button onClick={() => setIsContactOpen(true)} className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 border border-white/10 text-stone-200 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 active:scale-95 shadow-lg">
+                <Mail size={14} className="text-yellow-500"/> {t.contactUs}
+              </button>
+            </div>
           </div>
-          <div className="pt-4 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-3">
+
+          <div className="pt-6 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-[9px] text-stone-600 font-bold tracking-widest uppercase">
-              &copy; {new Date().getFullYear()} PHURTI ARENA. {t.allRights}
+              &copy; {new Date().getFullYear()} PHURTI.GE. {t.allRights}
             </p>
-            {/* 🟢 დამატებული წესების ლინკი სარდაფში */}
             <div className="flex gap-4 text-[9px] font-bold text-stone-600 uppercase tracking-widest">
               <button onClick={() => setShowRules(true)} className="hover:text-stone-300 transition-colors uppercase tracking-widest">წესები</button>
               <button className="hover:text-stone-300 transition-colors uppercase tracking-widest">კონფიდენციალურობა</button>
@@ -432,6 +506,37 @@ export default function Auth({ onAuthSuccess }) {
           </div>
         </div>
       </footer>
+
+      {isContactOpen && (
+        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+           <div className="bg-stone-900 border border-white/10 p-6 rounded-3xl w-full max-w-md shadow-2xl relative animate-in zoom-in-95">
+              <button onClick={() => setIsContactOpen(false)} className="absolute top-4 right-4 text-stone-500 hover:text-white"><X size={20}/></button>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center text-yellow-500 border border-yellow-500/30"><Mail size={20}/></div>
+                <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">{t.contactUs}</h3>
+              </div>
+              <p className="text-[10px] text-stone-400 mb-5 font-medium">{t.contactDesc}</p>
+              
+              {contactStatus && <div className={`mb-4 p-2 text-[10px] font-bold text-center border rounded-lg ${contactStatus.includes('მადლობა') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>{contactStatus}</div>}
+              
+              <form onSubmit={handleContactSubmit} className="space-y-3">
+                <input type="email" placeholder={t.emailPlaceholder} value={contactData.email} onChange={e=>setContactData({...contactData, email: e.target.value})} className="w-full bg-stone-950/50 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600 shadow-inner" />
+                
+                <select value={contactData.subject} onChange={e=>setContactData({...contactData, subject: e.target.value})} className="w-full bg-stone-950/50 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all cursor-pointer shadow-inner">
+                  <option value="feedback">{t.feedback}</option>
+                  <option value="complaint">{t.complaint}</option>
+                  <option value="other">სხვა...</option>
+                </select>
+                
+                <textarea placeholder={t.messagePlaceholder} value={contactData.message} onChange={e=>setContactData({...contactData, message: e.target.value})} className="w-full bg-stone-950/50 border border-white/5 focus:border-yellow-500/50 rounded-xl px-4 py-3 text-xs text-stone-200 outline-none transition-all placeholder-stone-600 min-h-[100px] resize-none shadow-inner" required></textarea>
+                
+                <button type="submit" disabled={isSending} className={`w-full bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-black text-[11px] uppercase tracking-widest py-3 rounded-xl mt-2 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg`}>
+                  {isSending ? t.wait : <><Send size={14}/> {t.sendMessage}</>}
+                </button>
+              </form>
+           </div>
+        </div>
+      )}
 
     </div>
   );
