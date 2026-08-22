@@ -1,4 +1,5 @@
-const SUITS = ['♥', '♦', '♣', '♠'];
+// 🟢 Frontend-თან თავსებადი ფერადი ემოჯი-სიმბოლოები
+const SUITS = ['❤️', '♦️', '♣️', '♠️'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
 function createDeck() {
@@ -21,12 +22,15 @@ function getCardValue(rank) {
   return parseInt(rank);
 }
 
+// 🟢 კარტის წაღების შენი ორიგინალი წესები
 function isValidCapture(cardFromHand, cardsFromTable) {
   if (cardsFromTable.length === 0) return false;
   
   if (cardFromHand.rank === 'J') {
     const qCount = cardsFromTable.filter(c => c.rank === 'Q').length;
     const kCount = cardsFromTable.filter(c => c.rank === 'K').length;
+    
+    // ვალეტს არ მიაქვს ცალად დადებული დამა ან კაროლი
     if (qCount === 1) return false; 
     if (kCount === 1) return false; 
     return true; 
@@ -35,16 +39,18 @@ function isValidCapture(cardFromHand, cardsFromTable) {
   const handValue = getCardValue(cardFromHand.rank);
 
   if (handValue === 0) {
+    // Q და K მიაქვს მხოლოდ თავისივე რანგის კარტი
     return cardsFromTable.every(c => c.rank === cardFromHand.rank);
   }
 
+  // 11-ის ჯამის შემოწმება
   const targetSum = 11 - handValue;
   const tableSum = cardsFromTable.reduce((sum, c) => sum + getCardValue(c.rank), 0);
   
   return tableSum === targetSum;
 }
 
-// 4. რაუნდის ბოლოს 4-ვე ქულის განაწილება
+// 🟢 ქულების დათვლა რაუნდის ბოლოს
 function calculateRoundScores(room) {
   const stats = room.players.map(p => {
     let clubsCount = 0;
@@ -52,9 +58,9 @@ function calculateRoundScores(room) {
     let has2Club = false;
 
     p.captured.forEach(c => {
-      if (c.suit === '♣') clubsCount++;
-      if (c.rank === '10' && c.suit === '♦') has10Diamond = true;
-      if (c.rank === '2' && c.suit === '♣') has2Club = true;
+      if (c.suit === '♣️') clubsCount++;
+      if (c.rank === '10' && c.suit === '♦️') has10Diamond = true;
+      if (c.rank === '2' && c.suit === '♣️') has2Club = true;
     });
 
     return {
@@ -80,7 +86,6 @@ function calculateRoundScores(room) {
     else if (s.clubsCount === maxClubs) { clubsWinner = null; }
   });
 
-  // 🟢 ზუსტად აქ შევცვალეთ: ბევრ კარტზე იწერება 2 ქულა
   if (cardsWinner) cardsWinner.playerRef.totalScore += 2;
   if (clubsWinner) clubsWinner.playerRef.totalScore += 1;
   
@@ -101,6 +106,7 @@ function calculateRoundScores(room) {
   };
 }
 
+// 🟢 ბოტის ინტელექტუალური ლოგიკა
 function getBestMove(botCards, tableCards) {
   if (!botCards || botCards.length === 0) return null;
 
@@ -110,8 +116,11 @@ function getBestMove(botCards, tableCards) {
   for (let handCard of botCards) {
      if (handCard.rank === 'J') {
         let cardsToTake = tableCards.filter(c => getCardValue(c.rank) > 0);
+        
+        // ვალეტით ორი დამის ან ორი კაროლის წაღება დაშვებულია
         let qCount = tableCards.filter(c => c.rank === 'Q').length;
         if (qCount >= 2) cardsToTake.push(...tableCards.filter(c => c.rank === 'Q'));
+        
         let kCount = tableCards.filter(c => c.rank === 'K').length;
         if (kCount >= 2) cardsToTake.push(...tableCards.filter(c => c.rank === 'K'));
         
@@ -170,20 +179,20 @@ function getBestMove(botCards, tableCards) {
 function evaluateCapture(cards) {
     let score = 0;
     for (let c of cards) {
-        if (c.rank === '10' && c.suit === '♦') score += 1000;
-        else if (c.rank === '2' && c.suit === '♣') score += 500;
-        else if (c.suit === '♣') score += 50;
+        if (c.rank === '10' && c.suit === '♦️') score += 1000;
+        else if (c.rank === '2' && c.suit === '♣️') score += 500;
+        else if (c.suit === '♣️') score += 50;
         else score += 10; 
     }
     return score;
 }
 
 function evaluateDiscardValue(c) {
-    if (c.rank === '10' && c.suit === '♦') return 1000;
-    if (c.rank === '2' && c.suit === '♣') return 500;
+    if (c.rank === '10' && c.suit === '♦️') return 1000;
+    if (c.rank === '2' && c.suit === '♣️') return 500;
     if (c.rank === 'J') return 400;
     if (['Q', 'K', 'A'].includes(c.rank)) return 100;
-    if (c.suit === '♣') return 50;
+    if (c.suit === '♣️') return 50;
     return getCardValue(c.rank); 
 }
 
@@ -207,4 +216,4 @@ function findAllValidSingleCaptures(availableCards, targetSum) {
     return results;
 }
 
-module.exports = { createDeck, isValidCapture, calculateRoundScores, getBestMove };
+module.exports = { createDeck, isValidCapture, calculateRoundScores, getBestMove, getCardValue };
