@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Lock, User, Play, ChevronRight, Trophy, BookOpen, Users, Star, Target, Globe, Share2, MessageCircle, Info, Sparkles, Gem, Swords, Coins, Store, Palette, Crown, KeyRound, Calendar, Key } from 'lucide-react';
+import Rules from './Rules'; // 🟢 აქ დავაიმპორტეთ ჩვენი ახალი წესების გვერდი
 
 const translations = {
   ka: {
@@ -71,6 +72,9 @@ export default function Auth({ onAuthSuccess }) {
   const [lang, setLang] = useState(() => localStorage.getItem('phurti_lang') || 'ka');
   useEffect(() => { localStorage.setItem('phurti_lang', lang); }, [lang]);
   const t = translations[lang] || translations['ka'];
+
+  // 🟢 ლოგიკა: ვაჩვენოთ თუ არა სრული წესების გვერდი
+  const [showRules, setShowRules] = useState(false);
 
   const [authMode, setAuthMode] = useState('login'); 
   const [recoveryStep, setRecoveryStep] = useState(1); 
@@ -182,6 +186,11 @@ export default function Auth({ onAuthSuccess }) {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  // 🟢 თუ წესების გვერდი ჩართულია, ვხატავთ მხოლოდ მას
+  if (showRules) {
+    return <Rules onBack={() => setShowRules(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-stone-200 font-sans selection:bg-yellow-500/30 overflow-x-hidden">
       
@@ -196,12 +205,12 @@ export default function Auth({ onAuthSuccess }) {
           
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-6 text-[10px] font-black tracking-widest text-stone-400 uppercase">
-              <a href="#rules" className="hover:text-yellow-500 transition-colors">{t.rules}</a>
+              {/* 🟢 აქაც ღილაკად ვაქციეთ წესების ლინკი */}
+              <button onClick={() => setShowRules(true)} className="hover:text-yellow-500 transition-colors uppercase font-black">{t.rules}</button>
               <a href="#features" className="hover:text-yellow-500 transition-colors">{t.system}</a>
               <a href="#about" className="hover:text-yellow-500 transition-colors">{t.about}</a>
             </div>
             
-            {/* 🟢 ენის გადამრთველი ღილაკები რეგისტრაციისას */}
             <div className="flex bg-stone-900/80 rounded-lg border border-white/5 p-1 gap-1 shadow-md ml-2 md:ml-4">
               <button onClick={() => setLang('ka')} className={`p-1 rounded transition-all text-[10px] md:text-xs ${lang === 'ka' ? 'bg-yellow-500 text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇪</button>
               <button onClick={() => setLang('en')} className={`p-1 rounded transition-all text-[10px] md:text-xs ${lang === 'en' ? 'bg-yellow-500 text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇧</button>
@@ -312,7 +321,6 @@ export default function Auth({ onAuthSuccess }) {
         </div>
       </section>
 
-      {/* 🟢 წესები */}
       <section id="rules" className="py-10 border-t border-white/5 bg-stone-950/30">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <h2 className="text-xl font-black text-stone-100 uppercase tracking-wider mb-6 flex items-center gap-2"><Target size={18} className="text-yellow-500"/> {t.howToPlay}</h2>
@@ -336,7 +344,6 @@ export default function Auth({ onAuthSuccess }) {
         </div>
       </section>
 
-      {/* 🟢 ეკონომიკა და მიღწევები */}
       <section id="features" className="py-10 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -417,6 +424,11 @@ export default function Auth({ onAuthSuccess }) {
             <p className="text-[9px] text-stone-600 font-bold tracking-widest uppercase">
               &copy; {new Date().getFullYear()} PHURTI ARENA. {t.allRights}
             </p>
+            {/* 🟢 დამატებული წესების ლინკი სარდაფში */}
+            <div className="flex gap-4 text-[9px] font-bold text-stone-600 uppercase tracking-widest">
+              <button onClick={() => setShowRules(true)} className="hover:text-stone-300 transition-colors uppercase tracking-widest">წესები</button>
+              <button className="hover:text-stone-300 transition-colors uppercase tracking-widest">კონფიდენციალურობა</button>
+            </div>
           </div>
         </div>
       </footer>
