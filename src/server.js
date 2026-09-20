@@ -38,6 +38,9 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.get('/', (req, res) => {
+    res.status(200).send('Phurti Server is UP and running! 🚀');
+});
 app.use('/api/auth', require('./routes/auth'));
 
 app.get('/api/admin/stats', async (req, res) => {
