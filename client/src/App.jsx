@@ -146,9 +146,9 @@ export default function App() {
   const winRate = profileData?.stats?.gamesPlayed > 0 ? Math.round((profileData.stats.gamesWon / profileData.stats.gamesPlayed) * 100) : 0; const currentLevel = profileData?.level || 1; const currentXp = profileData?.xp || 0; const targetXp = currentLevel * 1000; const xpPercentage = Math.min((currentXp / targetXp) * 100, 100); const myCoins = profileData?.coins || 0; const myAvatar = profileData?.avatar || '😎'; const amIVip = checkIsVip(profileData?.vipUntil); const myLeague = getLeague(currentXp); const unlockedAvatars = profileData?.unlockedAvatars || ['😎']; const unlockedTables = profileData?.unlockedTableThemes || ['wood', 'lavender']; const unlockedCards = profileData?.unlockedCardBacks || ['classic']; const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id; const myAchievements = profileData?.achievements || [];
 
   // 🟢 შესწორებული ლოგიკა: ამოწმებს არა მიმდინარე ავატარს, არამედ სამუდამო მიღწევას
-  const step1Done = myAchievements.includes('wc_avatar');
-  const step2Done = myAchievements.includes('wc_play');
-  const step3Done = myAchievements.includes('wc_win');
+  const step1Done = myAchievements.includes('wc_avatar') || (profileData?.avatar && profileData.avatar !== '😎');
+  const step2Done = myAchievements.includes('wc_play') || ((profileData?.stats?.gamesPlayed || 0) > 0);
+  const step3Done = myAchievements.includes('wc_win') || ((profileData?.stats?.gamesWon || 0) > 0);
   const welcomeCompleted = step1Done && step2Done && step3Done;
   const completedSteps = [step1Done, step2Done, step3Done].filter(Boolean).length;
   const welcomeProgress = (completedSteps / 3) * 100;
