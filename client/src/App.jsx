@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
 import DamkaBoard from './DamkaBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Sparkles } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -134,6 +134,15 @@ export default function App() {
   if (!userState) return <Auth onAuthSuccess={handleAuthSuccess} />;
 
   const winRate = profileData?.stats?.gamesPlayed > 0 ? Math.round((profileData.stats.gamesWon / profileData.stats.gamesPlayed) * 100) : 0; const currentLevel = profileData?.level || 1; const currentXp = profileData?.xp || 0; const targetXp = currentLevel * 1000; const xpPercentage = Math.min((currentXp / targetXp) * 100, 100); const myCoins = profileData?.coins || 0; const myAvatar = profileData?.avatar || '😎'; const amIVip = checkIsVip(profileData?.vipUntil); const myLeague = getLeague(currentXp); const unlockedAvatars = profileData?.unlockedAvatars || ['😎']; const unlockedTables = profileData?.unlockedTableThemes || ['wood', 'lavender']; const unlockedCards = profileData?.unlockedCardBacks || ['classic']; const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id; const myAchievements = profileData?.achievements || [];
+
+  // Welcome Challenge ლოგიკა
+  const step1Done = profileData?.avatar && profileData.avatar !== '😎';
+  const step2Done = (profileData?.stats?.gamesPlayed || 0) > 0;
+  const step3Done = (profileData?.stats?.gamesWon || 0) > 0;
+  const welcomeCompleted = step1Done && step2Done && step3Done;
+  const completedSteps = [step1Done, step2Done, step3Done].filter(Boolean).length;
+  const welcomeProgress = (completedSteps / 3) * 100;
+  const showWelcomeChallenge = profileData && !welcomeCompleted;
 
   const themeStyles = { wood: { bg: "linear-gradient(135deg, #2c1a0f 0%, #0d0805 100%)", overlay: "bg-black/10", accent: "text-amber-500", accentBg: "bg-amber-500", card: "bg-stone-900/80" }, lavender: { bg: "linear-gradient(135deg, #251b38 0%, #0f0a1a 100%)", overlay: "bg-black/10", accent: "text-violet-400", accentBg: "bg-violet-500", card: "bg-indigo-950/70" }, casino: { bg: "linear-gradient(135deg, #062615 0%, #020c06 100%)", overlay: "bg-black/20", accent: "text-emerald-400", accentBg: "bg-emerald-500", card: "bg-stone-950/80" }, midnight: { bg: "linear-gradient(135deg, #0b1120 0%, #03050a 100%)", overlay: "bg-black/10", accent: "text-yellow-500", accentBg: "bg-yellow-500", card: "bg-slate-900/70" }, neon: { bg: "linear-gradient(135deg, #09090b 0%, #020617 100%)", overlay: "bg-fuchsia-900/10", accent: "text-fuchsia-400 drop-shadow-[0_0_5px_rgba(232,121,249,0.8)]", accentBg: "bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.5)]", card: "bg-slate-950/80 border-fuchsia-500/20" }, dark_club: { bg: "radial-gradient(circle at top right, #3f3f46 0%, #000000 100%)", overlay: "bg-rose-900/5", accent: "text-rose-500 drop-shadow-[0_0_5px_rgba(244,63,94,0.6)]", accentBg: "bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.5)]", card: "bg-black/80 border-rose-900/20" }, vip_gold: { bg: "linear-gradient(135deg, #1f1400 0%, #000000 100%)", overlay: "bg-yellow-900/10", accent: "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]", accentBg: "bg-gradient-to-r from-yellow-600 to-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]", card: "bg-black/90 border-yellow-500/30 ring-1 ring-yellow-500/20" }, vip_diamond: { bg: "linear-gradient(135deg, #040e1f 0%, #000000 100%)", overlay: "bg-cyan-900/10", accent: "text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]", accentBg: "bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]", card: "bg-black/90 border-cyan-500/30 ring-1 ring-cyan-500/20" } };
   const activeThemeName = (inRoom && roomData?.hostTheme) ? roomData.hostTheme : (profileData?.tableTheme || 'wood'); const activeTheme = themeStyles[activeThemeName] || themeStyles['wood'];
@@ -366,6 +375,44 @@ export default function App() {
               </div>
 
               <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full relative">
+                
+                {/* 🟢 ახალბედას გამოწვევა (Welcome Challenge Banner) */}
+                {showWelcomeChallenge && (
+                  <div className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/80 to-stone-900 p-4 md:p-6 shadow-[0_0_30px_rgba(16,185,129,0.15)] group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-emerald-500/20 transition-all duration-700"></div>
+                    <div className="relative z-10 flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-center justify-between">
+                      <div className="flex-1 space-y-2 w-full">
+                        <h3 className="text-lg md:text-xl font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                          <Sparkles size={20} /> ახალბედას გამოწვევა
+                        </h3>
+                        <p className="text-[10px] md:text-xs text-stone-300 font-bold leading-relaxed">
+                          შეასრულე 3 მარტივი ნაბიჯი და მიიღე <span className="text-yellow-500 font-black px-1">24-საათიანი VIP სტატუსი</span> სრულიად უფასოდ!
+                        </p>
+                        <div className="w-full bg-stone-950/80 h-2 md:h-2.5 rounded-full overflow-hidden mt-3 md:mt-4 border border-white/5">
+                          <div className="bg-emerald-500 h-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.8)]" style={{ width: `${welcomeProgress}%` }}></div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 w-full md:w-auto shrink-0">
+                        <div className={`flex items-center gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-xl border ${step1Done ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-stone-900/80 border-white/5 text-stone-400'} text-[10px] md:text-xs font-black uppercase transition-all shadow-sm`}>
+                          {step1Done ? <CheckCircle2 size={16} /> : <div className="w-4 h-4 rounded-full border-2 border-stone-600 shrink-0"></div>}
+                          <span className="flex-1">1. შეცვალე ავატარი</span>
+                          <span className={step1Done ? 'text-emerald-500' : 'text-yellow-500'}>500 🪙</span>
+                        </div>
+                        <div className={`flex items-center gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-xl border ${step2Done ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-stone-900/80 border-white/5 text-stone-400'} text-[10px] md:text-xs font-black uppercase transition-all shadow-sm`}>
+                          {step2Done ? <CheckCircle2 size={16} /> : <div className="w-4 h-4 rounded-full border-2 border-stone-600 shrink-0"></div>}
+                          <span className="flex-1">2. ითამაშე 1 მატჩი</span>
+                          <span className={step2Done ? 'text-emerald-500' : 'text-blue-400'}>+500 XP</span>
+                        </div>
+                        <div className={`flex items-center gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-xl border ${step3Done ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-stone-900/80 border-white/5 text-stone-400'} text-[10px] md:text-xs font-black uppercase transition-all shadow-sm`}>
+                          {step3Done ? <CheckCircle2 size={16} /> : <div className="w-4 h-4 rounded-full border-2 border-stone-600 shrink-0"></div>}
+                          <span className="flex-1">3. მოიგე 1 მატჩი</span>
+                          <span className={step3Done ? 'text-emerald-500' : 'text-yellow-500'}>👑 VIP</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {startCountdown !== null && (
                     <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-2xl md:rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                         <span className={`text-6xl md:text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse ${activeTheme.accent}`}>{startCountdown}</span>
