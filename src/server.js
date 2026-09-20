@@ -25,7 +25,6 @@ const ALL_DAILY_QUESTS = [
 const app = express();
 const server = http.createServer(app);
 
-// 🟢 1. Express CORS
 app.use(cors({ 
     origin: [
         'http://localhost:5173', 
@@ -110,7 +109,6 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('✅ ბაზა დაუკავშირდა'))
     .catch(err => console.error('❌ შეცდომა:', err.message));
 
-// 🟢 2. Socket.IO CORS
 const io = new Server(server, { 
     cors: { 
         origin: [
@@ -145,14 +143,10 @@ const broadcastActiveRooms = () => {
     }))); 
 };
 
-// 🟢 მომხმარებლების ფილტრაცია და სტატუსის გაგზავნა
 const broadcastOnlineUsers = () => {
-    const uniqueUsers = {}; // აქ შევინახავთ უნიკალურ მოთამაშეებს
-    
+    const uniqueUsers = {}; 
     for (const [id, name] of Object.entries(onlineUsersMap)) {
         let inGame = false;
-        
-        // ვამოწმებთ, თამაშობს თუ არა მოთამაშე (სახელით ვამოწმებთ, რადგან სხვადასხვა ტაბს სხვადასხვა id აქვს)
         for (const rId in rooms) {
             const r = rooms[rId];
             const isMatchOver = r.roundSummary && r.roundSummary.matchWinner;
@@ -161,17 +155,12 @@ const broadcastOnlineUsers = () => {
                 break;
             }
         }
-        
-        // თუ მოთამაშე ჯერ არ დაგვიმატებია უნიკალურ სიაში
         if (!uniqueUsers[name]) {
             uniqueUsers[name] = { socketId: id, username: name, inGame };
         } else {
-            // თუ უკვე დამატებულია, უბრალოდ ვამოწმებთ, რომელიმე ტაბით თუ თამაშობს, სტატუსი მაინც განუახლდეს
             if (inGame) uniqueUsers[name].inGame = true;
         }
     }
-    
-    // ვაგზავნით მხოლოდ გაფილტრულ (უნიკალურ) სიას
     io.emit('updateOnlineUsers', Object.values(uniqueUsers));
 };
 
@@ -180,7 +169,6 @@ function getDamkaBotMove(board, playerIndex, multiCapturePos) {
     for (let r=0; r<8; r++) {
         for (let c=0; c<8; c++) {
             if (multiCapturePos && (r !== multiCapturePos.r || c !== multiCapturePos.c)) continue; 
-            
             if (board[r][c] && board[r][c].player === playerIndex) {
                 for (let tr=0; tr<8; tr++) {
                     for (let tc=0; tc<8; tc++) {
@@ -193,7 +181,6 @@ function getDamkaBotMove(board, playerIndex, multiCapturePos) {
             }
         }
     }
-    
     if (validMoves.length > 0) {
         const caps = validMoves.filter(m => validateDamkaMove(board, playerIndex, m.from, m.to).isCapture);
         if(caps.length > 0) return caps[Math.floor(Math.random() * caps.length)];
@@ -278,62 +265,80 @@ function processDamkaMove(roomId, playerId, from, to, ioInst) {
     
     if (isOver) {
         room.roundSummary = { matchWinner: winName };
-        broadcastOnlineUsers(); // 🟢 თამაში დასრულდა
+        broadcastOnlineUsers(); 
         
-        if (room.isRanked) { 
-            room.players.forEach(async (p) => {
-                if (p.isBot) return; 
-                try {
-                    const isWin = p.name === winName; 
-                    const dbU = await User.findOne({ username: p.name });
-                    if (dbU) {
-                        const isVip = dbU.vipUntil && new Date(dbU.vipUntil) > new Date();
-                        let eXp = isWin ? (isVip ? 35 : 25) : (isVip ? -5 : -10); 
-                        let eCoin = isWin ? (isVip ? 75 : 50) : (isVip ? -25 : -50);
-                        
-                        if (isWin) { 
-                            dbU.stats.gamesWon++; 
-                            dbU.stats.winStreak = (dbU.stats.winStreak || 0) + 1; 
-                            if (dbU.stats.winStreak >= 10 && !dbU.achievements.includes('legionnaire')) {
-                                dbU.achievements.push('legionnaire');
-                            }
-                            if (!dbU.achievements.includes('first_win')) {
-                                dbU.achievements.push('first_win');
-                            }
-                            if (dbU.stats.gamesWon >= 100 && !dbU.achievements.includes('veteran')) {
-                                dbU.achievements.push('veteran');
-                            }
-                        } else {
-                            dbU.stats.winStreak = 0; 
-                        }
-                        
-                        dbU.xp = Math.max(0, dbU.xp + eXp); 
-                        dbU.coins = Math.max(0, (dbU.coins || 0) + eCoin);
-                        let lThresh = dbU.level * 1000; 
-                        
-                        while (dbU.xp >= lThresh) { 
-                            dbU.xp -= lThresh; 
-                            dbU.level++; 
-                            lThresh = dbU.level * 1000; 
-                        }
-                        
-                        dbU.stats.gamesPlayed++;
-                        dbU.gameHistory.unshift({ 
-                            roomId: room.id, 
-                            targetScore: 12, 
-                            myFinalScore: isWin ? 12 : (p.name === room.players[0].name ? p0P : p1P), 
-                            isWinner: isWin, 
-                            playedAt: new Date(), 
-                            opponents: room.players.filter(op => op.id !== p.id).map(op => op.name), 
-                            gameType: 'damka' 
-                        });
-                        
-                        if (dbU.gameHistory.length > 30) dbU.gameHistory.pop(); 
-                        await dbU.save();
+        room.players.forEach(async (p) => {
+            if (p.isBot) return; 
+            try {
+                const isWin = p.name === winName; 
+                const dbU = await User.findOne({ username: p.name });
+                if (dbU) {
+                    const isVip = dbU.vipUntil && new Date(dbU.vipUntil) > new Date();
+                    
+                    let eXp = 0; let eCoin = 0;
+                    if (room.isRanked) {
+                        eXp = isWin ? (isVip ? 35 : 25) : (isVip ? -5 : -10); 
+                        eCoin = isWin ? (isVip ? 75 : 50) : (isVip ? -25 : -50);
+                    } else {
+                        eXp = 0; 
+                        eCoin = isWin ? 15 : 5; 
                     }
-                } catch (e) {}
-            });
-        }
+                    
+                    if (isWin) { 
+                        dbU.stats.gamesWon++; 
+                        if (room.isRanked) {
+                            dbU.stats.winStreak = (dbU.stats.winStreak || 0) + 1; 
+                            if (dbU.stats.winStreak >= 10 && !dbU.achievements.includes('legionnaire')) dbU.achievements.push('legionnaire');
+                        }
+                        if (!dbU.achievements.includes('first_win')) dbU.achievements.push('first_win');
+                        if (dbU.stats.gamesWon >= 100 && !dbU.achievements.includes('veteran')) dbU.achievements.push('veteran');
+                    } else {
+                        if (room.isRanked) dbU.stats.winStreak = 0; 
+                    }
+                    
+                    if (dbU.dailyQuests && dbU.dailyQuests.length > 0) {
+                        dbU.dailyQuests.forEach(q => {
+                            if (q.isCompleted) return;
+                            if (q.questId === 'play_ranked' && room.isRanked) q.progress++; 
+                            if (q.questId === 'win_ranked' && room.isRanked && isWin) q.progress++; 
+                            if (q.questId === 'play_5_games') q.progress++; 
+                            if (q.questId === 'win_3_games' && isWin) q.progress++; 
+                            
+                            if (q.progress >= q.target) { 
+                                q.progress = q.target; 
+                                q.isCompleted = true; 
+                                eXp += q.xpReward; 
+                                eCoin += 50; 
+                            }
+                        }); 
+                        dbU.markModified('dailyQuests');
+                    }
+                    
+                    dbU.xp = Math.max(0, dbU.xp + eXp); 
+                    dbU.coins = Math.max(0, (dbU.coins || 0) + eCoin);
+                    let lThresh = dbU.level * 1000; 
+                    while (dbU.xp >= lThresh) { 
+                        dbU.xp -= lThresh; 
+                        dbU.level++; 
+                        lThresh = dbU.level * 1000; 
+                    }
+                    
+                    dbU.stats.gamesPlayed++;
+                    dbU.gameHistory.unshift({ 
+                        roomId: room.id, 
+                        targetScore: 12, 
+                        myFinalScore: isWin ? 12 : (p.name === room.players[0].name ? p0P : p1P), 
+                        isWinner: isWin, 
+                        playedAt: new Date(), 
+                        opponents: room.players.filter(op => op.id !== p.id).map(op => op.name), 
+                        gameType: 'damka' 
+                    });
+                    
+                    if (dbU.gameHistory.length > 30) dbU.gameHistory.pop(); 
+                    await dbU.save();
+                }
+            } catch (e) {}
+        });
     }
     
     ioInst.to(roomId).emit('gameUpdated', room); 
@@ -490,7 +495,6 @@ io.on('connection', (socket) => {
         try { 
             const uname = onlineUsersMap[socket.id]; 
             if(!uname) return; 
-            
             const user = await User.findOne({username: uname}); 
             if(user && user.coins >= price) { 
                 user.coins -= price; 
@@ -499,9 +503,7 @@ io.on('connection', (socket) => {
                 await user.save(); 
                 socket.emit('successMessage', `VIP გააქტიურდა!`); 
                 socket.emit('friendListUpdated'); 
-            } else {
-                socket.emit('error', 'არასაკმარისი მონეტები!'); 
-            }
+            } else { socket.emit('error', 'არასაკმარისი მონეტები!'); }
         } catch(err) {} 
     });
 
@@ -509,30 +511,20 @@ io.on('connection', (socket) => {
         try { 
             const uname = onlineUsersMap[socket.id]; 
             if(!uname) return; 
-            
             const user = await User.findOne({username: uname}); 
             if(user) { 
                 let arr = type === 'avatar' ? user.unlockedAvatars : type === 'table' ? user.unlockedTableThemes : user.unlockedCardBacks; 
                 if(arr.includes(itemId)) return socket.emit('error', 'უკვე გაქვს!'); 
-                
                 if(user.coins >= price) { 
-                    user.coins -= price; 
-                    arr.push(itemId); 
-                    
+                    user.coins -= price; arr.push(itemId); 
                     if (type === 'avatar') user.avatar = itemId; 
                     else if (type === 'table') user.tableTheme = itemId; 
                     else user.cardBack = itemId; 
-                    
-                    if (user.unlockedAvatars.length > 20 && !user.achievements.includes('collector')) {
-                        user.achievements.push('collector'); 
-                    }
-                    
+                    if (user.unlockedAvatars.length > 20 && !user.achievements.includes('collector')) user.achievements.push('collector'); 
                     await user.save(); 
                     socket.emit('successMessage', 'წარმატებით შეიძინე!'); 
                     socket.emit('friendListUpdated'); 
-                } else {
-                    socket.emit('error', 'არასაკმარისი მონეტები!'); 
-                }
+                } else { socket.emit('error', 'არასაკმარისი მონეტები!'); }
             } 
         } catch(err) {} 
     });
@@ -541,24 +533,20 @@ io.on('connection', (socket) => {
         try { 
             const uname = onlineUsersMap[socket.id]; 
             if(!uname) return; 
-            
             const user = await User.findOne({username: uname}); 
             if(user) { 
                 const isVip = user.vipUntil && new Date(user.vipUntil) > new Date(); 
                 if (type === 'table' && ['vip_gold', 'vip_diamond'].includes(itemId)) { 
                     if (!isVip) return socket.emit('error', 'მხოლოდ VIP-სთვის!'); 
-                    user.tableTheme = itemId; 
-                    await user.save(); 
+                    user.tableTheme = itemId; await user.save(); 
                     socket.emit('successMessage', 'დაყენებულია!'); 
                     return socket.emit('friendListUpdated'); 
                 } 
-                
                 let arr = type === 'avatar' ? user.unlockedAvatars : type === 'table' ? user.unlockedTableThemes : user.unlockedCardBacks; 
                 if(arr.includes(itemId)) { 
                     if (type === 'avatar') user.avatar = itemId; 
                     else if (type === 'table') user.tableTheme = itemId; 
                     else user.cardBack = itemId; 
-                    
                     await user.save(); 
                     socket.emit('successMessage', 'დაყენებულია!'); 
                     socket.emit('friendListUpdated'); 
@@ -571,18 +559,14 @@ io.on('connection', (socket) => {
         try { 
             const sName = onlineUsersMap[socket.id]; 
             if(!sName || sName === targetUsername) return; 
-            
             const tU = await User.findOne({ username: targetUsername }); 
             if(tU) { 
                 if (!tU.friends.includes(sName) && !tU.friendRequests.includes(sName)) { 
-                    tU.friendRequests.push(sName); 
-                    await tU.save(); 
+                    tU.friendRequests.push(sName); await tU.save(); 
                     const tS = Object.entries(onlineUsersMap).find(([id, name]) => name === targetUsername); 
                     if(tS) io.to(tS[0]).emit('friendRequestReceived', sName); 
                     socket.emit('successMessage', 'გაიგზავნა!'); 
-                } else {
-                    socket.emit('error', 'უკვე გაგზავნილია.'); 
-                }
+                } else { socket.emit('error', 'უკვე გაგზავნილია.'); }
             } 
         } catch(err) {} 
     });
@@ -596,14 +580,10 @@ io.on('connection', (socket) => {
                 me.friendRequests = me.friendRequests.filter(u => u !== senderUsername); 
                 if(!me.friends.includes(senderUsername)) me.friends.push(senderUsername); 
                 if(!snd.friends.includes(mName)) snd.friends.push(mName); 
-                await me.save(); 
-                await snd.save(); 
+                await me.save(); await snd.save(); 
                 socket.emit('friendListUpdated'); 
                 const ss = Object.entries(onlineUsersMap).find(([id, name]) => name === senderUsername); 
-                if(ss) { 
-                    io.to(ss[0]).emit('friendListUpdated'); 
-                    io.to(ss[0]).emit('successMessage', `${mName}-მ დაგიმატა!`); 
-                } 
+                if(ss) { io.to(ss[0]).emit('friendListUpdated'); io.to(ss[0]).emit('successMessage', `${mName}-მ დაგიმატა!`); } 
             } 
         } catch(err) {} 
     });
@@ -614,20 +594,13 @@ io.on('connection', (socket) => {
             const me = await User.findOne({ username: mName }); 
             if(me) { 
                 me.friendRequests = me.friendRequests.filter(u => u !== senderUsername); 
-                await me.save(); 
-                socket.emit('friendListUpdated'); 
+                await me.save(); socket.emit('friendListUpdated'); 
             } 
         } catch(err) {} 
     });
 
     socket.on('sendInvite', ({ targetSocketId, roomId, password, fromName, gameType }) => { 
-        io.to(targetSocketId).emit('receiveInvite', { 
-            roomId, 
-            password, 
-            fromName, 
-            senderSocketId: socket.id, 
-            gameType: gameType || 'phurti' 
-        }); 
+        io.to(targetSocketId).emit('receiveInvite', { roomId, password, fromName, senderSocketId: socket.id, gameType: gameType || 'phurti' }); 
     });
 
     socket.on('rejectInvite', ({ senderSocketId, rejecterName }) => { 
@@ -654,14 +627,31 @@ io.on('connection', (socket) => {
                     const oName = p.name; 
                     const isOver = room.roundSummary && room.roundSummary.matchWinner;
                     
-                    if (!p.isBot && room.isRanked && !isOver) {
+                    if (!p.isBot && !isOver) {
                         User.findOne({ username: oName }).then(dbU => {
                             if (dbU) {
                                 const isV = dbU.vipUntil && new Date(dbU.vipUntil) > new Date(); 
                                 dbU.stats.gamesPlayed++; 
-                                dbU.xp = Math.max(0, dbU.xp - (isV ? 5 : 10)); 
+                                if (room.isRanked) {
+                                    dbU.xp = Math.max(0, dbU.xp - (isV ? 5 : 10)); 
+                                    dbU.stats.winStreak = 0; 
+                                }
                                 dbU.stats.totalPointsScored -= (room.targetScore || 0); 
-                                dbU.stats.winStreak = 0; 
+                                
+                                if (dbU.dailyQuests) {
+                                    dbU.dailyQuests.forEach(q => {
+                                        if (q.questId === 'play_5_games' && !q.isCompleted) {
+                                            q.progress++;
+                                            if(q.progress >= q.target) { q.progress=q.target; q.isCompleted=true; dbU.xp += q.xpReward; dbU.coins += 50; }
+                                        }
+                                        if (q.questId === 'play_ranked' && room.isRanked && !q.isCompleted) {
+                                            q.progress++;
+                                            if(q.progress >= q.target) { q.progress=q.target; q.isCompleted=true; dbU.xp += q.xpReward; dbU.coins += 50; }
+                                        }
+                                    });
+                                    dbU.markModified('dailyQuests');
+                                }
+
                                 dbU.gameHistory.unshift({ 
                                     roomId: room.id, 
                                     targetScore: room.targetScore || 0, 
@@ -696,7 +686,7 @@ io.on('connection', (socket) => {
             }
         }); 
         broadcastActiveRooms(); 
-        broadcastOnlineUsers(); // 🟢 მოთამაშე გამოვიდა, უნდა განახლდეს ონლაინ სია
+        broadcastOnlineUsers(); 
     };
 
     socket.on('reconnectUser', ({ oldSocketId, playerName, roomId }) => {
@@ -708,15 +698,9 @@ io.on('connection', (socket) => {
         if (r) { 
             const p = r.players.find(pl => pl.name === playerName); 
             if (p) { 
-                p.id = socket.id; 
-                socket.join(roomId); 
-                io.to(roomId).emit('gameUpdated', r); 
-            } else {
-                socket.emit('roomNotFound'); 
-            }
-        } else {
-            socket.emit('roomNotFound');
-        }
+                p.id = socket.id; socket.join(roomId); io.to(roomId).emit('gameUpdated', r); 
+            } else { socket.emit('roomNotFound'); }
+        } else { socket.emit('roomNotFound'); }
     });
 
     socket.on('joinRoom', async ({ action, roomId, playerName, roomPassword, maxPlayers, targetScore, allowBots, isRanked, gameType }) => {
@@ -726,40 +710,17 @@ io.on('connection', (socket) => {
         let uAv = '😎'; let hTh = 'wood'; let hCB = 'classic'; let uVip = null; let uXp = 0;
         try { 
             const dbU = await User.findOne({ username: playerName }); 
-            if (dbU) { 
-                uAv = dbU.avatar || '😎'; 
-                hTh = dbU.tableTheme || 'wood'; 
-                hCB = dbU.cardBack || 'classic'; 
-                uVip = dbU.vipUntil; 
-                uXp = dbU.xp || 0; 
-            } 
+            if (dbU) { uAv = dbU.avatar || '😎'; hTh = dbU.tableTheme || 'wood'; hCB = dbU.cardBack || 'classic'; uVip = dbU.vipUntil; uXp = dbU.xp || 0; } 
         } catch(e) {}
 
         if (!rooms[roomId]) {
             if (action === 'join' || !maxPlayers) return socket.emit('joinError', 'ასეთი მაგიდა არ არსებობს!');
             rooms[roomId] = { 
-                id: roomId, 
-                players: [], 
-                gameStarted: false, 
-                deck: [], 
-                tableCards: [], 
-                currentTurn: 0, 
-                roundSummary: null, 
-                lastAction: null, 
-                lastCapturerId: null, 
-                targetScore: targetScore || 11, 
-                maxPlayers: maxPlayers || 4, 
-                allowBots: allowBots !== undefined ? allowBots : true, 
-                isRanked: allowBots ? false : (isRanked !== undefined ? isRanked : true), 
-                readyForNextRound: [], 
-                turnExpiresAt: null, 
-                password: roomPassword ? roomPassword.trim() : null, 
-                isPrivate: !!roomPassword, 
-                hostTheme: hTh, 
-                hostCardBack: hCB, 
-                gameType: gameType || 'phurti', 
-                damkaBoard: null, 
-                lastDamkaMove: null 
+                id: roomId, players: [], gameStarted: false, deck: [], tableCards: [], currentTurn: 0, roundSummary: null, 
+                lastAction: null, lastCapturerId: null, targetScore: targetScore || 11, maxPlayers: maxPlayers || 4, 
+                allowBots: allowBots !== undefined ? allowBots : true, isRanked: allowBots ? false : (isRanked !== undefined ? isRanked : true), 
+                readyForNextRound: [], turnExpiresAt: null, password: roomPassword ? roomPassword.trim() : null, isPrivate: !!roomPassword, 
+                hostTheme: hTh, hostCardBack: hCB, gameType: gameType || 'phurti', damkaBoard: null, lastDamkaMove: null 
             };
         }
         
@@ -770,36 +731,15 @@ io.on('connection', (socket) => {
         
         const pEx = r.players.find(p => p.name === playerName);
         if (pEx) { 
-            pEx.id = socket.id; 
-            pEx.avatar = uAv; 
-            pEx.vipUntil = uVip; 
-            pEx.xp = uXp; 
-            if (r.gameStarted) socket.emit('gameStarted', r); 
-            else socket.emit('roomUpdated', r); 
-            broadcastActiveRooms(); 
-            return; 
+            pEx.id = socket.id; pEx.avatar = uAv; pEx.vipUntil = uVip; pEx.xp = uXp; 
+            if (r.gameStarted) socket.emit('gameStarted', r); else socket.emit('roomUpdated', r); 
+            broadcastActiveRooms(); return; 
         }
         
-        if (r.players.length >= r.maxPlayers && !r.gameStarted) {
-            return socket.emit('joinError', 'ოთახი უკვე სავსეა!');
-        }
+        if (r.players.length >= r.maxPlayers && !r.gameStarted) { return socket.emit('joinError', 'ოთახი უკვე სავსეა!'); }
         
-        r.players.push({ 
-            id: socket.id, 
-            name: playerName, 
-            avatar: uAv, 
-            vipUntil: uVip, 
-            xp: uXp, 
-            cards: [], 
-            captured: [], 
-            totalScore: 0, 
-            isBot: false, 
-            achievementsEarned: [] 
-        });
-        
-        io.to(roomId).emit('roomUpdated', r); 
-        broadcastActiveRooms();
-        checkAutoStart(roomId); 
+        r.players.push({ id: socket.id, name: playerName, avatar: uAv, vipUntil: uVip, xp: uXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
+        io.to(roomId).emit('roomUpdated', r); broadcastActiveRooms(); checkAutoStart(roomId); 
     });
 
     socket.on('tryFindMatch', async ({ playerName, gameType, maxPlayers, isRanked }) => {
@@ -808,45 +748,20 @@ io.on('connection', (socket) => {
         for (const rId in rooms) {
             const r = rooms[rId];
             if (!r.gameStarted && !r.isPrivate && r.gameType === gameType && r.isRanked === isRanked && r.players.length < r.maxPlayers && !r.allowBots) {
-                if (gameType === 'damka' || r.maxPlayers === maxPlayers) { 
-                    foundRoomId = rId; 
-                    break; 
-                }
+                if (gameType === 'damka' || r.maxPlayers === maxPlayers) { foundRoomId = rId; break; }
             }
         }
         
         if (foundRoomId) {
             const room = rooms[foundRoomId];
             if (room.players.find(p => p.name === playerName)) return; 
-            
             let uAv = '😎'; let uVip = null; let uXp = 0;
             try { 
                 const dbU = await User.findOne({ username: playerName }); 
-                if (dbU) { 
-                    uAv = dbU.avatar || '😎'; 
-                    uVip = dbU.vipUntil; 
-                    uXp = dbU.xp || 0; 
-                } 
+                if (dbU) { uAv = dbU.avatar || '😎'; uVip = dbU.vipUntil; uXp = dbU.xp || 0; } 
             } catch(e) {}
-            
-            room.players.push({ 
-                id: socket.id, 
-                name: playerName, 
-                avatar: uAv, 
-                vipUntil: uVip, 
-                xp: uXp, 
-                cards: [], 
-                captured: [], 
-                totalScore: 0, 
-                isBot: false, 
-                achievementsEarned: [] 
-            });
-            
-            socket.join(foundRoomId); 
-            io.to(foundRoomId).emit('roomUpdated', room); 
-            broadcastActiveRooms();
-            socket.emit('joinedMatchedRoom', foundRoomId);
-            checkAutoStart(foundRoomId); 
+            room.players.push({ id: socket.id, name: playerName, avatar: uAv, vipUntil: uVip, xp: uXp, cards: [], captured: [], totalScore: 0, isBot: false, achievementsEarned: [] });
+            socket.join(foundRoomId); io.to(foundRoomId).emit('roomUpdated', room); broadcastActiveRooms(); socket.emit('joinedMatchedRoom', foundRoomId); checkAutoStart(foundRoomId); 
         }
     });
 
@@ -855,51 +770,32 @@ io.on('connection', (socket) => {
     socket.on('updateConfig', ({ roomId, targetScore, maxPlayers, allowBots, isRanked }) => {
         const r = rooms[roomId]; 
         if (!r || r.gameStarted || (r.players[0] && r.players[0].id !== socket.id)) return;
-        
-        r.targetScore = targetScore; 
-        r.maxPlayers = maxPlayers; 
-        r.allowBots = allowBots; 
+        r.targetScore = targetScore; r.maxPlayers = maxPlayers; r.allowBots = allowBots; 
         r.isRanked = allowBots ? false : (isRanked !== undefined ? isRanked : r.isRanked);
-        
         if (r.players.length > maxPlayers) r.players = r.players.slice(0, maxPlayers);
-        
-        io.to(roomId).emit('roomUpdated', r); 
-        broadcastActiveRooms();
-        checkAutoStart(roomId); 
+        io.to(roomId).emit('roomUpdated', r); broadcastActiveRooms(); checkAutoStart(roomId); 
     });
 
     socket.on('leaveRoom', () => { 
         handlePlayerLeave(socket.id); 
-        socket.rooms.forEach(r => { 
-            if (r !== socket.id) socket.leave(r); 
-        }); 
+        socket.rooms.forEach(r => { if (r !== socket.id) socket.leave(r); }); 
     });
     
     socket.on('sendMessage', ({ roomId, message }) => { 
         const r = rooms[roomId]; 
         if (r) { 
             const p = r.players.find(pl => pl.id === socket.id); 
-            if (p) {
-                io.to(roomId).emit('receiveMessage', { 
-                    sender: p.name, 
-                    senderId: p.id, 
-                    isVip: p.vipUntil, 
-                    text: message, 
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-                }); 
-            } 
+            if (p) { io.to(roomId).emit('receiveMessage', { sender: p.name, senderId: p.id, isVip: p.vipUntil, text: message, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }); } 
         } 
     });
     
-    socket.on('sendEmote', ({ roomId, emote }) => { 
-        socket.to(roomId).emit('receiveEmote', { playerId: socket.id, emote }); 
-    });
+    socket.on('sendEmote', ({ roomId, emote }) => { socket.to(roomId).emit('receiveEmote', { playerId: socket.id, emote }); });
 
     socket.on('startGame', ({ roomId }) => { 
         const room = rooms[roomId];
         if (!room || room.gameStarted) return;
         if (!room.allowBots && room.players.length < room.maxPlayers) {
-            return socket.emit('error', `საჭიროა ${room.maxPlayers} მოთამაშე!`); // 🟢 აქ დაბრუნდა დაცვის მექანიზმი
+            return socket.emit('error', `საჭიროა ${room.maxPlayers} მოთამაშე!`); 
         }
         startGameLogic(roomId); 
     });
@@ -914,7 +810,7 @@ io.on('connection', (socket) => {
             if (!isValidCapture(cardFromHand, cardsFromTable)) return socket.emit('error', 'არასწორი მოჭრა!');
             if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
             
-            if (r.isRanked && cardFromHand.rank === 'J' && cardsFromTable.length >= 4 && !p.achievementsEarned.includes('sweeper')) {
+            if (cardFromHand.rank === 'J' && cardsFromTable.length >= 4 && !p.achievementsEarned.includes('sweeper')) {
                 p.achievementsEarned.push('sweeper');
             }
             
@@ -953,69 +849,83 @@ io.on('connection', (socket) => {
             wName = win ? win.name : 'მოწინააღმდეგე'; 
         } else { 
             let mS = -1; 
-            r.players.forEach(p => { 
-                if (p.id !== socket.id && p.totalScore > mS) { 
-                    mS = p.totalScore; 
-                    wName = p.name; 
-                } 
-            }); 
-            if (!wName) { 
-                const alt = r.players.find(p => p.id !== socket.id); 
-                wName = alt ? alt.name : 'მოწინააღმდეგე'; 
-            } 
+            r.players.forEach(p => { if (p.id !== socket.id && p.totalScore > mS) { mS = p.totalScore; wName = p.name; } }); 
+            if (!wName) { const alt = r.players.find(p => p.id !== socket.id); wName = alt ? alt.name : 'მოწინააღმდეგე'; } 
         }
         
         r.roundSummary = { matchWinner: wName, surrendered: s.name }; 
         if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
-        broadcastOnlineUsers(); // 🟢 მოთამაშემ დანებდა, ონლაინ სია განახლდეს
+        broadcastOnlineUsers(); 
         
-        if (r.isRanked) { 
-            r.players.forEach(async (p) => {
-                if (p.isBot) return; 
-                try {
-                    const isWin = p.name === wName; 
-                    const dbU = await User.findOne({ username: p.name });
-                    if (dbU) {
-                        const isV = dbU.vipUntil && new Date(dbU.vipUntil) > new Date(); 
-                        let eX = isWin ? (isV ? 35 : 25) : (isV ? -5 : -10); 
-                        let eC = isWin ? (isV ? 75 : 50) : (isV ? -25 : -50);
+        r.players.forEach(async (p) => {
+            if (p.isBot) return; 
+            try {
+                const isWin = p.name === wName; 
+                const dbU = await User.findOne({ username: p.name });
+                if (dbU) {
+                    const isV = dbU.vipUntil && new Date(dbU.vipUntil) > new Date(); 
+                    let eX = 0; let eC = 0;
+                    
+                    if (r.isRanked) {
+                        eX = isWin ? (isV ? 35 : 25) : (isV ? -5 : -10); 
+                        eC = isWin ? (isV ? 75 : 50) : (isV ? -25 : -50);
                         if (p.name === s.name) { eX -= 10; eC -= 20; }
-                        
-                        if (isWin) { 
-                            dbU.stats.gamesWon++; 
+                    } else {
+                        eX = 0;
+                        eC = isWin ? 15 : 5;
+                        if (p.name === s.name) { eC -= 5; } 
+                    }
+                    
+                    if (isWin) { 
+                        dbU.stats.gamesWon++; 
+                        if (r.isRanked) {
                             dbU.stats.winStreak = (dbU.stats.winStreak || 0) + 1; 
                             if (dbU.stats.winStreak >= 10 && !dbU.achievements.includes('legionnaire')) dbU.achievements.push('legionnaire'); 
-                            if (!dbU.achievements.includes('first_win')) dbU.achievements.push('first_win'); 
-                            if (dbU.stats.gamesWon >= 100 && !dbU.achievements.includes('veteran')) dbU.achievements.push('veteran'); 
-                        } else {
-                            dbU.stats.winStreak = 0; 
                         }
-                        
-                        dbU.xp = Math.max(0, dbU.xp + eX); 
-                        dbU.coins = Math.max(0, (dbU.coins || 0) + eC);
-                        let lT = dbU.level * 1000; 
-                        while (dbU.xp >= lT) { 
-                            dbU.xp -= lT; 
-                            dbU.level++; 
-                            lT = dbU.level * 1000; 
-                        }
-                        dbU.stats.gamesPlayed++;
-                        dbU.gameHistory.unshift({ 
-                            roomId: r.id, 
-                            targetScore: r.targetScore || 11, 
-                            myFinalScore: p.totalScore || 0, 
-                            isWinner: isWin, 
-                            playedAt: new Date(), 
-                            opponents: r.players.filter(op=>op.id!==p.id).map(op=>op.name), 
-                            gameType: r.gameType 
-                        });
-                        
-                        if (dbU.gameHistory.length > 30) dbU.gameHistory.pop(); 
-                        await dbU.save();
+                        if (!dbU.achievements.includes('first_win')) dbU.achievements.push('first_win'); 
+                        if (dbU.stats.gamesWon >= 100 && !dbU.achievements.includes('veteran')) dbU.achievements.push('veteran'); 
+                    } else {
+                        if (r.isRanked) dbU.stats.winStreak = 0; 
                     }
-                } catch (e) {}
-            });
-        }
+                    
+                    if (dbU.dailyQuests && dbU.dailyQuests.length > 0) {
+                        dbU.dailyQuests.forEach(q => {
+                            if (q.isCompleted) return;
+                            if (q.questId === 'play_ranked' && r.isRanked) q.progress++; 
+                            if (q.questId === 'win_ranked' && r.isRanked && isWin) q.progress++; 
+                            if (q.questId === 'play_5_games') q.progress++; 
+                            if (q.questId === 'win_3_games' && isWin) q.progress++; 
+                            
+                            if (q.progress >= q.target) { 
+                                q.progress = q.target; 
+                                q.isCompleted = true; 
+                                eX += q.xpReward; 
+                                eC += 50; 
+                            }
+                        }); 
+                        dbU.markModified('dailyQuests');
+                    }
+                    
+                    dbU.xp = Math.max(0, dbU.xp + eX); 
+                    dbU.coins = Math.max(0, (dbU.coins || 0) + eC);
+                    let lT = dbU.level * 1000; 
+                    while (dbU.xp >= lT) { dbU.xp -= lT; dbU.level++; lT = dbU.level * 1000; }
+                    dbU.stats.gamesPlayed++;
+                    dbU.gameHistory.unshift({ 
+                        roomId: r.id, 
+                        targetScore: r.targetScore || 11, 
+                        myFinalScore: p.totalScore || 0, 
+                        isWinner: isWin, 
+                        playedAt: new Date(), 
+                        opponents: r.players.filter(op=>op.id!==p.id).map(op=>op.name), 
+                        gameType: r.gameType 
+                    });
+                    
+                    if (dbU.gameHistory.length > 30) dbU.gameHistory.pop(); 
+                    await dbU.save();
+                }
+            } catch (e) {}
+        });
         io.to(roomId).emit('gameUpdated', r);
     });
     
@@ -1086,13 +996,13 @@ function handleTurnTransition(room, roomId) {
                 }
                 calculateRoundScores(room);
                 
-                if (room.isRanked && room.roundSummary.diamond10Winner !== "-") { 
+                if (room.roundSummary.diamond10Winner !== "-") { 
                     const p = room.players.find(pl => pl.name === room.roundSummary.diamond10Winner); 
                     if (p && !p.isBot && !p.achievementsEarned.includes('diamond_10')) {
                         p.achievementsEarned.push('diamond_10'); 
                     }
                 }
-                if (room.isRanked && room.roundSummary.club2Winner !== "-") { 
+                if (room.roundSummary.club2Winner !== "-") { 
                     const p = room.players.find(pl => pl.name === room.roundSummary.club2Winner); 
                     if (p && !p.isBot && !p.achievementsEarned.includes('club_2')) {
                         p.achievementsEarned.push('club_2'); 
@@ -1107,100 +1017,100 @@ function handleTurnTransition(room, roomId) {
                 let mS = -1; 
                 let winP = null; 
                 room.players.forEach(p => { 
-                    if (p.totalScore > mS) { 
-                        mS = p.totalScore; 
-                        winP = p; 
-                    } 
+                    if (p.totalScore > mS) { mS = p.totalScore; winP = p; } 
                 });
                 
                 if (mS >= room.targetScore) {
                     room.roundSummary.matchWinner = winP.name; 
-                    broadcastOnlineUsers(); // 🟢 თამაში დასრულდა
+                    broadcastOnlineUsers(); 
                     
-                    if (room.isRanked) {
-                        room.players.forEach(async (p) => {
-                            if (p.isBot) return; 
-                            try {
-                                const isW = p.name === room.roundSummary.matchWinner; 
-                                const mA = p.achievementsEarned || []; 
-                                const dbU = await User.findOne({ username: p.name });
-                                if (dbU) {
-                                    const isV = dbU.vipUntil && new Date(dbU.vipUntil) > new Date(); 
-                                    let eX = isW ? (isV ? 35 : 25) : (isV ? -5 : -10); 
-                                    let eC = isW ? (isV ? 75 : 50) : (isV ? -25 : -50);
-                                    
-                                    if (isW) { 
-                                        dbU.stats.gamesWon++; 
+                    room.players.forEach(async (p) => {
+                        if (p.isBot) return; 
+                        try {
+                            const isW = p.name === room.roundSummary.matchWinner; 
+                            const mA = p.achievementsEarned || []; 
+                            const dbU = await User.findOne({ username: p.name });
+                            if (dbU) {
+                                const isV = dbU.vipUntil && new Date(dbU.vipUntil) > new Date(); 
+                                
+                                let eX = 0; let eC = 0;
+                                if (room.isRanked) {
+                                    eX = isW ? (isV ? 35 : 25) : (isV ? -5 : -10); 
+                                    eC = isW ? (isV ? 75 : 50) : (isV ? -25 : -50);
+                                } else {
+                                    eX = 0;
+                                    eC = isW ? 15 : 5;
+                                }
+                                
+                                if (isW) { 
+                                    dbU.stats.gamesWon++; 
+                                    if (room.isRanked) {
                                         dbU.stats.winStreak = (dbU.stats.winStreak || 0) + 1; 
                                         if (dbU.stats.winStreak >= 10 && !dbU.achievements.includes('legionnaire')) dbU.achievements.push('legionnaire'); 
-                                        if (!dbU.achievements.includes('first_win')) dbU.achievements.push('first_win'); 
-                                        if (dbU.stats.gamesWon >= 100 && !dbU.achievements.includes('veteran')) dbU.achievements.push('veteran');
-                                        
-                                        if (!dbU.achievementProgress) dbU.achievementProgress = { diamond_10: 0, club_2: 0, sweeper: 0 };
-                                        
-                                        if (mA.includes('diamond_10') && !dbU.achievements.includes('diamond_10')) { 
-                                            dbU.achievementProgress.diamond_10 = (dbU.achievementProgress.diamond_10 || 0) + 1; 
-                                            if (dbU.achievementProgress.diamond_10 >= 50) dbU.achievements.push('diamond_10'); 
-                                        }
-                                        if (mA.includes('club_2') && !dbU.achievements.includes('club_2')) { 
-                                            dbU.achievementProgress.club_2 = (dbU.achievementProgress.club_2 || 0) + 1; 
-                                            if (dbU.achievementProgress.club_2 >= 50) dbU.achievements.push('club_2'); 
-                                        }
-                                        if (mA.includes('sweeper') && !dbU.achievements.includes('sweeper')) { 
-                                            dbU.achievementProgress.sweeper = (dbU.achievementProgress.sweeper || 0) + 1; 
-                                            if (dbU.achievementProgress.sweeper >= 50) dbU.achievements.push('sweeper'); 
-                                        }
-                                    } else {
-                                        dbU.stats.winStreak = 0; 
                                     }
+                                    if (!dbU.achievements.includes('first_win')) dbU.achievements.push('first_win'); 
+                                    if (dbU.stats.gamesWon >= 100 && !dbU.achievements.includes('veteran')) dbU.achievements.push('veteran');
                                     
-                                    if (dbU.dailyQuests && dbU.dailyQuests.length > 0) {
-                                        dbU.dailyQuests.forEach(q => {
-                                            if (q.isCompleted) return;
-                                            if (q.questId === 'play_ranked' && room.isRanked) q.progress++; 
-                                            if (q.questId === 'win_ranked' && room.isRanked && isW) q.progress++; 
-                                            if (q.questId === 'get_10_diamond' && mA.includes('diamond_10')) q.progress++; 
-                                            if (q.questId === 'get_2_club' && mA.includes('club_2')) q.progress++; 
-                                            if (q.questId === 'play_5_games') q.progress++; 
-                                            if (q.questId === 'win_3_games' && isW) q.progress++; 
-                                            if (q.questId === 'sweep_table' && mA.includes('sweeper')) q.progress++;
-                                            
-                                            if (q.progress >= q.target) { 
-                                                q.progress = q.target; 
-                                                q.isCompleted = true; 
-                                                eX += q.xpReward; 
-                                                eC += 50; 
-                                            }
-                                        }); 
-                                        dbU.markModified('dailyQuests');
+                                    if (!dbU.achievementProgress) dbU.achievementProgress = { diamond_10: 0, club_2: 0, sweeper: 0 };
+                                    
+                                    if (mA.includes('diamond_10') && !dbU.achievements.includes('diamond_10')) { 
+                                        dbU.achievementProgress.diamond_10 = (dbU.achievementProgress.diamond_10 || 0) + 1; 
+                                        if (dbU.achievementProgress.diamond_10 >= 50) dbU.achievements.push('diamond_10'); 
                                     }
-                                    
-                                    dbU.xp = Math.max(0, dbU.xp + eX); 
-                                    dbU.coins = Math.max(0, (dbU.coins || 0) + eC);
-                                    let lT = dbU.level * 1000; 
-                                    while (dbU.xp >= lT) { 
-                                        dbU.xp -= lT; 
-                                        dbU.level++; 
-                                        lT = dbU.level * 1000; 
+                                    if (mA.includes('club_2') && !dbU.achievements.includes('club_2')) { 
+                                        dbU.achievementProgress.club_2 = (dbU.achievementProgress.club_2 || 0) + 1; 
+                                        if (dbU.achievementProgress.club_2 >= 50) dbU.achievements.push('club_2'); 
                                     }
-                                    dbU.stats.gamesPlayed++; 
-                                    dbU.stats.totalPointsScored += p.totalScore;
-                                    dbU.gameHistory.unshift({ 
-                                        roomId: room.id, 
-                                        targetScore: room.targetScore, 
-                                        myFinalScore: p.totalScore, 
-                                        isWinner: isW, 
-                                        playedAt: new Date(), 
-                                        opponents: room.players.filter(op=>op.id!==p.id).map(op=>op.name), 
-                                        gameType: 'phurti' 
-                                    });
-                                    
-                                    if (dbU.gameHistory.length > 30) dbU.gameHistory.pop(); 
-                                    await dbU.save();
+                                    if (mA.includes('sweeper') && !dbU.achievements.includes('sweeper')) { 
+                                        dbU.achievementProgress.sweeper = (dbU.achievementProgress.sweeper || 0) + 1; 
+                                        if (dbU.achievementProgress.sweeper >= 50) dbU.achievements.push('sweeper'); 
+                                    }
+                                } else {
+                                    if (room.isRanked) dbU.stats.winStreak = 0; 
                                 }
-                            } catch (e) {}
-                        });
-                    }
+                                
+                                if (dbU.dailyQuests && dbU.dailyQuests.length > 0) {
+                                    dbU.dailyQuests.forEach(q => {
+                                        if (q.isCompleted) return;
+                                        if (q.questId === 'play_ranked' && room.isRanked) q.progress++; 
+                                        if (q.questId === 'win_ranked' && room.isRanked && isW) q.progress++; 
+                                        if (q.questId === 'get_10_diamond' && mA.includes('diamond_10')) q.progress++; 
+                                        if (q.questId === 'get_2_club' && mA.includes('club_2')) q.progress++; 
+                                        if (q.questId === 'play_5_games') q.progress++; 
+                                        if (q.questId === 'win_3_games' && isW) q.progress++; 
+                                        if (q.questId === 'sweep_table' && mA.includes('sweeper')) q.progress++;
+                                        
+                                        if (q.progress >= q.target) { 
+                                            q.progress = q.target; 
+                                            q.isCompleted = true; 
+                                            eX += q.xpReward; 
+                                            eC += 50; 
+                                        }
+                                    }); 
+                                    dbU.markModified('dailyQuests');
+                                }
+                                
+                                dbU.xp = Math.max(0, dbU.xp + eX); 
+                                dbU.coins = Math.max(0, (dbU.coins || 0) + eC);
+                                let lT = dbU.level * 1000; 
+                                while (dbU.xp >= lT) { dbU.xp -= lT; dbU.level++; lT = dbU.level * 1000; }
+                                dbU.stats.gamesPlayed++; 
+                                dbU.stats.totalPointsScored += p.totalScore;
+                                dbU.gameHistory.unshift({ 
+                                    roomId: room.id, 
+                                    targetScore: room.targetScore, 
+                                    myFinalScore: p.totalScore, 
+                                    isWinner: isW, 
+                                    playedAt: new Date(), 
+                                    opponents: room.players.filter(op=>op.id!==p.id).map(op=>op.name), 
+                                    gameType: 'phurti' 
+                                });
+                                
+                                if (dbU.gameHistory.length > 30) dbU.gameHistory.pop(); 
+                                await dbU.save();
+                            }
+                        } catch (e) {}
+                    });
                 }
                 io.to(roomId).emit('gameUpdated', room); 
                 return;
@@ -1218,10 +1128,7 @@ function startTurnTimer(room, roomId) {
     if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
     if (!room.gameStarted) return;
     const aP = room.players[room.currentTurn]; 
-    if (aP && aP.isBot) { 
-        room.turnExpiresAt = null; 
-        return; 
-    }
+    if (aP && aP.isBot) { room.turnExpiresAt = null; return; }
     
     room.turnExpiresAt = Date.now() + 30000; 
     roomTimers[roomId] = setTimeout(() => {
@@ -1230,20 +1137,11 @@ function startTurnTimer(room, roomId) {
         if (!tP || tP.isBot) return;
         
         if (room.gameType === 'phurti') {
-            if (tP.cards.length === 0) { 
-                handleTurnTransition(room, roomId); 
-                return; 
-            }
+            if (tP.cards.length === 0) { handleTurnTransition(room, roomId); return; }
             const aC = tP.cards[0]; 
             tP.cards = tP.cards.filter(c => !(c.rank === aC.rank && c.suit === aC.suit));
             room.tableCards.push(aC); 
-            room.lastAction = { 
-                playerName: `${tP.name} (🕒)`, 
-                isVip: tP.vipUntil, 
-                cardFromHand: aC, 
-                cardsFromTable: [], 
-                type: 'DISCARD' 
-            };
+            room.lastAction = { playerName: `${tP.name} (🕒)`, isVip: tP.vipUntil, cardFromHand: aC, cardsFromTable: [], type: 'DISCARD' };
             handleTurnTransition(room, roomId);
         } else if (room.gameType === 'damka') {
             room.currentTurn = (room.currentTurn + 1) % 2; 
@@ -1264,13 +1162,7 @@ function checkAndTriggerBotTurn(room, roomId) {
                 if (!bM) return;
                 
                 aP.cards = aP.cards.filter(c => !(c.rank === bM.cardFromHand.rank && c.suit === bM.cardFromHand.suit));
-                room.lastAction = { 
-                    playerName: aP.name, 
-                    isVip: null, 
-                    cardFromHand: bM.cardFromHand, 
-                    cardsFromTable: bM.cardsFromTable, 
-                    type: bM.type 
-                };
+                room.lastAction = { playerName: aP.name, isVip: null, cardFromHand: bM.cardFromHand, cardsFromTable: bM.cardsFromTable, type: bM.type };
                 
                 if (bM.type === 'CAPTURE' && bM.cardsFromTable.length > 0) {
                     aP.captured.push(bM.cardFromHand, ...bM.cardsFromTable); 
@@ -1280,7 +1172,6 @@ function checkAndTriggerBotTurn(room, roomId) {
                 } else {
                     room.tableCards.push(bM.cardFromHand);
                 }
-                
                 handleTurnTransition(room, roomId);
             } else if (room.gameType === 'damka') {
                 const bM = getDamkaBotMove(room.damkaBoard, room.currentTurn, room.multiCapturePiece);
