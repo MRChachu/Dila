@@ -283,6 +283,23 @@ function processDamkaMove(roomId, playerId, from, to, ioInst) {
                         eXp = 0; 
                         eCoin = isWin ? 15 : 5; 
                     }
+
+                    // 🟢 ახალბედას გამოწვევა: თამაში
+                    if (!dbU.achievements.includes('wc_play')) {
+                        dbU.achievements.push('wc_play');
+                        eXp += 500;
+                        const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
+                        if (sckId) io.to(sckId).emit('successMessage', '🎁 ახალბედას მისია: პირველი მატჩი დასრულდა! +500 XP');
+                    }
+
+                    // 🟢 ახალბედას გამოწვევა: მოგება
+                    if (isWin && !dbU.achievements.includes('wc_win')) {
+                        dbU.achievements.push('wc_win');
+                        const currVip = dbU.vipUntil && dbU.vipUntil > new Date() ? dbU.vipUntil.getTime() : Date.now();
+                        dbU.vipUntil = new Date(currVip + 24 * 60 * 60 * 1000);
+                        const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
+                        if (sckId) io.to(sckId).emit('successMessage', '👑 ახალბედას მისია შესრულდა: გაგიაქტიურდა 24სთ VIP!');
+                    }
                     
                     if (isWin) { 
                         dbU.stats.gamesWon++; 
@@ -517,7 +534,15 @@ io.on('connection', (socket) => {
                 if(arr.includes(itemId)) return socket.emit('error', 'უკვე გაქვს!'); 
                 if(user.coins >= price) { 
                     user.coins -= price; arr.push(itemId); 
-                    if (type === 'avatar') user.avatar = itemId; 
+                    if (type === 'avatar') {
+                        user.avatar = itemId;
+                        // 🟢 ახალბედას გამოწვევა: ავატარი
+                        if (itemId !== '😎' && !user.achievements.includes('wc_avatar')) {
+                            user.achievements.push('wc_avatar');
+                            user.coins += 500;
+                            socket.emit('successMessage', '🎁 ახალბედას მისია: ავატარი შეცვლილია! +500 🪙');
+                        }
+                    }
                     else if (type === 'table') user.tableTheme = itemId; 
                     else user.cardBack = itemId; 
                     if (user.unlockedAvatars.length > 20 && !user.achievements.includes('collector')) user.achievements.push('collector'); 
@@ -544,7 +569,15 @@ io.on('connection', (socket) => {
                 } 
                 let arr = type === 'avatar' ? user.unlockedAvatars : type === 'table' ? user.unlockedTableThemes : user.unlockedCardBacks; 
                 if(arr.includes(itemId)) { 
-                    if (type === 'avatar') user.avatar = itemId; 
+                    if (type === 'avatar') {
+                        user.avatar = itemId;
+                        // 🟢 ახალბედას გამოწვევა: ავატარი
+                        if (itemId !== '😎' && !user.achievements.includes('wc_avatar')) {
+                            user.achievements.push('wc_avatar');
+                            user.coins += 500;
+                            socket.emit('successMessage', '🎁 ახალბედას მისია: ავატარი შეცვლილია! +500 🪙');
+                        }
+                    }
                     else if (type === 'table') user.tableTheme = itemId; 
                     else user.cardBack = itemId; 
                     await user.save(); 
@@ -637,6 +670,14 @@ io.on('connection', (socket) => {
                                     dbU.stats.winStreak = 0; 
                                 }
                                 dbU.stats.totalPointsScored -= (room.targetScore || 0); 
+
+                                // 🟢 ახალბედას გამოწვევა: თამაში
+                                if (!dbU.achievements.includes('wc_play')) {
+                                    dbU.achievements.push('wc_play');
+                                    dbU.xp += 500;
+                                    const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
+                                    if (sckId) io.to(sckId).emit('successMessage', '🎁 ახალბედას მისია: პირველი მატჩი დასრულდა! +500 XP');
+                                }
                                 
                                 if (dbU.dailyQuests) {
                                     dbU.dailyQuests.forEach(q => {
@@ -875,6 +916,23 @@ io.on('connection', (socket) => {
                         eC = isWin ? 15 : 5;
                         if (p.name === s.name) { eC -= 5; } 
                     }
+
+                    // 🟢 ახალბედას გამოწვევა: თამაში
+                    if (!dbU.achievements.includes('wc_play')) {
+                        dbU.achievements.push('wc_play');
+                        eX += 500;
+                        const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
+                        if (sckId) io.to(sckId).emit('successMessage', '🎁 ახალბედას მისია: პირველი მატჩი დასრულდა! +500 XP');
+                    }
+
+                    // 🟢 ახალბედას გამოწვევა: მოგება
+                    if (isWin && !dbU.achievements.includes('wc_win')) {
+                        dbU.achievements.push('wc_win');
+                        const currVip = dbU.vipUntil && dbU.vipUntil > new Date() ? dbU.vipUntil.getTime() : Date.now();
+                        dbU.vipUntil = new Date(currVip + 24 * 60 * 60 * 1000);
+                        const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
+                        if (sckId) io.to(sckId).emit('successMessage', '👑 ახალბედას მისია შესრულდა: გაგიაქტიურდა 24სთ VIP!');
+                    }
                     
                     if (isWin) { 
                         dbU.stats.gamesWon++; 
@@ -1040,6 +1098,23 @@ function handleTurnTransition(room, roomId) {
                                 } else {
                                     eX = 0;
                                     eC = isW ? 15 : 5;
+                                }
+
+                                // 🟢 ახალბედას გამოწვევა: თამაში
+                                if (!dbU.achievements.includes('wc_play')) {
+                                    dbU.achievements.push('wc_play');
+                                    eX += 500;
+                                    const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
+                                    if (sckId) io.to(sckId).emit('successMessage', '🎁 ახალბედას მისია: პირველი მატჩი დასრულდა! +500 XP');
+                                }
+
+                                // 🟢 ახალბედას გამოწვევა: მოგება
+                                if (isW && !dbU.achievements.includes('wc_win')) {
+                                    dbU.achievements.push('wc_win');
+                                    const currVip = dbU.vipUntil && dbU.vipUntil > new Date() ? dbU.vipUntil.getTime() : Date.now();
+                                    dbU.vipUntil = new Date(currVip + 24 * 60 * 60 * 1000);
+                                    const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
+                                    if (sckId) io.to(sckId).emit('successMessage', '👑 ახალბედას მისია შესრულდა: გაგიაქტიურდა 24სთ VIP!');
                                 }
                                 
                                 if (isW) { 
