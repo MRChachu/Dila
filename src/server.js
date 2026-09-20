@@ -75,15 +75,11 @@ app.get('/api/admin/stats', async (req, res) => {
 
 app.post('/api/admin/advanced-action', async (req, res) => {
     try {
-        const { adminPass, targetUser, action } = req.body;
-        
-        if (adminPass !== process.env.ADMIN_PASS && adminPass !== 'chachu123') {
-            return res.status(403).json({ message: 'წვდომა აკრძალულია' });
-        }
+        const { targetUser, action } = req.body;
         
         if (action === 'delete') { 
             await User.deleteOne({ username: targetUser }); 
-            return res.json({ success: true, message: 'ექაუნთი წაიშალა' }); 
+            return res.json({ success: true, message: 'ექაუნთი წარმატებით წაიშალა' }); 
         } else if (action === 'reset') {
             await User.updateOne({ username: targetUser }, { 
                 $set: { 
@@ -96,7 +92,7 @@ app.post('/api/admin/advanced-action', async (req, res) => {
                     'stats.totalPointsScored': 0 
                 } 
             });
-            return res.json({ success: true, message: 'სტატისტიკა განულდა' });
+            return res.json({ success: true, message: 'სტატისტიკა წარმატებით განულდა' });
         }
         
         res.status(400).json({ message: 'უცნობი მოქმედება' });
