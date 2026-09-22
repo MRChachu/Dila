@@ -558,6 +558,45 @@ io.on('connection', (socket) => {
         } catch(err) {} 
     });
 
+    // 🟢 იღბლიანი ბორბლის ლოგიკა
+    socket.on('spinWheel', async ({ betAmount, selectedSuit }) => {
+        try {
+            const uname = onlineUsersMap[socket.id];
+            if (!uname) return;
+            
+            const user = await User.findOne({ username: uname });
+            if (user && user.coins >= betAmount) {
+                // 1. ჯერ ჩამოვაჭრათ ფსონი
+                user.coins -= betAmount;
+                
+                // 2. ავირჩიოთ მომგებიანი მასტი შემთხვევითად
+                const suits = ['❤️', '♣️', '♦️', '♠️'];
+                const winningSuit = suits[Math.floor(Math.random() * suits.length)];
+                
+                // 3. შევამოწმოთ მოიგო თუ არა
+                let winAmount = 0;
+                if (selectedSuit === winningSuit) {
+                    winAmount = betAmount * 3; // მოგება x3
+                    user.coins += winAmount;
+                }
+                
+                await user.save();
+                
+                // 4. გავუგზავნოთ შედეგი კლიენტს
+                socket.emit('wheelSpinResult', {
+                    success: true,
+                    winningSuit,
+                    winAmount,
+                    newCoins: user.coins
+                });
+            } else {
+                socket.emit('error', 'არასაკმარისი მონეტები!');
+            }
+        } catch (err) {
+            console.error('Wheel error:', err);
+        }
+    });
+
     socket.on('buyVip', async ({ days, price }) => { 
         try { 
             const uname = onlineUsersMap[socket.id]; 

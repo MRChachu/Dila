@@ -41,6 +41,14 @@ export default function App() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false); const [shopTab, setShopTab] = useState('vip'); 
   
+  // 🟢 იღბლიანი ბორბლის State-ები
+  const [isWheelOpen, setIsWheelOpen] = useState(false);
+  const [wheelSpinning, setWheelSpinning] = useState(false);
+  const [wheelRotation, setWheelRotation] = useState(0);
+  const [wheelSelectedSuit, setWheelSelectedSuit] = useState('❤️');
+  const [wheelBet, setWheelBet] = useState(50);
+  const [wheelResultMsg, setWheelResultMsg] = useState(null);
+
   const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
   const [myProfileTab, setMyProfileTab] = useState('stats'); 
   const [invSubTab, setInvSubTab] = useState('avatars'); 
@@ -51,7 +59,7 @@ export default function App() {
   const [mGameType, setMGameType] = useState('phurti'); const [mTargetScore, setMTargetScore] = useState(11); const [mMaxPlayers, setMMaxPlayers] = useState(4); const [mAllowBots, setMAllowBots] = useState(false); const [mRoomPassword, setMRoomPassword] = useState(''); const [mIsRanked, setMIsRanked] = useState(true); 
   
   const [socialTab, setSocialTab] = useState('online'); 
-  const [playerSearchQuery, setPlayerSearchQuery] = useState(''); // 🟢 ძებნისთვის
+  const [playerSearchQuery, setPlayerSearchQuery] = useState('');
   const [leaderboard, setLeaderboard] = useState([]); const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   
   // 🟢 გლობალური ჩატის State-ები
@@ -104,20 +112,51 @@ export default function App() {
     socket.on('friendListUpdated', () => fetchDashboardData(safeUsername)); socket.on('receiveUserProfile', (d) => setInspectProfile(d)); socket.on('roomNotFound', () => handleResetToLobby());
     socket.on('vipBonusClaimed', (a) => { setVipDailyReward(a); fetchDashboardData(safeUsername); }); socket.on('systemBroadcast', (m) => setSystemAlert(m));
 
-    // 🟢 გლობალური ჩატის ლისენერები
-    socket.on('receiveGlobalMessage', (msg) => {
-        setGlobalMessages((prev) => [...prev, msg]);
-    });
-    socket.on('globalChatHistory', (history) => {
-        setGlobalMessages(history);
-    });
+    // გლობალური ჩატი
+    socket.on('receiveGlobalMessage', (msg) => { setGlobalMessages((prev) => [...prev, msg]); });
+    socket.on('globalChatHistory', (history) => { setGlobalMessages(history); });
     socket.emit('getGlobalChatHistory');
+
+    // 🟢 იღბლიანი ბორბლის შედეგის ლისენერი
+    socket.on('wheelSpinResult', (data) => {
+        setWheelSpinning(true);
+        setWheelResultMsg(null);
+        
+        const baseSpins = 360 * 5; // 5 სრული ბრუნი
+        let extraRotation = 0;
+        
+        // CSS Conic-Gradient მიხედვით ვადგენთ რომელი მასტი სად არის და ვატრიალებთ
+        if (data.winningSuit === '❤️') extraRotation = 315;
+        if (data.winningSuit === '♣️') extraRotation = 225;
+        if (data.winningSuit === '♦️') extraRotation = 135;
+        if (data.winningSuit === '♠️') extraRotation = 45;
+
+        // მცირე რენდომ გადახრა, რომ ზუსტად შუაში არ გაჩერდეს და ბუნებრივი იყოს
+        const randomOffset = Math.floor(Math.random() * 60) - 30; // -30-დან +30 გრადუსამდე
+        
+        setWheelRotation(prev => {
+            const currentSpins = Math.floor(prev / 360) * 360;
+            return currentSpins + baseSpins + extraRotation + randomOffset;
+        });
+
+        // ანიმაცია გრძელდება 3 წამი, შესაბამისად შედეგსაც 3 წამის მერე ვწერთ ეკრანზე
+        setTimeout(() => {
+            setWheelSpinning(false);
+            setProfileData(prev => ({...prev, coins: data.newCoins}));
+            if (data.winAmount > 0) {
+                setToastMsg(`🎰 გილოცავ! დაჯდა ${data.winningSuit}, შენ მოიგე ${data.winAmount} 🪙`);
+                setWheelResultMsg({ type: 'win', text: `+${data.winAmount} 🪙 მოგება!` });
+            } else {
+                setWheelResultMsg({ type: 'lose', text: `წააგე... დაჯდა ${data.winningSuit}` });
+            }
+        }, 3000);
+    });
 
     const hOC = () => { const o = localStorage.getItem('phurti_socketId'); const u = localStorage.getItem('phurti_user'); const r = localStorage.getItem('phurti_roomId'); const iR = localStorage.getItem('phurti_inRoom') === 'true'; if (u) { const p = JSON.parse(u); const a = p?.user || p; const uN = a?.username; if (uN) { socket.emit('setOnlineUser', uN); if (iR && r) socket.emit('reconnectUser', { oldSocketId: o, playerName: uN, roomId: r.trim() }); else socket.emit('getLiveRooms'); } } localStorage.setItem('phurti_socketId', socket.id); };
     socket.on('connect', hOC); if (socket.connected) hOC();
     return () => { 
         socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('joinError'); socket.off('activeRoomsList'); socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound'); socket.off('vipBonusClaimed'); socket.off('systemBroadcast'); socket.off('joinedMatchedRoom'); socket.off('gameStartingCountdown'); socket.off('connect', hOC); 
-        socket.off('receiveGlobalMessage'); socket.off('globalChatHistory');
+        socket.off('receiveGlobalMessage'); socket.off('globalChatHistory'); socket.off('wheelSpinResult');
     };
   }, []);
 
@@ -125,7 +164,6 @@ export default function App() {
   useEffect(() => { if (error) { const t = setTimeout(() => setError(''), 4000); return () => clearTimeout(t); } }, [error]);
   useEffect(() => { if (toastMsg) { const t = setTimeout(() => setToastMsg(''), 4000); return () => clearTimeout(t); } }, [toastMsg]);
 
-  // 🟢 ჩატის ავტომატური სქროლი
   useEffect(() => {
       if (globalChatScrollRef.current) {
           globalChatScrollRef.current.scrollTop = globalChatScrollRef.current.scrollHeight;
@@ -163,7 +201,6 @@ export default function App() {
   const handleAcceptFriend = async (s) => { try { const r = await fetch('https://purti.onrender.com/api/auth/friend/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ me: safeUsername, sender: s }) }); const d = await r.json(); setToastMsg(d.message); fetchDashboardData(safeUsername); } catch(e) {} };
   const handleRejectFriend = async (s) => { try { const r = await fetch('https://purti.onrender.com/api/auth/friend/reject', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ me: safeUsername, sender: s }) }); const d = await r.json(); setToastMsg(d.message); fetchDashboardData(safeUsername); } catch(e) {} };
   
-  // 🟢 მეგობრის წაშლა
   const handleRemoveFriend = (t) => { 
       if (window.confirm(`ნამდვილად გინდა ${t}-ს წაშლა მეგობრებიდან?`)) { 
           socket.emit('removeFriend', { targetUsername: t }); 
@@ -179,12 +216,21 @@ export default function App() {
   const handleLogout = () => { socket.emit('leaveRoom'); setUserState(null); setInRoom(false); setRoomId(''); setRoomData(null); setProfileData(null); localStorage.clear(); socket.disconnect(); socket.connect(); };
   const handleResetToLobby = () => { socket.emit('leaveRoom'); setInRoom(false); setRoomId(''); setRoomData(null); setStartCountdown(null); localStorage.removeItem('phurti_roomId'); localStorage.removeItem('phurti_inRoom'); };
 
-  // 🟢 გლობალური მესიჯის გაგზავნის ფუნქცია
   const handleSendGlobalMessage = (e) => {
       e.preventDefault();
       if (!globalChatInput.trim() || !safeUsername) return;
       socket.emit('sendGlobalMessage', { sender: safeUsername, text: globalChatInput.trim(), isVip: checkIsVip(profileData?.vipUntil) });
       setGlobalChatInput('');
+  };
+
+  // 🟢 იღბლიანი ბორბლის ტრიალის გაშვება
+  const handleSpinWheel = () => {
+      if (wheelSpinning) return;
+      if (myCoins < wheelBet) {
+          setError('არასაკმარისი მონეტები ბორბლის დასატრიალებლად!');
+          return;
+      }
+      socket.emit('spinWheel', { betAmount: wheelBet, selectedSuit: wheelSelectedSuit });
   };
 
   if (!userState) return <Auth onAuthSuccess={handleAuthSuccess} />;
@@ -221,6 +267,102 @@ export default function App() {
             <button onClick={() => setInviteTarget(null)} className="w-full mt-4 py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase">გაუქმება</button>
           </div>
         </div>
+      )}
+
+      {/* 🟢 იღბლიანი ბორბლის მოდალი (Lucky Wheel) */}
+      {isWheelOpen && (
+          <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+            <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl font-sans relative flex flex-col items-center`}>
+              <button onClick={() => !wheelSpinning && setIsWheelOpen(false)} className="absolute top-4 right-4 text-stone-500 hover:text-stone-300 transition-colors">
+                  <XCircle size={24} />
+              </button>
+              <h3 className={`text-xl font-black ${activeTheme.accent} uppercase tracking-wider mb-6 flex items-center gap-2 drop-shadow-md`}>
+                  🎰 იღბლიანი ბორბალი
+              </h3>
+
+              {/* მიმთითებელი ისარი (Pointer) */}
+              <div className="relative w-full flex justify-center mb-1 z-20">
+                  <div className="absolute top-0 text-3xl drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]">👇</div>
+              </div>
+
+              {/* ბორბალი (Wheel) */}
+              <div className="relative mt-5 mb-8">
+                  <div 
+                      className="w-56 h-56 md:w-64 md:h-64 rounded-full border-4 border-yellow-500 overflow-hidden shadow-[0_0_40px_rgba(234,179,8,0.3)] transition-transform duration-[3000ms] ease-out"
+                      style={{ transform: `rotate(${wheelRotation}deg)` }}
+                  >
+                      {/* Conic Gradient ფერებისთვის */}
+                      <div className="absolute inset-0" style={{ background: 'conic-gradient(#dc2626 0 90deg, #1c1917 90deg 180deg, #dc2626 180deg 270deg, #1c1917 270deg 360deg)' }}></div>
+                      
+                      {/* მასტების ლოგოები ცენტრებში */}
+                      <div className="absolute inset-0 flex items-center justify-center font-black">
+                          <span className="absolute text-5xl drop-shadow-md" style={{ transform: 'rotate(45deg) translate(0, -65px)' }}>❤️</span>
+                          <span className="absolute text-5xl drop-shadow-md" style={{ transform: 'rotate(135deg) translate(0, -65px)' }}>♣️</span>
+                          <span className="absolute text-5xl drop-shadow-md" style={{ transform: 'rotate(225deg) translate(0, -65px)' }}>♦️</span>
+                          <span className="absolute text-5xl drop-shadow-md" style={{ transform: 'rotate(315deg) translate(0, -65px)' }}>♠️</span>
+                      </div>
+                      
+                      {/* ბორბლის ცენტრი */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-stone-900 rounded-full border-2 border-yellow-500 z-10 flex items-center justify-center shadow-inner">
+                          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      </div>
+                  </div>
+              </div>
+
+              {/* შედეგის მესიჯი */}
+              <div className="h-8 mb-5 flex items-center justify-center">
+                  {wheelResultMsg && (
+                      <span className={`text-sm md:text-base font-black px-4 py-1.5 rounded-lg uppercase tracking-widest animate-in zoom-in ${wheelResultMsg.type === 'win' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
+                          {wheelResultMsg.text}
+                      </span>
+                  )}
+              </div>
+
+              {/* ფსონის და მასტის არჩევა */}
+              <div className="w-full bg-stone-950/50 rounded-2xl p-4 md:p-5 border border-white/5 space-y-4 shadow-inner">
+                  <div className="flex justify-between items-center">
+                      <span className="text-[10px] md:text-xs uppercase font-bold text-stone-400">აირჩიე მასტი:</span>
+                      <div className="flex gap-2">
+                          {['❤️', '♦️', '♣️', '♠️'].map(s => (
+                              <button 
+                                  key={s} 
+                                  disabled={wheelSpinning}
+                                  onClick={() => setWheelSelectedSuit(s)}
+                                  className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl text-xl md:text-2xl border-2 transition-all ${wheelSelectedSuit === s ? 'bg-stone-800 border-yellow-500 scale-110 shadow-[0_0_15px_rgba(234,179,8,0.4)]' : 'bg-stone-900 border-white/5 opacity-50 hover:opacity-100 active:scale-95'}`}
+                              >
+                                  {s}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                      <span className="text-[10px] md:text-xs uppercase font-bold text-stone-400">ფსონი <span className="text-yellow-500">(x3)</span>:</span>
+                      <div className="flex gap-2">
+                          {[50, 100, 500].map(b => (
+                              <button 
+                                  key={b} 
+                                  disabled={wheelSpinning}
+                                  onClick={() => setWheelBet(b)}
+                                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-black transition-all border ${wheelBet === b ? 'bg-yellow-500 text-stone-950 border-yellow-500 shadow-md' : 'bg-stone-900 border-white/5 text-stone-400 hover:bg-stone-800 active:scale-95'}`}
+                              >
+                                  {b}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+              </div>
+
+              {/* დატრიალების ღილაკი */}
+              <button 
+                  onClick={handleSpinWheel}
+                  disabled={wheelSpinning}
+                  className={`w-full mt-5 py-3.5 md:py-4 rounded-xl text-sm md:text-base font-black uppercase tracking-widest transition-all shadow-xl ${wheelSpinning ? 'bg-stone-800 text-stone-500 cursor-not-allowed border border-white/5' : 'bg-gradient-to-r from-yellow-600 to-amber-500 text-stone-950 hover:opacity-90 active:scale-95 border-b-4 border-yellow-700'}`}
+              >
+                  {wheelSpinning ? 'ტრიალებს...' : 'დატრიალება 🎰'}
+              </button>
+            </div>
+          </div>
       )}
 
       {showInstallPrompt && (
@@ -447,6 +589,13 @@ export default function App() {
               <button onClick={() => setLang('en')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'en' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇧</button>
               <button onClick={() => setLang('ru')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'ru' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇷🇺</button>
             </div>
+            
+            {/* 🟢 ბორბლის ღილაკი */}
+            <button onClick={() => setIsWheelOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
+               <span className="text-sm md:text-base leading-none">🎰</span> 
+               <span className="hidden md:block text-[10px] font-black uppercase">ბორბალი</span>
+            </button>
+            
             <button onClick={loadLeaderboard} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><Trophy size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">{t.top10}</span></button>
             {safeUsername.toLowerCase() === 'chachu' && ( <button onClick={() => setIsAdminOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><ShieldAlert size={15} className="md:w-4 md:h-4" /> <span className="hidden md:block text-[10px] font-black uppercase">{t.admin}</span></button> )}
             <button onClick={() => setIsShopOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md"><ShoppingCart size={15} /> <span className="hidden md:block text-[10px] font-black uppercase">{t.shop}</span></button>
@@ -459,9 +608,8 @@ export default function App() {
           {!inRoom ? (
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6 items-start">
               
-              {/* 🟢 მარცხენა სვეტი (მობილურზე გამოჩნდება პირველი) */}
+              {/* მარცხენა სვეტი */}
               <div className="space-y-4 md:space-y-5">
-                {/* 1. პირადი გვერდი (Profile) */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4 mb-4 md:mb-5">
                     <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all" onClick={() => setIsMyProfileOpen(true)}>
@@ -493,7 +641,6 @@ export default function App() {
                   <button onClick={() => setIsHistoryOpen(true)} className={`mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-950/60 border border-white/5 hover:bg-stone-900 transition-all text-stone-300 shadow-inner flex items-center justify-center gap-2 active:scale-95`}><Clock size={16} className={activeTheme.accent} /> {t.myHistory}</button>
                 </div>
 
-                {/* 2. გლობალური ჩატი */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl transition-colors duration-700 h-[260px]`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3 shrink-0">
                       <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest">
@@ -562,7 +709,6 @@ export default function App() {
                   </form>
                 </div>
 
-                {/* 3. ონლაინ / მეგობრები / ძებნა */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
                   <div className="flex border-b border-white/5 gap-3 md:gap-4 overflow-x-auto custom-scrollbar shrink-0">
                     <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500 hover:text-stone-300'}`}>{t.online} ({onlineUser.length})</button>
@@ -601,10 +747,9 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 🟢 მარჯვენა სვეტი (მობილურზე გამოჩნდება ქვემოთ) */}
+              {/* მარჯვენა სვეტი */}
               <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full relative">
                 
-                {/* ახალბედას გამოწვევა (Welcome Challenge Banner) */}
                 {showWelcomeChallenge && (
                   <div className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/80 to-stone-900 p-4 md:p-6 shadow-[0_0_30px_rgba(16,185,129,0.15)] group">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-emerald-500/20 transition-all duration-700"></div>
@@ -648,7 +793,6 @@ export default function App() {
                     </div>
                 )}
 
-                {/* 4, 5, 6. თამაშის ძებნა / შექმნა / შესვლა */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                   <button onClick={() => setIsMatchmakingOpen(true)} className={`p-4 md:p-5 ${activeTheme.accentBg} hover:opacity-90 text-stone-950 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-[0_0_20px_currentColor] active:scale-95 border-b-4 border-black/20 group`}>
                       <div><h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><Search size={14} className="md:w-4 md:h-4"/> თამაშის ძებნა</h4><p className="text-[9px] md:text-xs text-stone-800 mt-1 font-black opacity-80">სწრაფი დაკავშირება</p></div><Play size={18} className="md:w-5 md:h-5 text-stone-900 group-hover:scale-110 transition-transform" />
@@ -662,15 +806,12 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 7, 8. მაგიდები და ყოველდღიური მისიები (გვერდი-გვერდ დესკტოპზე, ვერტიკალურად მობილურზე) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                  {/* მაგიდები გამოჩნდება მობილურზე მისიების ზემოთ */}
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700 h-full`}>
                     <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3"><h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest"><LayoutGrid size={14} className={activeTheme.accent} /> {t.tables}</h3><button onClick={() => socket.emit('getLiveRooms')} className={`p-1.5 md:p-2 hover:bg-stone-800 ${activeTheme.accent} rounded-lg bg-stone-950/60 border border-white/5 shadow-md active:scale-95`}><RefreshCw size={12}/></button></div>
                     {liveRooms.length === 0 ? ( <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-stone-950/30 h-[160px] flex items-center justify-center"><p className="text-[10px] md:text-xs text-stone-500 font-bold">{t.noTables}</p></div> ) : ( <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">{liveRooms.map((room) => ( <div key={room.id} className="p-2.5 md:p-3 rounded-xl bg-stone-950/40 border border-white/5 flex justify-between items-center shadow-md"><div className="flex flex-col gap-1"><div className={`flex items-center gap-1.5 text-[10px] md:text-xs font-black ${activeTheme.accent} font-mono`}><span className="text-xs">{room.hostAvatar || '😎'}</span> <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> {room.isPrivate && <Lock size={10} className="text-stone-500" />}<span className="text-[8px] bg-stone-900 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md uppercase ml-1 shadow-sm flex items-center gap-1">{room.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}</span></div><div className="flex gap-1.5 items-center">{room.isRanked ? <span className={`text-[8px] font-bold ${activeTheme.accentBg} bg-opacity-10 border-opacity-20 border-current px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}<span className="text-[8px] font-bold text-stone-400 bg-stone-900/80 px-1 py-0.5 rounded border border-white/5 font-mono">👥 {room.currentPlayers}/{room.maxPlayers}</span></div></div><button onClick={() => handleRoomClickFromList(room)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all active:scale-95 ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300' : `bg-white text-stone-900 shadow-md`}`}>{t.join}</button></div> ))}</div> )}
                   </div>
 
-                  {/* ყოველდღიური მისიები (ბოლოში) */}
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 relative overflow-hidden h-full`}>
                      <div className={`absolute top-0 right-0 w-32 h-32 ${activeTheme.accentBg} opacity-5 blur-[60px] rounded-full`}></div>
                      <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest mb-3">
