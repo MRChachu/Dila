@@ -46,7 +46,13 @@ app.get('/api/admin/stats', async (req, res) => {
     try {
         const totalUsers = await User.countDocuments();
         const globalStats = await User.aggregate([
-            { $group: { _id: null, totalGamesPlayed: { $sum: "$stats.gamesPlayed" }, totalCoins: { $sum: "$coins" } } }
+            { $group: { 
+                _id: null, 
+                totalGamesPlayed: { $sum: "$stats.gamesPlayed" }, 
+                totalCoins: { $sum: "$coins" },
+                totalPhurti: { $sum: "$stats.phurtiPlayed" }, // 🟢 დაემატა
+                totalDamka: { $sum: "$stats.damkaPlayed" }    // 🟢 დაემატა
+            } }
         ]);
         const topAvatars = await User.aggregate([
             { $match: { avatar: { $ne: null } } }, 
@@ -65,6 +71,8 @@ app.get('/api/admin/stats', async (req, res) => {
             totalUsers, 
             totalGamesPlayed: globalStats[0]?.totalGamesPlayed || 0, 
             totalCoins: globalStats[0]?.totalCoins || 0, 
+            totalPhurti: globalStats[0]?.totalPhurti || 0, // 🟢 დაემატა
+            totalDamka: globalStats[0]?.totalDamka || 0,   // 🟢 დაემატა
             topAvatars, 
             topThemes 
         });
@@ -89,7 +97,9 @@ app.post('/api/admin/advanced-action', async (req, res) => {
                     'stats.gamesPlayed': 0, 
                     'stats.gamesWon': 0, 
                     'stats.winStreak': 0, 
-                    'stats.totalPointsScored': 0 
+                    'stats.totalPointsScored': 0,
+                    'stats.phurtiPlayed': 0, // 🟢 დაემატა
+                    'stats.damkaPlayed': 0   // 🟢 დაემატა
                 } 
             });
             return res.json({ success: true, message: 'სტატისტიკა წარმატებით განულდა' });
@@ -280,7 +290,6 @@ function processDamkaMove(roomId, playerId, from, to, ioInst) {
                         eCoin = isWin ? 15 : 5; 
                     }
 
-                    // 🟢 ახალბედას გამოწვევა: თამაში
                     if (!dbU.achievements.includes('wc_play')) {
                         dbU.achievements.push('wc_play');
                         eXp += 500;
@@ -288,7 +297,6 @@ function processDamkaMove(roomId, playerId, from, to, ioInst) {
                         if (sckId) io.to(sckId).emit('successMessage', '🎁 ახალბედას მისია: პირველი მატჩი დასრულდა! +500 XP');
                     }
 
-                    // 🟢 ახალბედას გამოწვევა: მოგება
                     if (isWin && !dbU.achievements.includes('wc_win')) {
                         dbU.achievements.push('wc_win');
                         const currVip = dbU.vipUntil && dbU.vipUntil > new Date() ? dbU.vipUntil.getTime() : Date.now();
@@ -337,6 +345,10 @@ function processDamkaMove(roomId, playerId, from, to, ioInst) {
                     }
                     
                     dbU.stats.gamesPlayed++;
+                    // 🟢 დაემატა დამკის/ფურთის დათვლა
+                    if (room.gameType === 'damka') dbU.stats.damkaPlayed = (dbU.stats.damkaPlayed || 0) + 1;
+                    else dbU.stats.phurtiPlayed = (dbU.stats.phurtiPlayed || 0) + 1;
+
                     dbU.gameHistory.unshift({ 
                         roomId: room.id, 
                         targetScore: 12, 
@@ -532,7 +544,6 @@ io.on('connection', (socket) => {
                     user.coins -= price; arr.push(itemId); 
                     if (type === 'avatar') {
                         user.avatar = itemId;
-                        // 🟢 ახალბედას გამოწვევა: ავატარი
                         if (itemId !== '😎' && !user.achievements.includes('wc_avatar')) {
                             user.achievements.push('wc_avatar');
                             user.coins += 500;
@@ -567,7 +578,6 @@ io.on('connection', (socket) => {
                 if(arr.includes(itemId)) { 
                     if (type === 'avatar') {
                         user.avatar = itemId;
-                        // 🟢 ახალბედას გამოწვევა: ავატარი
                         if (itemId !== '😎' && !user.achievements.includes('wc_avatar')) {
                             user.achievements.push('wc_avatar');
                             user.coins += 500;
@@ -661,13 +671,17 @@ io.on('connection', (socket) => {
                             if (dbU) {
                                 const isV = dbU.vipUntil && new Date(dbU.vipUntil) > new Date(); 
                                 dbU.stats.gamesPlayed++; 
+                                
+                                // 🟢 დაემატა დამკის/ფურთის დათვლა
+                                if (room.gameType === 'damka') dbU.stats.damkaPlayed = (dbU.stats.damkaPlayed || 0) + 1;
+                                else dbU.stats.phurtiPlayed = (dbU.stats.phurtiPlayed || 0) + 1;
+
                                 if (room.isRanked) {
                                     dbU.xp = Math.max(0, dbU.xp - (isV ? 5 : 10)); 
                                     dbU.stats.winStreak = 0; 
                                 }
                                 dbU.stats.totalPointsScored -= (room.targetScore || 0); 
 
-                                // 🟢 ახალბედას გამოწვევა: თამაში
                                 if (!dbU.achievements.includes('wc_play')) {
                                     dbU.achievements.push('wc_play');
                                     dbU.xp += 500;
@@ -913,7 +927,6 @@ io.on('connection', (socket) => {
                         if (p.name === s.name) { eC -= 5; } 
                     }
 
-                    // 🟢 ახალბედას გამოწვევა: თამაში
                     if (!dbU.achievements.includes('wc_play')) {
                         dbU.achievements.push('wc_play');
                         eX += 500;
@@ -921,7 +934,6 @@ io.on('connection', (socket) => {
                         if (sckId) io.to(sckId).emit('successMessage', '🎁 ახალბედას მისია: პირველი მატჩი დასრულდა! +500 XP');
                     }
 
-                    // 🟢 ახალბედას გამოწვევა: მოგება
                     if (isWin && !dbU.achievements.includes('wc_win')) {
                         dbU.achievements.push('wc_win');
                         const currVip = dbU.vipUntil && dbU.vipUntil > new Date() ? dbU.vipUntil.getTime() : Date.now();
@@ -965,6 +977,11 @@ io.on('connection', (socket) => {
                     let lT = dbU.level * 1000; 
                     while (dbU.xp >= lT) { dbU.xp -= lT; dbU.level++; lT = dbU.level * 1000; }
                     dbU.stats.gamesPlayed++;
+                    
+                    // 🟢 დაემატა დამკის/ფურთის დათვლა
+                    if (r.gameType === 'damka') dbU.stats.damkaPlayed = (dbU.stats.damkaPlayed || 0) + 1;
+                    else dbU.stats.phurtiPlayed = (dbU.stats.phurtiPlayed || 0) + 1;
+
                     dbU.gameHistory.unshift({ 
                         roomId: r.id, 
                         targetScore: r.targetScore || 11, 
@@ -1096,7 +1113,6 @@ function handleTurnTransition(room, roomId) {
                                     eC = isW ? 15 : 5;
                                 }
 
-                                // 🟢 ახალბედას გამოწვევა: თამაში
                                 if (!dbU.achievements.includes('wc_play')) {
                                     dbU.achievements.push('wc_play');
                                     eX += 500;
@@ -1104,7 +1120,6 @@ function handleTurnTransition(room, roomId) {
                                     if (sckId) io.to(sckId).emit('successMessage', '🎁 ახალბედას მისია: პირველი მატჩი დასრულდა! +500 XP');
                                 }
 
-                                // 🟢 ახალბედას გამოწვევა: მოგება
                                 if (isW && !dbU.achievements.includes('wc_win')) {
                                     dbU.achievements.push('wc_win');
                                     const currVip = dbU.vipUntil && dbU.vipUntil > new Date() ? dbU.vipUntil.getTime() : Date.now();
@@ -1166,6 +1181,11 @@ function handleTurnTransition(room, roomId) {
                                 let lT = dbU.level * 1000; 
                                 while (dbU.xp >= lT) { dbU.xp -= lT; dbU.level++; lT = dbU.level * 1000; }
                                 dbU.stats.gamesPlayed++; 
+                                
+                                // 🟢 დაემატა დამკის/ფურთის დათვლა
+                                if (room.gameType === 'damka') dbU.stats.damkaPlayed = (dbU.stats.damkaPlayed || 0) + 1;
+                                else dbU.stats.phurtiPlayed = (dbU.stats.phurtiPlayed || 0) + 1;
+
                                 dbU.stats.totalPointsScored += p.totalScore;
                                 dbU.gameHistory.unshift({ 
                                     roomId: room.id, 

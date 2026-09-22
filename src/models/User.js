@@ -15,7 +15,9 @@ const userSchema = new mongoose.Schema({
     gamesPlayed: { type: Number, default: 0 },
     gamesWon: { type: Number, default: 0 },
     totalPointsScored: { type: Number, default: 0 },
-    winStreak: { type: Number, default: 0 } // 🟢 დაემატა ზედიზედ მოგებების მთვლელი
+    winStreak: { type: Number, default: 0 }, // 🟢 დაემატა ზედიზედ მოგებების მთვლელი
+    phurtiPlayed: { type: Number, default: 0 }, // 🟢 ფურთის მთვლელი
+    damkaPlayed: { type: Number, default: 0 }   // 🟢 დამკის მთვლელი
   },
   gameHistory: [{
       roomId: { type: String },
