@@ -50,7 +50,7 @@ export default function App() {
   const [selectedRoomIdForJoin, setSelectedRoomIdForJoin] = useState(''); const [joinPasswordInput, setJoinPasswordInput] = useState('');
   const [mGameType, setMGameType] = useState('phurti'); const [mTargetScore, setMTargetScore] = useState(11); const [mMaxPlayers, setMMaxPlayers] = useState(4); const [mAllowBots, setMAllowBots] = useState(false); const [mRoomPassword, setMRoomPassword] = useState(''); const [mIsRanked, setMIsRanked] = useState(true); 
   
-  const [socialTab, setSocialTab] = useState('online'); const [leaderboard, setLeaderboard] = useState([]); const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [socialTab, setSocialTab] = useState('online'); const [playerSearchQuery, setPlayerSearchQuery] = useState(''); const [leaderboard, setLeaderboard] = useState([]); const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   
   // 🟢 გლობალური ჩატის State-ები
   const [globalMessages, setGlobalMessages] = useState([]);
@@ -528,15 +528,38 @@ export default function App() {
 
                 {/* 3. ონლაინ / მეგობრები */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                  <div className="flex border-b border-white/5 gap-4">
-                    <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>{t.online} ({onlineUser.length})</button>
-                    <button onClick={() => setSocialTab('friends')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${socialTab === 'friends' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>{t.friends}</button>
-                    <button onClick={() => setSocialTab('requests')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all relative ${socialTab === 'requests' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500'}`}>{t.requests}{profileData?.friendRequests?.length > 0 && ( <span className="absolute -top-1 -right-3 w-3.5 h-3.5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[8px] font-black">{profileData.friendRequests.length}</span> )}</button>
-                  </div>
+                  <div className="flex border-b border-white/5 gap-3 md:gap-4 overflow-x-auto custom-scrollbar shrink-0">
+  <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500 hover:text-stone-300'}`}>{t.online} ({onlineUser.length})</button>
+  <button onClick={() => setSocialTab('friends')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${socialTab === 'friends' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500 hover:text-stone-300'}`}>{t.friends}</button>
+  <button onClick={() => setSocialTab('requests')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${socialTab === 'requests' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500 hover:text-stone-300'}`}>{t.requests}{profileData?.friendRequests?.length > 0 && ( <span className="absolute -top-1 -right-3 w-3.5 h-3.5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[8px] font-black">{profileData.friendRequests.length}</span> )}</button>
+  <button onClick={() => setSocialTab('search')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${socialTab === 'search' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500 hover:text-stone-300'}`}><Search size={12} className="inline mr-1 mb-0.5" /> ძებნა</button>
+</div>
                   <div className="space-y-1.5 md:space-y-2 max-h-[140px] md:max-h-[160px] overflow-y-auto pr-1 custom-scrollbar pt-2">
                     {socialTab === 'online' && ( onlineUser.filter(u => u.username !== safeUsername).length > 0 ? ( onlineUser.filter(u => u.username !== safeUsername).map(u => ( <div key={u.socketId} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-white/10`}><div className="flex items-center gap-2 md:gap-2.5 cursor-pointer" onClick={() => handleInspectPlayer(u.username)}><div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${u.inGame ? 'bg-rose-500 animate-pulse' : activeTheme.accentBg + ' animate-pulse'} rounded-full`} /><span className="font-bold text-stone-200 truncate max-w-[70px] md:max-w-[90px] hover:underline">{u.username}</span>{u.inGame && <span className="text-[8px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/30 ml-1 animate-pulse">თამაშობს</span>}</div><div className="flex gap-1.5">{!profileData?.friends?.includes(u.username) && ( <button onClick={() => handleSendFriendReq(u.username)} title="მეგობრებში დამატება" className={`p-1.5 md:p-2 rounded-lg bg-stone-800 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95`}><UserPlus size={12} /></button> )}{!u.inGame && <button onClick={() => handleSendInviteClick(u.socketId, u.username)} title="თამაშში მოწვევა" className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}><Swords size={12} /> {t.invite}</button>}</div></div> )) ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">{t.noPlayers}</p> )}
                     {socialTab === 'friends' && ( profileData?.friends?.length > 0 ? ( profileData.friends.map((friendName, i) => { const isOnline = onlineUser.find(u => u.username === friendName); return ( <div key={i} className={`flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs transition-all hover:border-white/10`}><div className="flex items-center gap-2 md:gap-2.5 cursor-pointer" onClick={() => handleInspectPlayer(friendName)}><div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${isOnline ? (isOnline.inGame ? 'bg-rose-500 animate-pulse' : activeTheme.accentBg) : 'bg-stone-600'} rounded-full`} /><span className={`font-bold truncate max-w-[80px] hover:underline ${isOnline ? 'text-stone-200' : 'text-stone-500'}`}>{friendName}</span>{isOnline?.inGame && <span className="text-[8px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/30 ml-1 animate-pulse">თამაშობს</span>}</div>{isOnline && !isOnline.inGame && ( <button onClick={() => handleSendInviteClick(isOnline.socketId, friendName)} className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black bg-stone-800 ${activeTheme.accent} border border-white/5 hover:bg-stone-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-md`}><Swords size={12} /> {t.invite}</button> )}</div> ) }) ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">მეგობრების სია ცარიელია</p> )}
                     {socialTab === 'requests' && ( profileData?.friendRequests?.length > 0 ? ( profileData.friendRequests.map((reqName, i) => ( <div key={i} className="flex items-center justify-between p-2 md:p-2.5 rounded-xl bg-stone-950/40 border border-white/5 text-[10px] md:text-xs"><span className="font-bold text-stone-200 truncate cursor-pointer hover:underline" onClick={() => handleInspectPlayer(reqName)}>{reqName}</span><div className="flex gap-1.5"><button onClick={() => handleAcceptFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-md active:scale-95"><CheckCircle2 size={12} /></button><button onClick={() => handleRejectFriend(reqName)} className="p-1.5 md:p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-md active:scale-95"><XCircle size={12} /></button></div></div> )) ) : <p className="text-[10px] md:text-xs text-stone-600 font-medium italic text-center py-4">ახალი თხოვნები არ გაქვს</p> )}
+                    {socialTab === 'search' && (
+  <div className="flex flex-col gap-3 p-1 mt-1">
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" size={14} />
+      <input 
+        type="text" 
+        placeholder="შეიყვანე ზუსტი სახელი..." 
+        value={playerSearchQuery}
+        onChange={(e) => setPlayerSearchQuery(e.target.value)}
+        onKeyDown={(e) => { if(e.key === 'Enter' && playerSearchQuery.trim()) handleInspectPlayer(playerSearchQuery.trim()); }}
+        className="w-full bg-stone-950/60 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none focus:border-white/30 transition-all shadow-inner"
+      />
+    </div>
+    <button 
+      onClick={() => { if(playerSearchQuery.trim()) handleInspectPlayer(playerSearchQuery.trim()); }}
+      disabled={!playerSearchQuery.trim()}
+      className={`w-full py-2.5 ${activeTheme.accentBg} text-stone-950 font-black rounded-xl text-[10px] md:text-xs uppercase transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
+    >
+      პროფილის ნახვა
+    </button>
+  </div>
+)}
                   </div>
                 </div>
               </div>
