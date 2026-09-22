@@ -119,9 +119,7 @@ export default function App() {
 
     // 🟢 იღბლიანი ბორბლის შედეგის ლისენერი
     socket.on('wheelSpinResult', (data) => {
-        setWheelSpinning(true);
-        setWheelResultMsg(null);
-        
+        // ვაგრძელებთ ანიმაციას
         const baseSpins = 360 * 5; // 5 სრული ბრუნი
         let extraRotation = 0;
         
@@ -226,10 +224,17 @@ export default function App() {
   // 🟢 იღბლიანი ბორბლის ტრიალის გაშვება
   const handleSpinWheel = () => {
       if (wheelSpinning) return;
+      const myCoins = profileData?.coins || 0;
       if (myCoins < wheelBet) {
           setError('არასაკმარისი მონეტები ბორბლის დასატრიალებლად!');
           return;
       }
+      
+      // 🟢 მყისიერად ვაკლებთ ფსონს ვიზუალურად და ვბლოკავთ ღილაკს
+      setProfileData(prev => ({ ...prev, coins: prev.coins - wheelBet }));
+      setWheelSpinning(true);
+      setWheelResultMsg(null);
+      
       socket.emit('spinWheel', { betAmount: wheelBet, selectedSuit: wheelSelectedSuit });
   };
 
@@ -273,10 +278,18 @@ export default function App() {
       {isWheelOpen && (
           <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[200] flex items-center justify-center p-4">
             <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl font-sans relative flex flex-col items-center`}>
+              
+              {/* 🟢 ბალანსის მაჩვენებელი ზედა მარცხენა კუთხეში */}
+              <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-stone-950/80 px-3 py-1.5 rounded-lg border border-yellow-500/30 shadow-inner">
+                  <Coins size={14} className="text-yellow-500" />
+                  <span className="text-[10px] md:text-xs font-mono font-black text-stone-200">{myCoins}</span>
+              </div>
+
               <button onClick={() => !wheelSpinning && setIsWheelOpen(false)} className="absolute top-4 right-4 text-stone-500 hover:text-stone-300 transition-colors">
                   <XCircle size={24} />
               </button>
-              <h3 className={`text-xl font-black ${activeTheme.accent} uppercase tracking-wider mb-6 flex items-center gap-2 drop-shadow-md`}>
+              
+              <h3 className={`text-xl font-black ${activeTheme.accent} uppercase tracking-wider mb-6 mt-2 flex items-center gap-2 drop-shadow-md`}>
                   🎰 იღბლიანი ბორბალი
               </h3>
 
