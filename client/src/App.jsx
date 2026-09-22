@@ -480,7 +480,7 @@ export default function App() {
                 </div>
 
                 {/* 2. გლობალური ჩატი */}
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl transition-colors duration-700 h-[320px]`}>
+                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl transition-colors duration-700 h-[260px]`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3 shrink-0">
                       <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest">
                           <Megaphone size={14} className={activeTheme.accent} /> გლობალური ჩატი
