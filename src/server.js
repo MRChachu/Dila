@@ -480,6 +480,25 @@ io.on('connection', (socket) => {
         io.emit('receiveGlobalMessage', message); // ვუგზავნით ყველას
     });
 
+    // 🟢 გლობალური ჩატის ადმინ-ფუნქციები
+    socket.on('adminClearGlobalChat', ({ adminName }) => {
+        if (adminName && adminName.toLowerCase() === 'chachu') {
+            globalChatHistory.length = 0; // სრულად ვასუფთავებთ მასივს
+            io.emit('globalChatHistory', globalChatHistory); // ყველასთან ვანახლებთ
+        }
+    });
+
+    socket.on('adminDeleteGlobalMessage', ({ adminName, messageId }) => {
+        if (adminName && adminName.toLowerCase() === 'chachu') {
+            // ვპოულობთ და ვშლით მხოლოდ კონკრეტულ მესიჯს ID-ის მიხედვით
+            const index = globalChatHistory.findIndex(m => m.id === messageId);
+            if (index !== -1) {
+                globalChatHistory.splice(index, 1);
+                io.emit('globalChatHistory', globalChatHistory); // ყველასთან ვანახლებთ
+            }
+        }
+    });
+
     socket.on('setOnlineUser', async (username) => {
         onlineUsersMap[socket.id] = username; 
         broadcastOnlineUsers();

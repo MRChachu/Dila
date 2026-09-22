@@ -480,51 +480,77 @@ export default function App() {
                 </div>
 
                 {/* 2. გლობალური ჩატი */}
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl transition-colors duration-700 h-[260px]`}>
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3 shrink-0">
-                      <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest">
-                          <Megaphone size={14} className={activeTheme.accent} /> გლობალური ჩატი
-                      </h3>
-                  </div>
-                  
-                  <div ref={globalChatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar pr-2 py-3 space-y-2 flex flex-col">
-                      {globalMessages.length === 0 ? (
-                          <p className="text-[10px] text-stone-500 italic text-center m-auto">ჩატი ცარიელია. დაწერე პირველი!</p>
-                      ) : (
-                          globalMessages.map((msg, i) => (
-                              <div key={i} className="text-[10px] md:text-xs leading-snug break-words">
-                                  <span className="text-stone-500 text-[8px] mr-1.5 shrink-0">{msg.time}</span>
-                                  <VipName 
-                                      name={msg.sender} 
-                                      isVip={msg.isVip} 
-                                      className={`font-black cursor-pointer hover:underline ${msg.sender === safeUsername ? activeTheme.accent : 'text-stone-300'}`} 
-                                      onClick={() => handleInspectPlayer(msg.sender)} 
-                                  />
-                                  <span className="text-stone-400 mx-1">:</span>
-                                  <span className="text-stone-200">{msg.text}</span>
-                              </div>
-                          ))
-                      )}
-                  </div>
-
-                  <form onSubmit={handleSendGlobalMessage} className="mt-auto shrink-0 flex gap-2 pt-3 border-t border-white/5">
-                      <input 
-                          type="text" 
-                          value={globalChatInput} 
-                          onChange={(e) => setGlobalChatInput(e.target.value)} 
-                          placeholder="დაწერე მესიჯი ოთახში..." 
-                          maxLength={150}
-                          className="flex-1 bg-stone-950/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none focus:border-white/30 transition-all placeholder-stone-600 shadow-inner"
-                      />
-                      <button 
-                          type="submit" 
-                          disabled={!globalChatInput.trim()} 
-                          className={`px-4 py-2 ${activeTheme.accentBg} text-stone-950 font-black rounded-xl text-[10px] md:text-xs uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 shadow-md`}
-                      >
-                          გაგზავნა
-                      </button>
-                  </form>
+                {/* 🟢 გლობალური ჩატი */}
+<div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl transition-colors duration-700 h-[260px]`}>
+    <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3 shrink-0">
+        <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest">
+            <Megaphone size={14} className={activeTheme.accent} /> გლობალური ჩატი
+        </h3>
+        
+        {/* 🟢 ჩატის სრულად გასუფთავების ღილაკი (მხოლოდ ადმინისთვის) */}
+        {safeUsername.toLowerCase() === 'chachu' && (
+            <button 
+                onClick={() => { if(window.confirm('ნამდვილად გინდა ჩატის სრულად გასუფთავება?')) socket.emit('adminClearGlobalChat', { adminName: safeUsername }); }}
+                className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-colors border border-rose-500/20 active:scale-95"
+                title="ჩატის სრულად გასუფთავება"
+            >
+                <Trash2 size={12} />
+            </button>
+        )}
+    </div>
+    
+    <div ref={globalChatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar pr-2 py-3 space-y-2 flex flex-col">
+        {globalMessages.length === 0 ? (
+            <p className="text-[10px] text-stone-500 italic text-center m-auto">ჩატი ცარიელია. დაწერე პირველი!</p>
+        ) : (
+            globalMessages.map((msg, i) => (
+                <div key={msg.id || i} className="text-[10px] md:text-xs leading-snug break-words flex items-start justify-between group hover:bg-stone-950/40 p-1 -mx-1 rounded transition-colors">
+                    <div className="flex-1">
+                        <span className="text-stone-500 text-[8px] mr-1.5 shrink-0">{msg.time}</span>
+                        {/* 🟢 სახელზე დაკლიკებით პროფილის გახსნა (უკვე მუშაობს) */}
+                        <VipName 
+                            name={msg.sender} 
+                            isVip={msg.isVip} 
+                            className={`font-black cursor-pointer hover:underline ${msg.sender === safeUsername ? activeTheme.accent : 'text-stone-300'}`} 
+                            onClick={() => handleInspectPlayer(msg.sender)} 
+                        />
+                        <span className="text-stone-400 mx-1">:</span>
+                        <span className="text-stone-200">{msg.text}</span>
+                    </div>
+                    
+                    {/* 🟢 კონკრეტული მესიჯის წაშლის ღილაკი (მხოლოდ ადმინისთვის) */}
+                    {safeUsername.toLowerCase() === 'chachu' && (
+                        <button 
+                            onClick={() => socket.emit('adminDeleteGlobalMessage', { adminName: safeUsername, messageId: msg.id })}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-rose-500 hover:bg-rose-500/20 rounded transition-all shrink-0 ml-2"
+                            title="მესიჯის წაშლა"
+                        >
+                            <XCircle size={12} />
+                        </button>
+                    )}
                 </div>
+            ))
+        )}
+    </div>
+
+    <form onSubmit={handleSendGlobalMessage} className="mt-auto shrink-0 flex gap-2 pt-3 border-t border-white/5">
+        <input 
+            type="text" 
+            value={globalChatInput} 
+            onChange={(e) => setGlobalChatInput(e.target.value)} 
+            placeholder="დაწერე მესიჯი..." 
+            maxLength={150}
+            className="flex-1 bg-stone-950/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none focus:border-white/30 transition-all placeholder-stone-600 shadow-inner"
+        />
+        <button 
+            type="submit" 
+            disabled={!globalChatInput.trim()} 
+            className={`px-4 py-2 ${activeTheme.accentBg} text-stone-950 font-black rounded-xl text-[10px] md:text-xs uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 shadow-md`}
+        >
+            გაგზავნა
+        </button>
+    </form>
+</div>
 
                 {/* 3. ონლაინ / მეგობრები */}
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
