@@ -217,7 +217,6 @@ export default function App() {
       setGlobalChatInput('');
   };
 
-  // 🟢 იღბლიანი ბორბლის ტრიალის გაშვება
   const handleSpinWheel = () => {
       if (wheelSpinning) return;
       const myCoins = profileData?.coins || 0;
@@ -437,12 +436,17 @@ export default function App() {
                   </div>
                   <div>
                     <h4 className={`text-[10px] font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2 uppercase tracking-widest mb-3`}><Award size={14} className={activeTheme.accent} /> {t.achievements}</h4>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3 pt-1">
                       {AVAILABLE_BADGES.map(b => { 
                         const hasIt = myAchievements.includes(b.id); 
                         return ( 
-                          <div key={b.id} title={b.name} className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all ${hasIt ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-50 border-current ${activeTheme.accent} text-lg shadow-[0_0_10px_currentColor]` : 'bg-stone-950/50 border-white/5 text-sm opacity-30 grayscale'}`}>
-                            <span className="drop-shadow-md">{b.icon}</span>
+                          <div 
+                            key={b.id} 
+                            title={b.name}
+                            onClick={() => setToastMsg(hasIt ? `🏆 მიღწეულია: ${b.name}` : `🔒 დასაბლოკია: ${b.name}`)}
+                            className={`cursor-pointer w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-xl border transition-all hover:scale-105 active:scale-95 ${hasIt ? `${activeTheme.accentBg} bg-opacity-15 border-current ${activeTheme.accent} text-base md:text-lg shadow-sm` : 'bg-stone-950/60 border-white/5 opacity-40 grayscale text-sm hover:opacity-70'}`}
+                          >
+                            <span className="drop-shadow-sm">{b.icon}</span>
                           </div> 
                         )
                       })}
@@ -514,16 +518,17 @@ export default function App() {
             </div>
             <h4 className={`text-[10px] font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2 uppercase tracking-widest mb-3`}><Award size={14} className={activeTheme.accent} /> {t.achievements}</h4>
             
-            <div className="flex flex-nowrap items-center justify-between w-full gap-1">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 pt-1">
               {AVAILABLE_BADGES.map(b => { 
                 const hasIt = inspectProfile.achievements?.includes(b.id); 
                 return ( 
                   <div 
                     key={b.id} 
+                    title={b.name}
                     onClick={() => setToastMsg(hasIt ? `🏆 აქვს: ${b.name}` : `🔒 არ აქვს: ${b.name}`)}
-                    className={`cursor-pointer shrink-0 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg md:rounded-xl border transition-all hover:scale-110 active:scale-95 ${hasIt ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-50 border-current ${activeTheme.accent} text-sm sm:text-base md:text-lg shadow-[0_0_10px_currentColor]` : 'bg-stone-950/50 border-white/5 text-xs sm:text-sm md:text-base opacity-30 grayscale hover:opacity-80'}`}
+                    className={`cursor-pointer w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-xl border transition-all hover:scale-105 active:scale-95 ${hasIt ? `${activeTheme.accentBg} bg-opacity-15 border-current ${activeTheme.accent} text-base md:text-lg shadow-sm` : 'bg-stone-950/60 border-white/5 opacity-40 grayscale text-sm hover:opacity-70'}`}
                   >
-                    <span className="drop-shadow-md">{b.icon}</span>
+                    <span className="drop-shadow-sm">{b.icon}</span>
                   </div> 
                 )
               })}
