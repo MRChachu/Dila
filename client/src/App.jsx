@@ -49,7 +49,14 @@ export default function App() {
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem('phurti_music') === 'true'); const audioRef = useRef(typeof Audio !== 'undefined' ? new Audio('/bg-music.mp3') : null);
   const [selectedRoomIdForJoin, setSelectedRoomIdForJoin] = useState(''); const [joinPasswordInput, setJoinPasswordInput] = useState('');
   const [mGameType, setMGameType] = useState('phurti'); const [mTargetScore, setMTargetScore] = useState(11); const [mMaxPlayers, setMMaxPlayers] = useState(4); const [mAllowBots, setMAllowBots] = useState(false); const [mRoomPassword, setMRoomPassword] = useState(''); const [mIsRanked, setMIsRanked] = useState(true); 
+  
   const [socialTab, setSocialTab] = useState('online'); const [leaderboard, setLeaderboard] = useState([]); const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  
+  // 🟢 გლობალური ჩატის State-ები
+  const [globalMessages, setGlobalMessages] = useState([]);
+  const [globalChatInput, setGlobalChatInput] = useState('');
+  const globalChatScrollRef = useRef(null);
+
   const [isAdminOpen, setIsAdminOpen] = useState(false); const [adminPass, setAdminPass] = useState(''); const [adminUsers, setAdminUsers] = useState([]); const [adminMessage, setAdminMessage] = useState(''); const [adminStats, setAdminStats] = useState(null); const [searchQuery, setSearchQuery] = useState(''); const [broadcastText, setBroadcastText] = useState(''); const [systemAlert, setSystemAlert] = useState(null);
   const [dailyReward, setDailyReward] = useState(null); const [vipDailyReward, setVipDailyReward] = useState(null);
   const [deferredPrompt, setDeferredPrompt] = useState(null); const [showInstallPrompt, setShowInstallPrompt] = useState(false);
@@ -95,14 +102,34 @@ export default function App() {
     socket.on('friendListUpdated', () => fetchDashboardData(safeUsername)); socket.on('receiveUserProfile', (d) => setInspectProfile(d)); socket.on('roomNotFound', () => handleResetToLobby());
     socket.on('vipBonusClaimed', (a) => { setVipDailyReward(a); fetchDashboardData(safeUsername); }); socket.on('systemBroadcast', (m) => setSystemAlert(m));
 
+    // 🟢 გლობალური ჩატის ლისენერები
+    socket.on('receiveGlobalMessage', (msg) => {
+        setGlobalMessages((prev) => [...prev, msg]);
+    });
+    socket.on('globalChatHistory', (history) => {
+        setGlobalMessages(history);
+    });
+    socket.emit('getGlobalChatHistory');
+
     const hOC = () => { const o = localStorage.getItem('phurti_socketId'); const u = localStorage.getItem('phurti_user'); const r = localStorage.getItem('phurti_roomId'); const iR = localStorage.getItem('phurti_inRoom') === 'true'; if (u) { const p = JSON.parse(u); const a = p?.user || p; const uN = a?.username; if (uN) { socket.emit('setOnlineUser', uN); if (iR && r) socket.emit('reconnectUser', { oldSocketId: o, playerName: uN, roomId: r.trim() }); else socket.emit('getLiveRooms'); } } localStorage.setItem('phurti_socketId', socket.id); };
     socket.on('connect', hOC); if (socket.connected) hOC();
-    return () => { socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('joinError'); socket.off('activeRoomsList'); socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound'); socket.off('vipBonusClaimed'); socket.off('systemBroadcast'); socket.off('joinedMatchedRoom'); socket.off('gameStartingCountdown'); socket.off('connect', hOC); };
+    return () => { 
+        socket.off('roomUpdated'); socket.off('gameStarted'); socket.off('gameUpdated'); socket.off('error'); socket.off('joinError'); socket.off('activeRoomsList'); socket.off('updateOnlineUsers'); socket.off('receiveInvite'); socket.off('inviteRejected'); socket.off('successMessage'); socket.off('friendRequestReceived'); socket.off('friendListUpdated'); socket.off('receiveUserProfile'); socket.off('roomNotFound'); socket.off('vipBonusClaimed'); socket.off('systemBroadcast'); socket.off('joinedMatchedRoom'); socket.off('gameStartingCountdown'); socket.off('connect', hOC); 
+        // 🟢 ვთიშავთ ჩატის ლისენერებსაც
+        socket.off('receiveGlobalMessage'); socket.off('globalChatHistory');
+    };
   }, []);
 
   useEffect(() => { if (userState && !inRoom && safeUsername !== 'მოთამაშე') { fetchDashboardData(safeUsername); socket.emit('getLiveRooms'); socket.emit('setOnlineUser', safeUsername); } }, [userState, inRoom, safeUsername]);
   useEffect(() => { if (error) { const t = setTimeout(() => setError(''), 4000); return () => clearTimeout(t); } }, [error]);
   useEffect(() => { if (toastMsg) { const t = setTimeout(() => setToastMsg(''), 4000); return () => clearTimeout(t); } }, [toastMsg]);
+
+  // 🟢 ჩატის ავტომატური სქროლი
+  useEffect(() => {
+      if (globalChatScrollRef.current) {
+          globalChatScrollRef.current.scrollTop = globalChatScrollRef.current.scrollHeight;
+      }
+  }, [globalMessages]);
 
   const loadLeaderboard = async () => { try { const r = await fetch('https://purti.onrender.com/api/auth/leaderboard'); const d = await r.json(); setLeaderboard(d); setIsLeaderboardOpen(true); } catch(e) {} };
   const loginAdmin = async (e) => { if (e) e.preventDefault(); try { const r = await fetch('https://purti.onrender.com/api/auth/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminPass }) }); const d = await r.json(); if (r.ok) { setAdminUsers(d); const sR = await fetch('https://purti.onrender.com/api/admin/stats'); if (sR.ok) setAdminStats(await sR.json()); } else setAdminMessage(d.message); } catch (e) { setAdminMessage('შეცდომა!'); } };
@@ -141,11 +168,18 @@ export default function App() {
   const handleLogout = () => { socket.emit('leaveRoom'); setUserState(null); setInRoom(false); setRoomId(''); setRoomData(null); setProfileData(null); localStorage.clear(); socket.disconnect(); socket.connect(); };
   const handleResetToLobby = () => { socket.emit('leaveRoom'); setInRoom(false); setRoomId(''); setRoomData(null); setStartCountdown(null); localStorage.removeItem('phurti_roomId'); localStorage.removeItem('phurti_inRoom'); };
 
+  // 🟢 გლობალური მესიჯის გაგზავნის ფუნქცია
+  const handleSendGlobalMessage = (e) => {
+      e.preventDefault();
+      if (!globalChatInput.trim() || !safeUsername) return;
+      socket.emit('sendGlobalMessage', { sender: safeUsername, text: globalChatInput.trim(), isVip: checkIsVip(profileData?.vipUntil) });
+      setGlobalChatInput('');
+  };
+
   if (!userState) return <Auth onAuthSuccess={handleAuthSuccess} />;
 
   const winRate = profileData?.stats?.gamesPlayed > 0 ? Math.round((profileData.stats.gamesWon / profileData.stats.gamesPlayed) * 100) : 0; const currentLevel = profileData?.level || 1; const currentXp = profileData?.xp || 0; const targetXp = currentLevel * 1000; const xpPercentage = Math.min((currentXp / targetXp) * 100, 100); const myCoins = profileData?.coins || 0; const myAvatar = profileData?.avatar || '😎'; const amIVip = checkIsVip(profileData?.vipUntil); const myLeague = getLeague(currentXp); const unlockedAvatars = profileData?.unlockedAvatars || ['😎']; const unlockedTables = profileData?.unlockedTableThemes || ['wood', 'lavender']; const unlockedCards = profileData?.unlockedCardBacks || ['classic']; const isHost = roomData && roomData.players[0] && roomData.players[0].id === socket.id; const myAchievements = profileData?.achievements || [];
 
-  // 🟢 შესწორებული ლოგიკა: ამოწმებს არა მიმდინარე ავატარს, არამედ სამუდამო მიღწევას
   const step1Done = myAchievements.includes('wc_avatar') || (profileData?.avatar && profileData.avatar !== '😎');
   const step2Done = myAchievements.includes('wc_play') || ((profileData?.stats?.gamesPlayed || 0) > 0);
   const step3Done = myAchievements.includes('wc_win') || ((profileData?.stats?.gamesWon || 0) > 0);
@@ -210,7 +244,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 ახალი: "ჩემი პროფილის" (My Profile / Inventory) მოდალური ფანჯარა */}
+      {/* "ჩემი პროფილის" (My Profile / Inventory) მოდალური ფანჯარა */}
       {isMyProfileOpen && profileData && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-lg w-full shadow-2xl font-sans relative flex flex-col max-h-[85vh]`}>
@@ -443,22 +477,49 @@ export default function App() {
                   <button onClick={() => setIsHistoryOpen(true)} className={`mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-950/60 border border-white/5 hover:bg-stone-900 transition-all text-stone-300 shadow-inner flex items-center justify-center gap-2 active:scale-95`}><Clock size={16} className={activeTheme.accent} /> {t.myHistory}</button>
                 </div>
 
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
-                  <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest"><Award size={14} className={activeTheme.accent} /> {t.achievements}</h4>
-                  <div className="flex flex-nowrap items-center justify-between w-full gap-1 md:gap-2">
-                    {AVAILABLE_BADGES.map((badge) => {
-                      const isUnlocked = myAchievements.includes(badge.id);
-                      return ( 
-                        <div 
-                          key={badge.id} 
-                          onClick={() => setToastMsg(isUnlocked ? `🏆 მიღწეულია: ${badge.name}` : `🔒 დასაბლოკია: ${badge.name}`)}
-                          className={`cursor-pointer shrink-0 w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-xl border transition-all hover:scale-110 active:scale-95 ${isUnlocked ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current ${activeTheme.accent} text-base sm:text-lg md:text-xl shadow-[0_0_15px_currentColor]` : 'bg-stone-950/50 border-white/5 opacity-40 grayscale text-sm sm:text-base md:text-lg hover:opacity-80'}`}
-                        >
-                          <span className="drop-shadow-md">{badge.icon}</span>
-                        </div> 
-                      );
-                    })}
+                {/* 🟢 გლობალური ჩატი (მიღწევების მაგივრად) */}
+                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl transition-colors duration-700 h-[280px]`}>
+                  <h4 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest shrink-0">
+                      <Megaphone size={14} className={activeTheme.accent} /> გლობალური ჩატი
+                  </h4>
+                  
+                  <div ref={globalChatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar pr-2 py-3 space-y-2 flex flex-col">
+                      {globalMessages.length === 0 ? (
+                          <p className="text-[10px] text-stone-500 italic text-center m-auto">ჩატი ცარიელია. დაწერე პირველი!</p>
+                      ) : (
+                          globalMessages.map((msg, i) => (
+                              <div key={i} className="text-[10px] md:text-xs leading-snug break-words">
+                                  <span className="text-stone-500 text-[8px] mr-1.5 shrink-0">{msg.time}</span>
+                                  <VipName 
+                                      name={msg.sender} 
+                                      isVip={msg.isVip} 
+                                      className={`font-black cursor-pointer hover:underline ${msg.sender === safeUsername ? activeTheme.accent : 'text-stone-300'}`} 
+                                      onClick={() => handleInspectPlayer(msg.sender)} 
+                                  />
+                                  <span className="text-stone-400 mx-1">:</span>
+                                  <span className="text-stone-200">{msg.text}</span>
+                              </div>
+                          ))
+                      )}
                   </div>
+
+                  <form onSubmit={handleSendGlobalMessage} className="mt-auto shrink-0 flex gap-2 pt-2 border-t border-white/5">
+                      <input 
+                          type="text" 
+                          value={globalChatInput} 
+                          onChange={(e) => setGlobalChatInput(e.target.value)} 
+                          placeholder="დაწერე მესიჯი..." 
+                          maxLength={150}
+                          className="flex-1 bg-stone-950/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none focus:border-white/30 transition-all placeholder-stone-600"
+                      />
+                      <button 
+                          type="submit" 
+                          disabled={!globalChatInput.trim()} 
+                          className={`px-4 py-2 ${activeTheme.accentBg} text-stone-950 font-black rounded-xl text-[10px] md:text-xs uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 shadow-md`}
+                      >
+                          გაგზავნა
+                      </button>
+                  </form>
                 </div>
 
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>

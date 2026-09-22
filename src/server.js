@@ -132,6 +132,7 @@ const rooms = {};
 const roomTimers = {}; 
 const disconnectTimeouts = {}; 
 const onlineUsersMap = {};
+const globalChatHistory = []; // 🟢 ინახავს გლობალური ჩატის ბოლო მესიჯებს
 
 const broadcastActiveRooms = () => {
     io.emit('activeRoomsList', Object.values(rooms).filter(r => !r.gameStarted).map(r => ({
@@ -456,6 +457,28 @@ function checkAutoStart(roomId) {
 
 io.on('connection', (socket) => {
     socket.on('adminBroadcast', (m) => io.emit('systemBroadcast', m));
+    
+    // 🟢 გლობალური ჩატის ისტორიის გაგზავნა ახალ შემოსულზე
+    socket.on('getGlobalChatHistory', () => {
+        socket.emit('globalChatHistory', globalChatHistory);
+    });
+
+    // 🟢 როცა ვინმე წერს გლობალურ ჩატში
+    socket.on('sendGlobalMessage', ({ sender, text, isVip }) => {
+        const message = {
+            id: Date.now().toString(),
+            sender,
+            text,
+            isVip,
+            time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tbilisi' })
+        };
+        
+        globalChatHistory.push(message);
+        // ვინახავთ მხოლოდ ბოლო 50 მესიჯს, რომ ოპერატიული მეხსიერება არ გაივსოს
+        if (globalChatHistory.length > 50) globalChatHistory.shift(); 
+        
+        io.emit('receiveGlobalMessage', message); // ვუგზავნით ყველას
+    });
 
     socket.on('setOnlineUser', async (username) => {
         onlineUsersMap[socket.id] = username; 
@@ -531,6 +554,7 @@ io.on('connection', (socket) => {
             } else { socket.emit('error', 'არასაკმარისი მონეტები!'); }
         } catch(err) {} 
     });
+    
 
     socket.on('buyItem', async ({ type, itemId, price }) => { 
         try { 
