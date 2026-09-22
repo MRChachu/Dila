@@ -681,6 +681,29 @@ io.on('connection', (socket) => {
         } catch(err) {} 
     });
 
+    // 🟢 მეგობრის წაშლა
+    socket.on('removeFriend', async ({ targetUsername }) => { 
+        try { 
+            const mName = onlineUsersMap[socket.id]; 
+            const me = await User.findOne({ username: mName }); 
+            const snd = await User.findOne({ username: targetUsername }); 
+            if(me && snd) { 
+                // ვშლით ორივეს სიიდან ერთმანეთს
+                me.friends = me.friends.filter(u => u !== targetUsername); 
+                snd.friends = snd.friends.filter(u => u !== mName); 
+                await me.save(); 
+                await snd.save(); 
+                
+                socket.emit('friendListUpdated'); 
+                socket.emit('successMessage', 'მეგობარი წაიშალა!'); 
+                
+                // თუ მეორე მომხმარებელი ონლაინაა, მასაც ვუახლებთ სიას ეკრანზე
+                const ss = Object.entries(onlineUsersMap).find(([id, name]) => name === targetUsername); 
+                if(ss) { io.to(ss[0]).emit('friendListUpdated'); } 
+            } 
+        } catch(err) {} 
+    });
+
     socket.on('sendInvite', ({ targetSocketId, roomId, password, fromName, gameType }) => { 
         io.to(targetSocketId).emit('receiveInvite', { roomId, password, fromName, senderSocketId: socket.id, gameType: gameType || 'phurti' }); 
     });
