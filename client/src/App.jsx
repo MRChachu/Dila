@@ -224,6 +224,30 @@ export default function App() {
   const handleInspectPlayer = (u) => socket.emit('getUserProfile', { username: u }); 
   const handleRoomClickFromList = (r) => { if (r.isPrivate) { setSelectedRoomIdForJoin(r.id); setIsPasswordModalOpen(true); } else handleJoinSpecificRoom(r.id); };
   const handleLogout = () => { socket.emit('leaveRoom'); setUserState(null); setInRoom(false); setRoomId(''); setRoomData(null); setProfileData(null); localStorage.clear(); socket.disconnect(); socket.connect(); };
+  const handleDeleteAccount = async () => {
+      const pass = window.prompt('გთხოვთ, შეიყვანოთ თქვენი პაროლი ანგარიშის სამუდამოდ წასაშლელად:');
+      if (!pass) return;
+
+      if (window.confirm('ნამდვილად გსურთ ანგარიშის გაუქმება? თქვენი ყველა ქოინი, XP და მიღწევა სამუდამოდ წაიშლება!')) {
+          try {
+              const res = await fetch('https://purti.onrender.com/api/auth/delete-account', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ username: safeUsername, password: pass })
+              });
+              const data = await res.json();
+              if (res.ok) {
+                  alert('თქვენი ანგარიში და ყველა მონაცემი წარმატებით წაიშალა სისტემიდან.');
+                  setLegalModal(null);
+                  handleLogout(); // ვაგდებთ ლოგინის გვერდზე
+              } else {
+                  setError(data.message || 'შეცდომა ანგარიშის წაშლისას');
+              }
+          } catch (err) {
+              setError('სერვერთან კავშირი ვერ მოხერხდა');
+          }
+      }
+  };
   const handleResetToLobby = () => { socket.emit('leaveRoom'); setInRoom(false); setRoomId(''); setRoomData(null); setStartCountdown(null); localStorage.removeItem('phurti_roomId'); localStorage.removeItem('phurti_inRoom'); };
 
   const handleSendGlobalMessage = (e) => {
@@ -351,7 +375,15 @@ export default function App() {
                   <p>თქვენი პერსონალური და სათამაშო მონაცემები სრულიად კონფიდენციალურია. ისინი არ გაიყიდება და არ გადაეცემა მესამე პირებს მარკეტინგული ან სხვა კომერციული მიზნებისთვის.</p>
                   
                   <h3 className="text-sm font-black text-stone-100 uppercase mt-4">3. მონაცემების წაშლა</h3>
-                  <p>თქვენ ნებისმიერ დროს გაქვთ უფლება მოითხოვოთ თქვენი ანგარიშისა და მასზე მიბმული ყველა მონაცემის სრულად განადგურება ჩვენი სისტემიდან ადმინისტრაციასთან დაკავშირებით.</p>
+                  <p>თქვენ ნებისმიერ დროს გაქვთ უფლება მოითხოვოთ თქვენი ანგარიშისა და მასზე მიბმული ყველა მონაცემის სრულად განადგურება ჩვენი სისტემიდან.</p>
+
+                  {/* 🔴 ანგარიშის წაშლის ღილაკი */}
+                  <div className="mt-6 pt-5 border-t border-rose-500/20 flex flex-col items-center">
+                      <p className="text-[10px] text-rose-400 font-bold mb-3 text-center uppercase tracking-wider">ყურადღება: ანგარიშის წაშლა შეუქცევადია!</p>
+                      <button onClick={handleDeleteAccount} className="px-6 py-2.5 bg-rose-900/40 hover:bg-rose-600 text-rose-500 hover:text-white font-black text-[10px] md:text-xs uppercase rounded-xl border border-rose-500/30 hover:border-rose-500 transition-all shadow-lg active:scale-95 flex items-center gap-2">
+                          <Trash2 size={16} /> ანგარიშის გაუქმება
+                      </button>
+                  </div>
                 </>
               )}
             </div>
