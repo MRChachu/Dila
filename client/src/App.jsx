@@ -643,7 +643,8 @@ export default function App() {
                 {/* 🟢 ინვენტარის ტაბი (რეალური მონაცემებით) */}
                 {profileTab === 'inventory' && (
                     <div className="animate-in fade-in duration-300 space-y-5">
-                        {(!profileData?.unlockedAvatars?.length && !profileData?.unlockedTableThemes?.length && !profileData?.unlockedCardBacks?.length) ? (
+                        {/* 🟢 შევცვალეთ ცარიელი ინვენტარის ლოგიკა: თუ VIP არის, ცარიელი აღარასდროს იქნება */}
+                        {(!profileData?.unlockedAvatars?.length && !profileData?.unlockedTableThemes?.length && !profileData?.unlockedCardBacks?.length && !amIVip) ? (
                             <div className="flex flex-col items-center justify-center h-[120px] text-stone-500 space-y-3">
                                 <PackageOpen size={32} className="opacity-20" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">ინვენტარი ცარიელია</span>
@@ -664,16 +665,27 @@ export default function App() {
                                     </div>
                                 )}
                                 
-                                {/* მაგიდის თემები */}
-                                {profileData?.unlockedTableThemes?.length > 0 && (
+                                {/* 🟢 მაგიდის თემები (დაემატა VIP მაგიდების გამოჩენა) */}
+                                {(profileData?.unlockedTableThemes?.length > 0 || amIVip) && (
                                     <div>
                                         <h3 className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-2 border-b border-white/5 pb-1">ჩემი მაგიდები</h3>
                                         <div className="flex flex-wrap gap-2">
-                                            {profileData.unlockedTableThemes.map((item, i) => (
+                                            {/* ჩვეულებრივი ნაყიდი მაგიდები */}
+                                            {profileData?.unlockedTableThemes?.map((item, i) => (
                                                 <button key={i} onClick={() => socket.emit('equipItem', { type: 'table', itemId: item })} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all ${profileData.tableTheme === item ? `bg-stone-800 border-2 ${activeTheme.accent.replace('text-', 'border-')}${activeTheme.accent} shadow-[0_0_10px_currentColor]` : 'bg-stone-900 border border-white/10 text-stone-400 hover:text-stone-200 active:scale-95'}`} title="დაყენება">
                                                     {item.replace('table_', '')}
                                                 </button>
                                             ))}
+                                            
+                                            {/* 👑 სპეციალური VIP მაგიდები (გამოჩნდება მხოლოდ VIP-ებისთვის) */}
+                                            {amIVip && ['vip_gold', 'vip_diamond'].map((item, i) => {
+                                                if (profileData?.unlockedTableThemes?.includes(item)) return null; // რომ არ გაორდეს
+                                                return (
+                                                    <button key={`vip_${i}`} onClick={() => socket.emit('equipItem', { type: 'table', itemId: item })} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border-2 ${profileData.tableTheme === item ? 'bg-stone-800 border-yellow-400 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500/50 active:scale-95'}`} title="ექსკლუზივი VIP წევრებისთვის">
+                                                        {item === 'vip_gold' ? '👑 GOLD' : '💎 DIAMOND'}
+                                                    </button>
+                                                )
+                                            })}
                                         </div>
                                     </div>
                                 )}
