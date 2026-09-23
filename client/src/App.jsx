@@ -588,10 +588,11 @@ export default function App() {
             </div>
 
             {/* 4. შიგთავსი (სტატისტიკა / ინვენტარი) */}
-            <div className="relative z-10 min-h-[140px]">
+            <div className="relative z-10 min-h-[160px] max-h-[250px] overflow-y-auto custom-scrollbar pr-2 mt-2">
+                
+                {/* 🟢 სტატისტიკის და მიღწევების ტაბი */}
                 {profileTab === 'stats' && (
                     <div className="space-y-5 animate-in fade-in duration-300">
-                        {/* სტატისტიკის ყუთები */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 md:p-4 text-center shadow-inner hover:border-white/10 transition-colors">
                                 <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-stone-500">მოგება</p>
@@ -603,50 +604,95 @@ export default function App() {
                             </div>
                         </div>
                         
-                        {/* 🟢 განახლებული მიღწევები */}
                         <div>
                             <h3 className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-stone-500 mb-3 flex items-center gap-1.5"><Trophy size={14} className={activeTheme.accent}/> მიღწევები</h3>
-                            <div className="flex flex-wrap gap-3">
+                            <div className="flex flex-wrap gap-3 md:gap-4">
                                 {profileData?.achievements?.length > 0 ? (
                                     profileData.achievements.map((ach, idx) => {
-                                        // 🟢 მიღწევების ლამაზი იკონები და სახელები ბაზის მიხედვით
                                         const achData = {
                                             'wc_play': { icon: '🎮', name: 'პირველი მატჩი' },
                                             'wc_win': { icon: '👑', name: 'პირველი მოგება' },
                                             'legionnaire': { icon: '⚔️', name: 'ლეგიონერი' },
-                                            'first_win': { icon: '🥇', name: 'პირველი გამარჯვება' },
+                                            'first_win': { icon: '🥇', name: '1 გამარჯვება' },
                                             'veteran': { icon: '🎖️', name: 'ვეტერანი' },
                                             'wc_avatar': { icon: '🖼️', name: 'ახალი იმიჯი' },
                                             'collector': { icon: '🎒', name: 'კოლექციონერი' },
                                             'diamond_10': { icon: '♦️', name: '10 აგური' },
                                             'club_2': { icon: '♣️', name: '2 ჯვარი' },
-                                            'sweeper': { icon: '🧹', name: 'მაგიდის მგველი' }
+                                            'sweeper': { icon: '🧹', name: 'მგველი' }
                                         };
-                                        
                                         const data = achData[ach] || { icon: '🏆', name: ach };
 
                                         return (
-                                            <div key={idx} className="relative group/ach w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-stone-800 to-stone-900 border border-white/10 flex items-center justify-center hover:border-yellow-500/50 hover:shadow-[0_0_15px_rgba(234,179,8,0.3)] transition-all cursor-help">
-                                                <span className="text-lg md:text-xl drop-shadow-md">{data.icon}</span>
-                                                {/* Tooltip - გამოჩნდება მაუსის მიტანისას */}
-                                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-stone-800 text-stone-200 text-[9px] font-bold px-2.5 py-1.5 rounded-lg opacity-0 group-hover/ach:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl border border-white/10">
-                                                    {data.name}
+                                            <div key={idx} className="flex flex-col items-center gap-1.5 w-[50px] md:w-[60px]">
+                                                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-stone-800 to-stone-900 border border-white/10 flex items-center justify-center shadow-md ${activeTheme.accent}`}>
+                                                    <span className="text-lg md:text-xl drop-shadow-md">{data.icon}</span>
                                                 </div>
+                                                <span className="text-[7px] md:text-[8px] font-bold text-stone-400 uppercase tracking-wider text-center leading-tight">{data.name}</span>
                                             </div>
                                         );
                                     })
                                 ) : (
-                                    <span className="text-[10px] font-bold text-stone-600 uppercase tracking-widest bg-stone-950/50 px-3 py-1.5 rounded-lg border border-white/5">ჯერ მიღწევები არ გაქვს</span>
+                                    <span className="text-[10px] font-bold text-stone-600 uppercase tracking-widest bg-stone-950/50 px-3 py-1.5 rounded-lg border border-white/5">ჯერ არ გაქვს</span>
                                 )}
                             </div>
                         </div>
                     </div>
                 )}
                 
+                {/* 🟢 ინვენტარის ტაბი (რეალური მონაცემებით) */}
                 {profileTab === 'inventory' && (
-                    <div className="flex flex-col items-center justify-center h-full text-stone-500 space-y-3 animate-in fade-in duration-300 py-6">
-                        <PackageOpen size={32} className="opacity-20" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">ინვენტარი ცარიელია</span>
+                    <div className="animate-in fade-in duration-300 space-y-5">
+                        {(!profileData?.unlockedAvatars?.length && !profileData?.unlockedTableThemes?.length && !profileData?.unlockedCardBacks?.length) ? (
+                            <div className="flex flex-col items-center justify-center h-[120px] text-stone-500 space-y-3">
+                                <PackageOpen size={32} className="opacity-20" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">ინვენტარი ცარიელია</span>
+                            </div>
+                        ) : (
+                            <>
+                                {/* ავატარები */}
+                                {profileData?.unlockedAvatars?.length > 0 && (
+                                    <div>
+                                        <h3 className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-2 border-b border-white/5 pb-1">ჩემი ავატარები</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {profileData.unlockedAvatars.map((item, i) => (
+                                                <button key={i} onClick={() => socket.emit('equipItem', { type: 'avatar', itemId: item })} className={`w-10 h-10 rounded-xl text-xl flex items-center justify-center transition-all ${profileData.avatar === item ? `bg-stone-800 border-2 ${activeTheme.accent.replace('text-', 'border-')} shadow-[0_0_10px_currentColor] scale-110` : 'bg-stone-900 border border-white/10 hover:border-white/30 active:scale-95'}`} title="დაყენება">
+                                                    {item}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* მაგიდის თემები */}
+                                {profileData?.unlockedTableThemes?.length > 0 && (
+                                    <div>
+                                        <h3 className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-2 border-b border-white/5 pb-1">ჩემი მაგიდები</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {profileData.unlockedTableThemes.map((item, i) => (
+                                                <button key={i} onClick={() => socket.emit('equipItem', { type: 'table', itemId: item })} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all ${profileData.tableTheme === item ? `bg-stone-800 border-2 ${activeTheme.accent.replace('text-', 'border-')}${activeTheme.accent} shadow-[0_0_10px_currentColor]` : 'bg-stone-900 border border-white/10 text-stone-400 hover:text-stone-200 active:scale-95'}`} title="დაყენება">
+                                                    {item.replace('table_', '')}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* ბანქოს დიზაინები */}
+                                {profileData?.unlockedCardBacks?.length > 0 && (
+                                    <div>
+                                        <h3 className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-2 border-b border-white/5 pb-1">ჩემი ბანქო</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {profileData.unlockedCardBacks.map((item, i) => (
+                                                <button key={i} onClick={() => socket.emit('equipItem', { type: 'cardBack', itemId: item })} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all ${profileData.cardBack === item ? `bg-stone-800 border-2 ${activeTheme.accent.replace('text-', 'border-')}${activeTheme.accent} shadow-[0_0_10px_currentColor]` : 'bg-stone-900 border border-white/10 text-stone-400 hover:text-stone-200 active:scale-95'}`} title="დაყენება">
+                                                    {item.replace('card_', '')}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 )}
             </div>
