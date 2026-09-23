@@ -949,25 +949,38 @@ export default function App() {
             </div>
           )}
         </main>
-        {/* 🟢 სოც. ქსელების ბლოკი (მხოლოდ ლობიში) */}
+        {/* 🟢 სოც. ქსელების და იურიდიული ლინკების ბლოკი (მხოლოდ ლობიში) */}
           {!inRoom && (
-              <div className="w-full pb-6 pt-2 flex flex-col items-center justify-center gap-1.5 animate-in fade-in duration-1000">
-                  {/* ერთიანი ესთეტიკური ჩარჩო */}
-                  <div className="flex items-center gap-1.5 bg-stone-950/60 p-1.5 md:p-2 rounded-2xl border border-white/5 shadow-inner">
-                      {/* Facebook */}
-                      <a href="https://facebook.com/share/1AXfwQEWdJ/" target="_blank" rel="noreferrer" className="p-2 md:p-2.5 bg-stone-900 border border-white/10 hover:border-blue-500/50 rounded-xl text-stone-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all shadow-md active:scale-95 group">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-                      </a>
-                      {/* Instagram */}
-                      <a href="https://instagram.com/phurtiarena" target="_blank" rel="noreferrer" className="p-2 md:p-2.5 bg-stone-900 border border-white/10 hover:border-pink-500/50 rounded-xl text-stone-400 hover:text-pink-400 hover:bg-pink-500/10 transition-all shadow-md active:scale-95 group">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                      </a>
-                      {/* TikTok */}
-                      <a href="https://tiktok.com/@phurtiarena" target="_blank" rel="noreferrer" className="p-2 md:p-2.5 bg-stone-900 border border-white/10 hover:border-stone-300/50 rounded-xl text-stone-400 hover:text-stone-200 hover:bg-stone-300/10 transition-all shadow-md active:scale-95 group">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>
-                      </a>
+              <div className="w-full pb-6 pt-2 flex flex-col items-center justify-center gap-4 animate-in fade-in duration-1000">
+                  
+                  {/* სოც. ქსელების ჩარჩო */}
+                  <div className="flex flex-col items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 bg-stone-950/60 p-1.5 md:p-2 rounded-2xl border border-white/5 shadow-inner">
+                          {/* Facebook */}
+                          <a href="https://facebook.com/share/1AXfwQEWdJ/" target="_blank" rel="noreferrer" className="p-2 md:p-2.5 bg-stone-900 border border-white/10 hover:border-blue-500/50 rounded-xl text-stone-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all shadow-md active:scale-95 group">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                          </a>
+                          {/* Instagram */}
+                          <a href="https://instagram.com/phurtiarena" target="_blank" rel="noreferrer" className="p-2 md:p-2.5 bg-stone-900 border border-white/10 hover:border-pink-500/50 rounded-xl text-stone-400 hover:text-pink-400 hover:bg-pink-500/10 transition-all shadow-md active:scale-95 group">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                          </a>
+                          {/* TikTok */}
+                          <a href="https://tiktok.com/@phurtiarena" target="_blank" rel="noreferrer" className="p-2 md:p-2.5 bg-stone-900 border border-white/10 hover:border-stone-300/50 rounded-xl text-stone-400 hover:text-stone-200 hover:bg-stone-300/10 transition-all shadow-md active:scale-95 group">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>
+                          </a>
+                      </div>
+                      <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-widest text-stone-600 mt-0.5">შემოგვიერთდი</span>
                   </div>
-                  <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-widest text-stone-600 mt-1">შემოგვიერთდი</span>
+
+                  {/* 🟢 საიტის წესები და პოლიტიკა */}
+                  <div className="flex flex-wrap justify-center items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-stone-500 px-4 text-center">
+                      <button onClick={() => alert('აქ გაიხსნება საიტის წესები')} className="hover:text-stone-300 transition-colors">საიტის წესები</button>
+                      <span className="text-stone-700 hidden sm:inline">•</span>
+                      <button onClick={() => alert('აქ გაიხსნება თამაშის წესები')} className="hover:text-stone-300 transition-colors">თამაშის წესები</button>
+                      <span className="text-stone-700 hidden sm:inline">•</span>
+                      <button onClick={() => alert('აქ გაიხსნება კონფიდენციალურობის პოლიტიკა')} className="hover:text-stone-300 transition-colors">კონფიდენციალურობა</button>
+                  </div>
+
               </div>
           )}
       </div>
