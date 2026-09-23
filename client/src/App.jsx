@@ -51,6 +51,7 @@ export default function App() {
   const [wheelResultMsg, setWheelResultMsg] = useState(null);
 
   const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
+  const [profileTab, setProfileTab] = useState('stats');
   const [myProfileTab, setMyProfileTab] = useState('stats'); 
   const [invSubTab, setInvSubTab] = useState('avatars'); 
 
