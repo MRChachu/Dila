@@ -403,6 +403,7 @@ export default function App() {
       )}
 
       {/* 🟢 იღბლიანი ბორბლის მოდალი (Lucky Wheel) */}
+      {/* 🟢 იღბლიანი ბორბალი (Premium Casino Wheel) */}
       {isWheelOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
           <div className={`${activeTheme.card} border ${activeTheme.accent.replace('text-', 'border-')}/30 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl relative overflow-hidden group`}>
@@ -411,34 +412,45 @@ export default function App() {
             <div className={`absolute -top-10 -right-10 w-40 h-40 ${activeTheme.accentBg} opacity-10 blur-[50px] rounded-full pointer-events-none`}></div>
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/10 blur-[50px] rounded-full pointer-events-none"></div>
 
+            {/* 🟢 1. ანგარიშზე არსებული თანხის ჩვენება მარცხენა ზედა კუთხეში */}
+            <div className="absolute top-4 left-4 bg-stone-950/60 border border-white/10 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-inner z-20">
+                <Coins size={14} className="text-yellow-500" />
+                <span className="text-[10px] md:text-xs font-mono font-black text-stone-200">{profileData?.coins || 0}</span>
+            </div>
+
             {/* დახურვის ღილაკი */}
-            <button onClick={() => { setIsWheelOpen(false); setWheelResultMsg(null); setWheelSpinning(false); }} className="absolute top-4 right-4 text-stone-500 hover:text-rose-500 transition-colors z-20">
-                <XCircle size={24} />
+            <button onClick={() => { setIsWheelOpen(false); setWheelResultMsg(null); setWheelSpinning(false); }} className="absolute top-4 right-4 text-stone-500 hover:text-rose-500 transition-colors z-20 bg-stone-950/60 rounded-full p-1 border border-white/5">
+                <XCircle size={20} />
             </button>
 
-            <h2 className="text-lg md:text-xl font-black text-stone-100 uppercase tracking-widest text-center mb-6 drop-shadow-md flex items-center justify-center gap-2">
+            <h2 className="text-lg md:text-xl font-black text-stone-100 uppercase tracking-widest text-center mb-6 mt-4 drop-shadow-md flex items-center justify-center gap-2 relative z-10">
                 <Dices className={activeTheme.accent} size={24} /> იღბლიანი ბორბალი
             </h2>
 
             <div className="relative z-10 flex flex-col items-center">
                 
-                {/* 🟢 ვიზუალური "ბორბალი" / ანიმაცია */}
+                {/* 🟢 2. ვიზუალური "ბორბალი" და სერვერის შედეგის პირდაპირი გამოტანა */}
                 <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full border-4 ${wheelSpinning ? `border-yellow-500 border-t-transparent animate-spin shadow-[0_0_20px_rgba(234,179,8,0.5)]` : 'border-stone-800 shadow-[0_0_30px_rgba(0,0,0,0.5)]'} flex items-center justify-center mb-6 relative bg-stone-950/50 transition-all`}>
                     {wheelSpinning ? (
                         <div className="text-5xl animate-spin" style={{ animationDuration: '0.5s' }}>⏳</div>
                     ) : wheelResultMsg ? (
-                        <div className="text-center animate-in zoom-in duration-300">
-                            <div className="text-5xl drop-shadow-lg">{wheelResultMsg.winningSuit}</div>
-                            <div className={`text-[10px] md:text-xs font-black uppercase tracking-widest mt-2 ${wheelResultMsg.winAmount > 0 ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'text-rose-500'}`}>
-                                {wheelResultMsg.winAmount > 0 ? `+${wheelResultMsg.winAmount} 🪙` : 'წააგე'}
-                            </div>
+                        <div className="text-center animate-in zoom-in duration-300 p-2 flex flex-col items-center justify-center w-full h-full">
+                            <span className={`text-[10px] md:text-[11px] font-black uppercase tracking-wider drop-shadow-md text-center leading-relaxed ${
+                                (typeof wheelResultMsg === 'string' && (wheelResultMsg.includes('მოიგ') || wheelResultMsg.includes('გილოცავ'))) 
+                                || (typeof wheelResultMsg === 'object' && wheelResultMsg.win)
+                                ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' 
+                                : 'text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]'
+                            }`}>
+                                {/* ზუსტად სერვერის ტექსტის გამოტანა */}
+                                {typeof wheelResultMsg === 'object' ? (wheelResultMsg.message || wheelResultMsg.msg || wheelResultMsg.text) : wheelResultMsg}
+                            </span>
                         </div>
                     ) : (
                         <div className="text-5xl opacity-50 drop-shadow-md hover:scale-110 transition-transform">🎡</div>
                     )}
                 </div>
 
-                {/* 🟢 ფსონის არჩევა */}
+                {/* ფსონის არჩევა */}
                 <div className="w-full mb-5">
                     <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-widest block mb-2 text-center">აირჩიე ფსონი (🪙)</label>
                     <div className="flex gap-2">
@@ -450,7 +462,7 @@ export default function App() {
                     </div>
                 </div>
 
-                {/* 🟢 მასტის არჩევა */}
+                {/* მასტის არჩევა */}
                 <div className="w-full mb-6">
                     <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-widest block mb-2 text-center">რომელი მასტი ამოვა?</label>
                     <div className="grid grid-cols-4 gap-2">
@@ -467,7 +479,7 @@ export default function App() {
                     </div>
                 </div>
 
-                {/* 🟢 დატრიალების ღილაკი */}
+                {/* დატრიალების ღილაკი */}
                 <button 
                     onClick={handleSpinWheel} 
                     disabled={wheelSpinning || (profileData?.coins || 0) < wheelBet}
