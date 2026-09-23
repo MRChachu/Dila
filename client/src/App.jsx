@@ -746,35 +746,66 @@ export default function App() {
               
               {/* მარცხენა სვეტი */}
               <div className="space-y-4 md:space-y-5">
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700`}>
-                  <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4 mb-4 md:mb-5">
-                    <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all" onClick={() => setIsMyProfileOpen(true)}>
-                      <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-3xl md:text-4xl border border-white/10 shadow-xl relative`}>
+                {/* 🟢 1. პრემიუმ პროფილის ბარათი (Gaming ID Card) */}
+                <div className={`relative overflow-hidden ${activeTheme.card} backdrop-blur-xl border ${amIVip ? 'border-yellow-500/30' : 'border-white/10'} rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 group`}>
+                  {/* VIP Glow Background */}
+                  {amIVip && <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 blur-[50px] rounded-full pointer-events-none"></div>}
+                  
+                  <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4 mb-4 md:mb-5 relative z-10">
+                    <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all w-full" onClick={() => setIsMyProfileOpen(true)}>
+                      {/* ავატარი */}
+                      <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-3xl md:text-4xl border ${amIVip ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'border-white/10 shadow-xl'} relative shrink-0`}>
                         {myAvatar}
                         <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
                       </div>
-                      <div className="flex flex-col gap-0.5">
-                        <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5"><VipName name={safeUsername} isVip={amIVip} /> <Briefcase size={12} className={activeTheme.accent}/></h2>
-                        <div className="flex items-center gap-1.5 text-stone-400 mt-1">
-                           <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${myLeague.bg} ${myLeague.border} shadow-sm mr-1`}><span className="text-[9px] drop-shadow-md">{myLeague.icon}</span><span className={`text-[8px] font-black uppercase tracking-wider ${myLeague.color}`}>{myLeague.name}</span></div>
-                           <Coins size={12} className="text-yellow-500"/> <span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span>
-                           {amIVip && <span className="ml-1 text-[8px] font-black bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/30 tracking-wider">VIP ACTIVE</span>}
+                      
+                      {/* ინფო */}
+                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                        <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5">
+                            <VipName name={safeUsername} isVip={amIVip} /> 
+                            {amIVip && <Crown size={14} className="text-yellow-500 shrink-0" />}
+                        </h2>
+                        <div className="flex flex-wrap items-center gap-1.5 text-stone-400 mt-1">
+                           <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${myLeague.bg} ${myLeague.border} shadow-sm shrink-0`}><span className="text-[9px] drop-shadow-md">{myLeague.icon}</span><span className={`text-[8px] font-black uppercase tracking-wider ${myLeague.color}`}>{myLeague.name}</span></div>
+                           <div className="flex items-center gap-1 bg-stone-950/50 px-2 py-0.5 rounded-md border border-white/5 shrink-0"><Coins size={10} className="text-yellow-500"/><span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span></div>
+                           {amIVip && <span className="ml-0.5 text-[7px] md:text-[8px] font-black bg-gradient-to-r from-yellow-500 to-amber-500 text-stone-950 px-1.5 py-0.5 rounded uppercase tracking-wider shadow-[0_0_8px_rgba(234,179,8,0.5)] shrink-0">VIP</span>}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 md:space-y-2 mb-4">
-                    <div className="flex justify-between text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest"><span>{t.xpProgress}</span><span>{currentXp} / {targetXp}</span></div>
-                    <div className="w-full h-2 md:h-2.5 bg-stone-950 rounded-full overflow-hidden border border-white/5"><div className={`h-full ${activeTheme.accentBg} rounded-full transition-all duration-1000`} style={{ width: `${xpPercentage}%` }}></div></div>
+                  {/* XP პროგრესი */}
+                  <div className="space-y-1.5 md:space-y-2 mb-4 relative z-10">
+                    <div className="flex justify-between text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest"><span>{t.xpProgress}</span><span className={activeTheme.accent}>{currentXp} / {targetXp}</span></div>
+                    <div className="w-full h-1.5 md:h-2 bg-stone-950 rounded-full overflow-hidden border border-white/5 shadow-inner">
+                        <div className={`h-full ${activeTheme.accentBg} rounded-full transition-all duration-1000 relative`} style={{ width: `${xpPercentage}%` }}>
+                            {/* ნეონის ანარეკლი ზოლის ბოლოში */}
+                            <div className="absolute top-0 right-0 bottom-0 w-4 bg-white/40 blur-[2px]"></div>
+                        </div>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner"><p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.matches}</p><p className="text-sm md:text-base font-mono font-black text-stone-200 mt-0.5 md:mt-1">{profileData?.stats?.gamesPlayed || 0}</p></div>
-                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner"><p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.wins}</p><p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1`}>{profileData?.stats?.gamesWon || 0}</p></div>
-                    <div className="bg-stone-950/60 border border-white/5 rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner"><p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500">{t.winRate}</p><p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1`}>{winRate}%</p></div>
+                  {/* სტატისტიკის ყუთები */}
+                  <div className="grid grid-cols-3 gap-2 relative z-10">
+                    <div className="bg-stone-950/60 border border-white/5 hover:border-white/10 transition-colors rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner group/stat cursor-default">
+                        <p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500 group-hover/stat:text-stone-300 transition-colors">{t.matches}</p>
+                        <p className="text-sm md:text-base font-mono font-black text-stone-200 mt-0.5 md:mt-1">{profileData?.stats?.gamesPlayed || 0}</p>
+                    </div>
+                    <div className="bg-stone-950/60 border border-white/5 hover:border-white/10 transition-colors rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner group/stat cursor-default">
+                        <p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500 group-hover/stat:text-stone-300 transition-colors">{t.wins}</p>
+                        <p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1 drop-shadow-md`}>{profileData?.stats?.gamesWon || 0}</p>
+                    </div>
+                    <div className="bg-stone-950/60 border border-white/5 hover:border-white/10 transition-colors rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner group/stat cursor-default">
+                        <p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500 group-hover/stat:text-stone-300 transition-colors">{t.winRate}</p>
+                        <p className={`text-sm md:text-base font-mono font-black ${activeTheme.accent} mt-0.5 md:mt-1 drop-shadow-md`}>{winRate}%</p>
+                    </div>
                   </div>
-                  <button onClick={() => setIsHistoryOpen(true)} className={`mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-950/60 border border-white/5 hover:bg-stone-900 transition-all text-stone-300 shadow-inner flex items-center justify-center gap-2 active:scale-95`}><Clock size={16} className={activeTheme.accent} /> {t.myHistory}</button>
+                  
+                  {/* ისტორიის ღილაკი ანიმაციით */}
+                  <button onClick={() => setIsHistoryOpen(true)} className={`mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-950/80 border border-white/5 hover:border-white/20 transition-all text-stone-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 active:scale-95 relative z-10 overflow-hidden group/btn`}>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
+                      <Clock size={14} className={`${activeTheme.accent} md:w-4 md:h-4 shrink-0`} /> <span className="truncate">{t.myHistory}</span>
+                  </button>
                 </div>
 
                 <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl transition-colors duration-700 h-[260px]`}>
