@@ -226,6 +226,32 @@ router.get('/leaderboard', async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'შეცდომა' }); }
 });
 
+// 🟢 ანგარიშის სრულად წაშლა (მომხმარებლის მიერ)
+router.post('/delete-account', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username: caseInsensitive(username) });
+    
+    if (!user) return res.status(404).json({ message: 'მომხმარებელი ვერ მოიძებნა' });
+
+    let isMatch = false;
+    if (user.password && user.password.startsWith('$2b$')) {
+        isMatch = await bcrypt.compare(password, user.password);
+    } else {
+        isMatch = (user.password === password);
+    }
+
+    if (!isMatch) return res.status(400).json({ message: 'პაროლი არასწორია. წაშლა უარყოფილია!' });
+
+    // 🟢 ვშლით მომხმარებელს ბაზიდან
+    await User.deleteOne({ username: user.username });
+
+    res.status(200).json({ message: 'ანგარიში წარმატებით წაიშალა.' });
+  } catch (err) {
+    res.status(500).json({ message: 'სერვერის შეცდომა ანგარიშის წაშლისას' });
+  }
+});
+
 // ============================================
 // 🤝 მეგობრების სისტემის API
 // ============================================
