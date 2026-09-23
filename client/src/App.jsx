@@ -537,7 +537,6 @@ export default function App() {
         </div>
       )}
 
-      {/* "ჩემი პროფილის" (My Profile / Inventory) მოდალური ფანჯარა */}
       {/* 🟢 ჩემი პროფილის ფანჯარა (Premium ID Modal) */}
       {isMyProfileOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
