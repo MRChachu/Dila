@@ -291,7 +291,11 @@ export default function App() {
 
   return (
     <div className="relative flex min-h-screen flex-col font-sans antialiased transition-all duration-700" style={{ background: activeTheme.bg }}>
-      <div className={`absolute inset-0 ${activeTheme.overlay} backdrop-blur-[4px] z-0 transition-colors duration-700`}></div>
+      <div className={`absolute inset-0 ${activeTheme.overlay} backdrop-blur-[8px] z-0 transition-colors duration-700`}></div>
+      {/* 🟢 ფერადი განათებები (Glow Orbs) უკანა ფონზე */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[150px] pointer-events-none"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-cyan-500/5 rounded-full blur-[150px] pointer-events-none"></div>
       {error && <div className="fixed top-20 md:top-24 right-4 md:right-6 z-[100] rounded-2xl bg-stone-900/95 border border-rose-500/20 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-right-8 fade-in duration-300 flex items-center gap-3"><div className="flex items-center justify-center p-1 rounded-full bg-rose-500/20 text-rose-500 border border-rose-500/30"><XCircle size={16} className="md:w-5 md:h-5" /></div><span className="text-stone-100 tracking-wide uppercase">{error}</span></div>}
       {toastMsg && <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-[100] rounded-2xl bg-stone-900/95 border border-white/10 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-top-5 fade-in duration-300 flex items-center gap-3"><div className={`flex items-center justify-center p-1 rounded-full ${activeTheme.accentBg} bg-opacity-20 ${activeTheme.accent} border border-current border-opacity-30`}><CheckCircle2 size={16} className="md:w-5 md:h-5" /></div><span className="text-stone-100 tracking-wide uppercase">{toastMsg}</span></div>}
       
@@ -925,16 +929,56 @@ export default function App() {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                  <button onClick={() => setIsMatchmakingOpen(true)} className={`p-4 md:p-5 ${activeTheme.accentBg} hover:opacity-90 text-stone-950 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-[0_0_20px_currentColor] active:scale-95 border-b-4 border-black/20 group`}>
-                      <div><h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><Search size={14} className="md:w-4 md:h-4"/> თამაშის ძებნა</h4><p className="text-[9px] md:text-xs text-stone-800 mt-1 font-black opacity-80">სწრაფი დაკავშირება</p></div><Play size={18} className="md:w-5 md:h-5 text-stone-900 group-hover:scale-110 transition-transform" />
+                {/* 🟢 მთავარი მოქმედების (Action) ღილაკების ბლოკი */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 relative z-10">
+                  
+                  {/* 1. თამაშის ძებნა (Epic Gaming Button) */}
+                  <button onClick={() => setIsMatchmakingOpen(true)} className={`relative overflow-hidden p-5 md:p-6 rounded-2xl md:rounded-3xl text-left transition-all active:scale-95 group border-2 ${activeTheme.accent.replace('text-', 'border-')} shadow-[0_0_30px_currentColor] bg-gradient-to-br from-stone-900 to-stone-950`}>
+                      <div className={`absolute top-0 right-0 w-32 h-32 ${activeTheme.accentBg} opacity-10 blur-[40px] rounded-full group-hover:opacity-30 transition-opacity duration-500`}></div>
+                      <div className={`absolute -bottom-4 -right-4 text-7xl opacity-5 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-500 ${activeTheme.accent}`}>🎮</div>
+                      <div className="relative z-10 flex items-center justify-between">
+                          <div>
+                              <h4 className={`font-black text-sm md:text-base flex items-center gap-2 tracking-widest uppercase ${activeTheme.accent} drop-shadow-md`}>
+                                  <Search size={18} className="animate-pulse" /> თამაშის ძებნა
+                              </h4>
+                              <p className="text-[10px] md:text-xs text-stone-400 mt-1.5 font-bold tracking-wide">სწრაფი დაკავშირება</p>
+                          </div>
+                          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full ${activeTheme.accentBg} flex items-center justify-center text-stone-950 shadow-[0_0_15px_currentColor] group-hover:translate-x-1.5 transition-transform`}>
+                              <Play size={20} className="ml-1 fill-current" />
+                          </div>
+                      </div>
                   </button>
-                  <button onClick={() => setIsCreateModalOpen(true)} className={`p-4 md:p-5 bg-stone-100 hover:bg-stone-200 border-stone-300 text-stone-900 rounded-2xl md:rounded-3xl flex items-center justify-between text-left transition-all shadow-lg active:scale-95 border-b-4 group`}>
-                    <div><h4 className="font-black text-xs md:text-sm flex items-center gap-1.5 md:gap-2 tracking-wide uppercase"><PlusCircle size={14} className="md:w-4 md:h-4"/> ოთახის შექმნა</h4><p className="text-[9px] md:text-xs text-stone-500 mt-1 font-bold">შენი წესებით</p></div>
+
+                  {/* 2. ოთახის შექმნა (Premium Glassmorphism) */}
+                  <button onClick={() => setIsCreateModalOpen(true)} className={`relative overflow-hidden p-5 md:p-6 rounded-2xl md:rounded-3xl text-left transition-all active:scale-95 group border border-white/10 hover:border-white/30 bg-stone-900/40 backdrop-blur-md shadow-xl`}>
+                      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="absolute -bottom-4 -right-4 text-7xl opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 text-white">🏠</div>
+                      <div className="relative z-10 flex items-center justify-between">
+                          <div>
+                              <h4 className="font-black text-sm md:text-base flex items-center gap-2 tracking-widest uppercase text-stone-200">
+                                  <PlusCircle size={18} /> ოთახის შექმნა
+                              </h4>
+                              <p className="text-[10px] md:text-xs text-stone-500 mt-1.5 font-bold tracking-wide">ითამაშე შენი წესებით</p>
+                          </div>
+                          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-stone-800 border border-white/5 flex items-center justify-center text-stone-300 shadow-inner group-hover:rotate-90 transition-transform duration-500">
+                              <PlusCircle size={20} />
+                          </div>
+                      </div>
                   </button>
-                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-3 md:p-4 flex gap-2 md:gap-2.5 items-center shadow-2xl transition-colors duration-700 col-span-1 md:col-span-2 lg:col-span-1`}>
-                    <input type="text" placeholder={t.roomIdPlaceholder} value={roomId} onChange={(e) => setRoomId(e.target.value)} className={`flex-1 w-full rounded-xl bg-stone-950/60 border border-white/5 px-3 md:px-4 py-3 md:py-3.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none transition-all placeholder-stone-600 shadow-inner`} />
-                    <button onClick={() => handleJoinSpecificRoom(roomId)} className={`px-4 md:px-5 py-3 md:py-3.5 bg-stone-800 hover:bg-stone-700 border border-white/10 ${activeTheme.accent} rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md`}>{t.join}</button>
+
+                  {/* 3. ოთახში შესვლა კოდით (ID Join) */}
+                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 hover:border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col justify-center gap-2.5 shadow-2xl transition-all duration-700 col-span-1 md:col-span-2 lg:col-span-1 relative overflow-hidden group`}>
+                    <div className="absolute -right-8 -top-8 w-24 h-24 bg-white/5 rounded-full blur-[20px] pointer-events-none"></div>
+                    <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-widest px-1">შესვლა კოდით</label>
+                    <div className="flex gap-2.5 relative z-10">
+                        <div className="relative flex-1">
+                            <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-600" />
+                            <input type="text" placeholder={t.roomIdPlaceholder} value={roomId} onChange={(e) => setRoomId(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/5 pl-9 pr-3 py-3 md:py-3.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none transition-all focus:border-white/20 placeholder-stone-700 shadow-inner`} />
+                        </div>
+                        <button onClick={() => handleJoinSpecificRoom(roomId)} className={`px-5 py-3 md:py-3.5 bg-stone-800 hover:bg-stone-700 border border-white/10 ${activeTheme.accent} rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md uppercase tracking-wider`}>
+                            {t.join}
+                        </button>
+                    </div>
                   </div>
                 </div>
 
