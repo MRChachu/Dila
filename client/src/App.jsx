@@ -808,16 +808,19 @@ export default function App() {
                   </button>
                 </div>
 
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl transition-colors duration-700 h-[260px]`}>
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3 shrink-0">
-                      <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest">
-                          <Megaphone size={14} className={activeTheme.accent} /> გლობალური ჩატი
+                {/* 🟢 2. გლობალური ჩატი (Premium Chat) */}
+                <div className={`relative overflow-hidden ${activeTheme.card} backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl transition-all duration-700 h-[260px] group/chat`}>
+                  <div className={`absolute -top-10 -left-10 w-32 h-32 ${activeTheme.accentBg} opacity-10 blur-[40px] rounded-full pointer-events-none transition-opacity duration-700 group-hover/chat:opacity-20`}></div>
+                  
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3 shrink-0 relative z-10">
+                      <h3 className="text-[10px] md:text-xs font-black text-stone-200 flex items-center gap-2 uppercase tracking-widest drop-shadow-md">
+                          <Megaphone size={16} className={`${activeTheme.accent} animate-pulse`} /> გლობალური ჩატი
                       </h3>
                       
                       {safeUsername.toLowerCase() === 'chachu' && (
                           <button 
                               onClick={() => { if(window.confirm('ნამდვილად გინდა ჩატის სრულად გასუფთავება?')) socket.emit('adminClearGlobalChat', { adminName: safeUsername }); }}
-                              className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-colors border border-rose-500/20 active:scale-95"
+                              className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20 active:scale-95 shadow-md"
                               title="ჩატის სრულად გასუფთავება"
                           >
                               <Trash2 size={12} />
@@ -825,28 +828,31 @@ export default function App() {
                       )}
                   </div>
                   
-                  <div ref={globalChatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar pr-2 py-3 space-y-2 flex flex-col">
+                  <div ref={globalChatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar pr-2 py-3 space-y-2 flex flex-col relative z-10">
                       {globalMessages.length === 0 ? (
-                          <p className="text-[10px] text-stone-500 italic text-center m-auto">ჩატი ცარიელია. დაწერე პირველი!</p>
+                          <div className="m-auto flex flex-col items-center justify-center opacity-30 text-stone-400">
+                              <Megaphone size={28} className="mb-2" />
+                              <p className="text-[10px] uppercase font-bold tracking-widest">ჩატი ცარიელია</p>
+                          </div>
                       ) : (
                           globalMessages.map((msg, i) => (
-                              <div key={msg.id || i} className="text-[10px] md:text-xs leading-snug break-words flex items-start justify-between group hover:bg-stone-950/40 p-1 -mx-1 rounded transition-colors">
+                              <div key={msg.id || i} className="text-[10px] md:text-xs leading-snug break-words flex items-start justify-between group/msg hover:bg-white/5 p-1.5 -mx-1.5 rounded-lg transition-colors">
                                   <div className="flex-1">
-                                      <span className="text-stone-500 text-[8px] mr-1.5 shrink-0">{msg.time}</span>
+                                      <span className="text-stone-500 text-[8px] mr-1.5 shrink-0 font-mono">{msg.time}</span>
                                       <VipName 
                                           name={msg.sender} 
                                           isVip={msg.isVip} 
-                                          className={`font-black cursor-pointer hover:underline ${msg.sender === safeUsername ? activeTheme.accent : 'text-stone-300'}`} 
+                                          className={`font-black cursor-pointer hover:underline ${msg.sender === safeUsername ? activeTheme.accent : 'text-stone-200'}`} 
                                           onClick={() => handleInspectPlayer(msg.sender)} 
                                       />
-                                      <span className="text-stone-400 mx-1">:</span>
-                                      <span className="text-stone-200">{msg.text}</span>
+                                      <span className="text-stone-500 mx-1">:</span>
+                                      <span className="text-stone-300">{msg.text}</span>
                                   </div>
                                   
                                   {safeUsername.toLowerCase() === 'chachu' && (
                                       <button 
                                           onClick={() => socket.emit('adminDeleteGlobalMessage', { adminName: safeUsername, messageId: msg.id })}
-                                          className="opacity-0 group-hover:opacity-100 p-1 text-rose-500 hover:bg-rose-500/20 rounded transition-all shrink-0 ml-2"
+                                          className="opacity-0 group-hover/msg:opacity-100 p-1 text-rose-500 hover:bg-rose-500/20 rounded transition-all shrink-0 ml-2"
                                           title="მესიჯის წაშლა"
                                       >
                                           <XCircle size={12} />
@@ -857,19 +863,19 @@ export default function App() {
                       )}
                   </div>
 
-                  <form onSubmit={handleSendGlobalMessage} className="mt-auto shrink-0 flex gap-2 pt-3 border-t border-white/5">
+                  <form onSubmit={handleSendGlobalMessage} className="mt-auto shrink-0 flex gap-2 pt-3 border-t border-white/5 relative z-10">
                       <input 
                           type="text" 
                           value={globalChatInput} 
                           onChange={(e) => setGlobalChatInput(e.target.value)} 
-                          placeholder="დაწერე მესიჯი ოთახში..." 
+                          placeholder="დაწერე შეტყობინება..." 
                           maxLength={150}
-                          className="flex-1 bg-stone-950/60 border border-white/10 rounded-xl px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none focus:border-white/30 transition-all placeholder-stone-600 shadow-inner"
+                          className="flex-1 bg-stone-950/80 border border-white/5 rounded-xl px-3 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none focus:border-white/20 transition-all placeholder-stone-600 shadow-inner"
                       />
                       <button 
                           type="submit" 
                           disabled={!globalChatInput.trim()} 
-                          className={`px-4 py-2 ${activeTheme.accentBg} text-stone-950 font-black rounded-xl text-[10px] md:text-xs uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 shadow-md`}
+                          className={`px-4 py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 font-black rounded-xl text-[10px] md:text-xs uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 shadow-[0_0_10px_currentColor] hover:scale-105`}
                       >
                           გაგზავნა
                       </button>
@@ -1020,15 +1026,38 @@ export default function App() {
                     {liveRooms.length === 0 ? ( <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-stone-950/30 h-[160px] flex items-center justify-center"><p className="text-[10px] md:text-xs text-stone-500 font-bold">{t.noTables}</p></div> ) : ( <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">{liveRooms.map((room) => ( <div key={room.id} className="p-2.5 md:p-3 rounded-xl bg-stone-950/40 border border-white/5 flex justify-between items-center shadow-md"><div className="flex flex-col gap-1"><div className={`flex items-center gap-1.5 text-[10px] md:text-xs font-black ${activeTheme.accent} font-mono`}><span className="text-xs">{room.hostAvatar || '😎'}</span> <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> {room.isPrivate && <Lock size={10} className="text-stone-500" />}<span className="text-[8px] bg-stone-900 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md uppercase ml-1 shadow-sm flex items-center gap-1">{room.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}</span></div><div className="flex gap-1.5 items-center">{room.isRanked ? <span className={`text-[8px] font-bold ${activeTheme.accentBg} bg-opacity-10 border-opacity-20 border-current px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}<span className="text-[8px] font-bold text-stone-400 bg-stone-900/80 px-1 py-0.5 rounded border border-white/5 font-mono">👥 {room.currentPlayers}/{room.maxPlayers}</span></div></div><button onClick={() => handleRoomClickFromList(room)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all active:scale-95 ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300' : `bg-white text-stone-900 shadow-md`}`}>{t.join}</button></div> ))}</div> )}
                   </div>
 
-                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 relative overflow-hidden h-full`}>
-                     <div className={`absolute top-0 right-0 w-32 h-32 ${activeTheme.accentBg} opacity-5 blur-[60px] rounded-full`}></div>
-                     <h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest mb-3">
-                      <Target size={14} className={activeTheme.accent} /> {t.dailyQuests}
+                  {/* 🟢 3. ყოველდღიური მისიები (Premium Quests) */}
+                  <div className={`${activeTheme.card} backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 relative overflow-hidden h-full group/quest`}>
+                     {/* ფონის განათება და დიდი იკონა */}
+                     <div className={`absolute top-0 right-0 w-32 h-32 ${activeTheme.accentBg} opacity-10 blur-[50px] rounded-full pointer-events-none group-hover/quest:opacity-20 transition-all duration-700`}></div>
+                     <div className="absolute -bottom-10 -left-10 text-8xl opacity-[0.03] group-hover/quest:scale-110 group-hover/quest:rotate-12 transition-all duration-700 pointer-events-none">🎯</div>
+                     
+                     <h3 className="text-[10px] md:text-xs font-black text-stone-200 flex items-center gap-2 border-b border-white/5 pb-2.5 md:pb-3 uppercase tracking-widest mb-4 relative z-10 drop-shadow-md">
+                      <Target size={16} className={`${activeTheme.accent} animate-pulse`} /> {t.dailyQuests}
                     </h3>
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 relative z-10">
                       {profileData?.dailyQuests?.map((q, idx) => {
                         const isDone = q.isCompleted; const p = Math.min((q.progress / q.target) * 100, 100);
-                        return ( <div key={idx} className={`p-3 md:p-4 rounded-xl border transition-all ${isDone ? 'bg-stone-950/80 border-stone-800' : `bg-stone-950/40 border-white/5`} flex flex-col justify-between`}><div className="flex justify-between items-start mb-2"><p className={`text-[10px] md:text-xs font-bold ${isDone ? 'text-stone-500 line-through' : 'text-stone-200'} leading-snug`}>{q.title}</p>{isDone ? <CheckCircle2 size={14} className="text-stone-600 shrink-0 ml-2"/> : <Gift size={14} className={`${activeTheme.accent} shrink-0 ml-2`}/>}</div><div className="space-y-1 mt-auto"><div className="flex justify-between text-[8px] md:text-[9px] font-black uppercase tracking-wider text-stone-500"><span>{q.progress} / {q.target}</span><span className={isDone ? 'text-stone-600' : activeTheme.accent}>+{q.xpReward} XP</span></div><div className="w-full h-1.5 md:h-2 bg-stone-900 rounded-full overflow-hidden"><div className={`h-full ${isDone ? 'bg-stone-700' : activeTheme.accentBg} transition-all duration-1000`} style={{ width: `${p}%` }}></div></div></div></div> )
+                        return ( 
+                          <div key={idx} className={`p-3 md:p-4 rounded-xl border transition-all duration-500 ${isDone ? 'bg-stone-950/80 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : `bg-stone-950/40 border-white/5 hover:border-white/10`} flex flex-col justify-between group/item`}>
+                              <div className="flex justify-between items-start mb-2">
+                                  <p className={`text-[10px] md:text-xs font-black ${isDone ? 'text-stone-500 line-through' : 'text-stone-200'} leading-snug`}>{q.title}</p>
+                                  {isDone ? <CheckCircle2 size={16} className="text-emerald-500 shrink-0 ml-2 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"/> : <Gift size={16} className={`${activeTheme.accent} shrink-0 ml-2 group-hover/item:scale-110 transition-transform`}/>}
+                              </div>
+                              <div className="space-y-1 mt-auto">
+                                  <div className="flex justify-between text-[8px] md:text-[9px] font-black uppercase tracking-wider text-stone-500">
+                                      <span>{q.progress} / {q.target}</span>
+                                      <span className={isDone ? 'text-emerald-500' : activeTheme.accent}>+{q.xpReward} XP</span>
+                                  </div>
+                                  <div className="w-full h-1.5 md:h-2 bg-stone-900 rounded-full overflow-hidden border border-white/5 shadow-inner">
+                                      <div className={`h-full ${isDone ? 'bg-emerald-500' : activeTheme.accentBg} transition-all duration-1000 relative`} style={{ width: `${p}%` }}>
+                                          {/* მბზინავი ეფექტი ზოლის ბოლოში */}
+                                          <div className="absolute top-0 right-0 bottom-0 w-4 bg-white/30 blur-[2px]"></div>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div> 
+                        )
                       })}
                     </div>
                   </div>
