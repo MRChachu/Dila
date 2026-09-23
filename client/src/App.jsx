@@ -597,11 +597,7 @@ export default function App() {
             <span className={`text-sm md:text-lg font-black tracking-widest ${activeTheme.accent}`}>PHURTI ARENA</span>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
-            <div className="flex bg-stone-900/80 rounded-lg md:rounded-xl border border-white/5 p-1 gap-1 shadow-md mr-1 md:mr-2">
-              <button onClick={() => setLang('ka')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'ka' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇪</button>
-              <button onClick={() => setLang('en')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'en' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇬🇧</button>
-              <button onClick={() => setLang('ru')} className={`p-1.5 md:p-2 rounded-md transition-all text-[10px] md:text-xs ${lang === 'ru' ? activeTheme.accentBg + ' text-stone-950 shadow-sm' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}>🇷🇺</button>
-            </div>
+           
             
             {/* 🟢 ბორბლის ღილაკი */}
             <button onClick={() => setIsWheelOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
