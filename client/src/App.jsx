@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
 import DamkaBoard from './DamkaBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, UserMinus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Sparkles, Share2, PackageOpen, Briefcase } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, UserMinus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Sparkles, Share2, PackageOpen, Dices, Briefcase } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -404,108 +404,83 @@ export default function App() {
 
       {/* 🟢 იღბლიანი ბორბლის მოდალი (Lucky Wheel) */}
       {isWheelOpen && (
-          <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[200] flex items-center justify-center p-4">
-            <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl font-sans relative flex flex-col items-center`}>
-              
-              {/* 🟢 ბალანსის მაჩვენებელი ზედა მარცხენა კუთხეში */}
-              <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-stone-950/80 px-3 py-1.5 rounded-lg border border-yellow-500/30 shadow-inner">
-                  <Coins size={14} className="text-yellow-500" />
-                  <span className="text-[10px] md:text-xs font-mono font-black text-stone-200">{myCoins}</span>
-              </div>
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
+          <div className={`${activeTheme.card} border ${activeTheme.accent.replace('text-', 'border-')}/30 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl relative overflow-hidden group`}>
+            
+            {/* ფონის ნეონის განათება */}
+            <div className={`absolute -top-10 -right-10 w-40 h-40 ${activeTheme.accentBg} opacity-10 blur-[50px] rounded-full pointer-events-none`}></div>
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/10 blur-[50px] rounded-full pointer-events-none"></div>
 
-              <button onClick={() => !wheelSpinning && setIsWheelOpen(false)} className="absolute top-4 right-4 text-stone-500 hover:text-stone-300 transition-colors">
-                  <XCircle size={24} />
-              </button>
-              
-              <h3 className={`text-xl font-black ${activeTheme.accent} uppercase tracking-wider mb-6 mt-2 flex items-center gap-2 drop-shadow-md`}>
-                  🎰 იღბლიანი ბორბალი
-              </h3>
+            {/* დახურვის ღილაკი */}
+            <button onClick={() => { setIsWheelOpen(false); setWheelResultMsg(null); setWheelSpinning(false); }} className="absolute top-4 right-4 text-stone-500 hover:text-rose-500 transition-colors z-20">
+                <XCircle size={24} />
+            </button>
 
-              {/* მიმთითებელი ისარი (Pointer) */}
-              <div className="relative w-full flex justify-center mb-1 z-20">
-                  <div className="absolute top-0 text-3xl drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]">👇</div>
-              </div>
+            <h2 className="text-lg md:text-xl font-black text-stone-100 uppercase tracking-widest text-center mb-6 drop-shadow-md flex items-center justify-center gap-2">
+                <Dices className={activeTheme.accent} size={24} /> იღბლიანი ბორბალი
+            </h2>
 
-              {/* ბორბალი (Wheel) */}
-              <div className="relative mt-5 mb-8">
-                  <div 
-                      className="w-56 h-56 md:w-64 md:h-64 rounded-full border-4 border-yellow-500 overflow-hidden shadow-[0_0_40px_rgba(234,179,8,0.3)] transition-transform duration-[3000ms] ease-out"
-                      style={{ transform: `rotate(${wheelRotation}deg)` }}
-                  >
-                      {/* Conic Gradient ფერებისთვის */}
-                      <div className="absolute inset-0" style={{ background: 'conic-gradient(#dc2626 0 90deg, #1c1917 90deg 180deg, #dc2626 180deg 270deg, #1c1917 270deg 360deg)' }}></div>
-                      
-                      {/* მასტების ლოგოები ცენტრებში */}
-                      <div className="absolute inset-0 flex items-center justify-center font-black">
-                          <span className="absolute text-5xl drop-shadow-md" style={{ transform: 'rotate(45deg) translate(0, -65px)' }}>❤️</span>
-                          <span className="absolute text-5xl drop-shadow-md" style={{ transform: 'rotate(135deg) translate(0, -65px)' }}>♣️</span>
-                          <span className="absolute text-5xl drop-shadow-md" style={{ transform: 'rotate(225deg) translate(0, -65px)' }}>♦️</span>
-                          <span className="absolute text-5xl drop-shadow-md" style={{ transform: 'rotate(315deg) translate(0, -65px)' }}>♠️</span>
-                      </div>
-                      
-                      {/* ბორბლის ცენტრი */}
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-stone-900 rounded-full border-2 border-yellow-500 z-10 flex items-center justify-center shadow-inner">
-                          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                      </div>
-                  </div>
-              </div>
+            <div className="relative z-10 flex flex-col items-center">
+                
+                {/* 🟢 ვიზუალური "ბორბალი" / ანიმაცია */}
+                <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full border-4 ${wheelSpinning ? `border-yellow-500 border-t-transparent animate-spin shadow-[0_0_20px_rgba(234,179,8,0.5)]` : 'border-stone-800 shadow-[0_0_30px_rgba(0,0,0,0.5)]'} flex items-center justify-center mb-6 relative bg-stone-950/50 transition-all`}>
+                    {wheelSpinning ? (
+                        <div className="text-5xl animate-spin" style={{ animationDuration: '0.5s' }}>⏳</div>
+                    ) : wheelResultMsg ? (
+                        <div className="text-center animate-in zoom-in duration-300">
+                            <div className="text-5xl drop-shadow-lg">{wheelResultMsg.winningSuit}</div>
+                            <div className={`text-[10px] md:text-xs font-black uppercase tracking-widest mt-2 ${wheelResultMsg.winAmount > 0 ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'text-rose-500'}`}>
+                                {wheelResultMsg.winAmount > 0 ? `+${wheelResultMsg.winAmount} 🪙` : 'წააგე'}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-5xl opacity-50 drop-shadow-md hover:scale-110 transition-transform">🎡</div>
+                    )}
+                </div>
 
-              {/* შედეგის მესიჯი */}
-              <div className="h-8 mb-5 flex items-center justify-center">
-                  {wheelResultMsg && (
-                      <span className={`text-sm md:text-base font-black px-4 py-1.5 rounded-lg uppercase tracking-widest animate-in zoom-in ${wheelResultMsg.type === 'win' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
-                          {wheelResultMsg.text}
-                      </span>
-                  )}
-              </div>
+                {/* 🟢 ფსონის არჩევა */}
+                <div className="w-full mb-5">
+                    <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-widest block mb-2 text-center">აირჩიე ფსონი (🪙)</label>
+                    <div className="flex gap-2">
+                        {[50, 100, 250, 500].map(amt => (
+                            <button key={amt} onClick={() => !wheelSpinning && setWheelBet(amt)} className={`flex-1 py-2 rounded-xl text-[10px] md:text-xs font-black transition-all ${wheelBet === amt ? 'bg-yellow-500 text-stone-950 shadow-[0_0_10px_rgba(234,179,8,0.4)] scale-105' : 'bg-stone-900 border border-white/5 text-stone-400 hover:bg-stone-800'}`} disabled={wheelSpinning}>
+                                {amt}
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
-              {/* ფსონის და მასტის არჩევა */}
-              <div className="w-full bg-stone-950/50 rounded-2xl p-4 md:p-5 border border-white/5 space-y-4 shadow-inner">
-                  <div className="flex justify-between items-center">
-                      <span className="text-[10px] md:text-xs uppercase font-bold text-stone-400">აირჩიე მასტი:</span>
-                      <div className="flex gap-2">
-                          {['❤️', '♦️', '♣️', '♠️'].map(s => (
-                              <button 
-                                  key={s} 
-                                  disabled={wheelSpinning}
-                                  onClick={() => setWheelSelectedSuit(s)}
-                                  className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl text-xl md:text-2xl border-2 transition-all ${wheelSelectedSuit === s ? 'bg-stone-800 border-yellow-500 scale-110 shadow-[0_0_15px_rgba(234,179,8,0.4)]' : 'bg-stone-900 border-white/5 opacity-50 hover:opacity-100 active:scale-95'}`}
-                              >
-                                  {s}
-                              </button>
-                          ))}
-                      </div>
-                  </div>
+                {/* 🟢 მასტის არჩევა */}
+                <div className="w-full mb-6">
+                    <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-widest block mb-2 text-center">რომელი მასტი ამოვა?</label>
+                    <div className="grid grid-cols-4 gap-2">
+                        {[
+                            { suit: '❤️', color: 'text-rose-500', glow: 'shadow-[0_0_15px_rgba(244,63,94,0.3)]' },
+                            { suit: '♣️', color: 'text-stone-300', glow: 'shadow-[0_0_15px_rgba(214,211,209,0.3)]' },
+                            { suit: '♦️', color: 'text-rose-500', glow: 'shadow-[0_0_15px_rgba(244,63,94,0.3)]' },
+                            { suit: '♠️', color: 'text-stone-300', glow: 'shadow-[0_0_15px_rgba(214,211,209,0.3)]' }
+                        ].map(item => (
+                            <button key={item.suit} onClick={() => !wheelSpinning && setWheelSelectedSuit(item.suit)} className={`py-2.5 md:py-3 rounded-xl text-2xl md:text-3xl flex items-center justify-center transition-all ${wheelSelectedSuit === item.suit ? `bg-stone-800 border-2 border-stone-600 ${item.glow} scale-110` : 'bg-stone-900/50 border-2 border-transparent hover:bg-stone-800 opacity-60'} ${item.color}`} disabled={wheelSpinning}>
+                                {item.suit}
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
-                  <div className="flex justify-between items-center">
-                      <span className="text-[10px] md:text-xs uppercase font-bold text-stone-400">ფსონი <span className="text-yellow-500">(x3)</span>:</span>
-                      <div className="flex gap-2">
-                          {[50, 100, 500].map(b => (
-                              <button 
-                                  key={b} 
-                                  disabled={wheelSpinning}
-                                  onClick={() => setWheelBet(b)}
-                                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-black transition-all border ${wheelBet === b ? 'bg-yellow-500 text-stone-950 border-yellow-500 shadow-md' : 'bg-stone-900 border-white/5 text-stone-400 hover:bg-stone-800 active:scale-95'}`}
-                              >
-                                  {b}
-                              </button>
-                          ))}
-                      </div>
-                  </div>
-              </div>
-
-              {/* დატრიალების ღილაკი */}
-              <button 
-                  onClick={handleSpinWheel}
-                  disabled={wheelSpinning}
-                  className={`w-full mt-5 py-3.5 md:py-4 rounded-xl text-sm md:text-base font-black uppercase tracking-widest transition-all shadow-xl ${wheelSpinning ? 'bg-stone-800 text-stone-500 cursor-not-allowed border border-white/5' : 'bg-gradient-to-r from-yellow-600 to-amber-500 text-stone-950 hover:opacity-90 active:scale-95 border-b-4 border-yellow-700'}`}
-              >
-                  {wheelSpinning ? 'ტრიალებს...' : 'დატრიალება 🎰'}
-              </button>
+                {/* 🟢 დატრიალების ღილაკი */}
+                <button 
+                    onClick={handleSpinWheel} 
+                    disabled={wheelSpinning || (profileData?.coins || 0) < wheelBet}
+                    className={`w-full py-3 md:py-3.5 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${wheelSpinning ? 'bg-stone-800 text-stone-500 cursor-wait' : (profileData?.coins || 0) < wheelBet ? 'bg-rose-900/30 text-rose-500 border border-rose-500/30 cursor-not-allowed' : `${activeTheme.accentBg} text-stone-950 hover:scale-105 active:scale-95 shadow-[0_0_20px_currentColor]`}`}
+                >
+                    {wheelSpinning ? 'ტრიალებს...' : (profileData?.coins || 0) < wheelBet ? 'არასაკმარისი 🪙' : 'დატრიალება'}
+                </button>
+                
+                <p className="text-[8px] text-stone-500 mt-3 uppercase tracking-widest font-bold">მოგება: ფსონი x3</p>
             </div>
           </div>
+        </div>
       )}
-
       {showInstallPrompt && (
         <div className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[500] bg-stone-900 border border-cyan-500/30 p-4 rounded-2xl shadow-[0_10px_40px_rgba(6,182,212,0.2)] flex flex-col md:flex-row items-center gap-4 w-[90%] max-w-md animate-in slide-in-from-bottom-5">
            <div className="flex items-center gap-3 w-full"><div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shrink-0"><Download size={24} /></div><div className="flex flex-col"><span className="text-xs md:text-sm font-black text-stone-100 uppercase tracking-wider">აპლიკაციის დაყენება</span><span className="text-[10px] md:text-xs text-stone-400 font-bold">გადმოწერე და ითამაშე უფრო სწრაფად!</span></div></div>
