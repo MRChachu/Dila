@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
 import DamkaBoard from './DamkaBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, UserMinus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Sparkles, Briefcase } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, UserMinus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Sparkles, Share2, Briefcase } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -161,6 +161,17 @@ export default function App() {
   useEffect(() => { if (userState && !inRoom && safeUsername !== 'მოთამაშე') { fetchDashboardData(safeUsername); socket.emit('getLiveRooms'); socket.emit('setOnlineUser', safeUsername); } }, [userState, inRoom, safeUsername]);
   useEffect(() => { if (error) { const t = setTimeout(() => setError(''), 4000); return () => clearTimeout(t); } }, [error]);
   useEffect(() => { if (toastMsg) { const t = setTimeout(() => setToastMsg(''), 4000); return () => clearTimeout(t); } }, [toastMsg]);
+  // 🟢 URL ლინკიდან ოთახის წაკითხვის ლოგიკა
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    if (roomParam && userState && !inRoom && !isPasswordModalOpen) {
+        setSelectedRoomIdForJoin(roomParam);
+        setIsPasswordModalOpen(true);
+        // ლინკის გასუფთავება ისტორიიდან (რომ დარეფრეშებისას ისევ არ ამოაგდოს)
+        window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [userState, inRoom, isPasswordModalOpen]);
 
   useEffect(() => {
       if (globalChatScrollRef.current) {
@@ -852,7 +863,19 @@ export default function App() {
                       <div className={`${activeTheme.card} backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-6 space-y-4 md:space-y-5 shadow-2xl transition-colors duration-700`}>
                         <div className="border-b border-white/10 pb-3 md:pb-4 flex justify-between items-start">
                           <div className="flex flex-col gap-1">
-                             <h3 className={`text-lg md:text-xl font-black ${activeTheme.accent} font-mono`}>ROOM #{roomData.id}</h3>
+                             <div className="flex items-center gap-3">
+    <h3 className={`text-lg md:text-xl font-black ${activeTheme.accent} font-mono`}>ROOM #{roomData.id}</h3>
+    <button 
+        onClick={() => {
+            navigator.clipboard.writeText(`${window.location.origin}/?room=${roomData.id}`);
+            setToastMsg('მაგიდის ლინკი დაკოპირდა!');
+        }}
+        className="p-1.5 rounded-lg bg-stone-900 border border-white/10 text-stone-400 hover:text-white hover:bg-stone-800 transition-all shadow-md active:scale-95"
+        title="მაგიდის ლინკის კოპირება"
+    >
+        <Share2 size={16} />
+    </button>
+</div>
                              <span className="text-[10px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400 w-max shadow-inner flex items-center gap-1.5">
                                {roomData.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში (Damka)</> : '🃏 ფურთი (Phurti)'}
                              </span>
