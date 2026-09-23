@@ -762,9 +762,9 @@ export default function App() {
                       {/* ინფო */}
                       <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                         <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5">
-                            <VipName name={safeUsername} isVip={amIVip} /> 
-                            {amIVip && <Crown size={14} className="text-yellow-500 shrink-0" />}
-                        </h2>
+    {safeUsername} 
+    {amIVip && <Crown size={16} className="text-yellow-500 shrink-0 drop-shadow-md" />}
+</h2>
                         <div className="flex flex-wrap items-center gap-1.5 text-stone-400 mt-1">
                            <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${myLeague.bg} ${myLeague.border} shadow-sm shrink-0`}><span className="text-[9px] drop-shadow-md">{myLeague.icon}</span><span className={`text-[8px] font-black uppercase tracking-wider ${myLeague.color}`}>{myLeague.name}</span></div>
                            <div className="flex items-center gap-1 bg-stone-950/50 px-2 py-0.5 rounded-md border border-white/5 shrink-0"><Coins size={10} className="text-yellow-500"/><span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span></div>
