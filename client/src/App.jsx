@@ -538,91 +538,102 @@ export default function App() {
       )}
 
       {/* "ჩემი პროფილის" (My Profile / Inventory) მოდალური ფანჯარა */}
-      {isMyProfileOpen && profileData && (
-        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
-          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-lg w-full shadow-2xl font-sans relative flex flex-col max-h-[85vh]`}>
-            {/* Header: User Info */}
-            <div className="flex items-center gap-4 mb-5 border-b border-white/10 pb-5">
-               <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center text-4xl border border-white/10 shadow-xl relative`}>
-                 {myAvatar}
-                 <div className={`absolute -bottom-2 -right-2 w-6 h-6 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
-               </div>
-               <div>
-                 <h2 className="text-lg font-black tracking-wide"><VipName name={safeUsername} isVip={amIVip} className="text-stone-100"/></h2>
-                 <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border ${myLeague.bg} ${myLeague.border} shadow-sm mt-1 w-max`}><span className="text-[10px] drop-shadow-md">{myLeague.icon}</span><span className={`text-[9px] font-black uppercase tracking-wider ${myLeague.color}`}>{myLeague.name}</span></div>
-                 <div className="text-[10px] text-stone-400 font-bold mt-1 font-mono">{currentXp} XP / <span className="text-yellow-500">{myCoins} 🪙</span></div>
-               </div>
-            </div>
-
-            {/* Main Tabs */}
-            <div className="flex gap-2 bg-stone-950/50 p-1 rounded-xl border border-white/5 mb-4 shrink-0">
-              <button onClick={() => setMyProfileTab('stats')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase transition-all ${myProfileTab === 'stats' ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500 hover:bg-stone-900'}`}><User size={14} className="inline mr-1 mb-0.5"/>სტატისტიკა</button>
-              <button onClick={() => setMyProfileTab('inventory')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase transition-all ${myProfileTab === 'inventory' ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500 hover:bg-stone-900'}`}><Briefcase size={14} className="inline mr-1 mb-0.5"/>ინვენტარი</button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[250px]">
-              {myProfileTab === 'stats' && (
-                <div className="space-y-5">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-stone-950/60 border border-white/5 rounded-xl p-4 text-center shadow-inner"><p className="text-[10px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.wins}</p><p className={`text-2xl font-mono font-black ${activeTheme.accent}`}>{profileData.stats?.gamesWon || 0}</p></div>
-                    <div className="bg-stone-950/60 border border-white/5 rounded-xl p-4 text-center shadow-inner"><p className="text-[10px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.winRate}</p><p className="text-2xl font-mono font-black text-emerald-400">{winRate}%</p></div>
-                  </div>
-                  <div>
-                    <h4 className={`text-[10px] font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2 uppercase tracking-widest mb-3`}><Award size={14} className={activeTheme.accent} /> {t.achievements}</h4>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {AVAILABLE_BADGES.map(b => { 
-                        const hasIt = myAchievements.includes(b.id); 
-                        return ( 
-                          <div key={b.id} title={b.name} className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all ${hasIt ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-50 border-current ${activeTheme.accent} text-lg shadow-[0_0_10px_currentColor]` : 'bg-stone-950/50 border-white/5 text-sm opacity-30 grayscale'}`}>
-                            <span className="drop-shadow-md">{b.icon}</span>
-                          </div> 
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {myProfileTab === 'inventory' && (
-                <div className="space-y-4">
-                  <div className="flex gap-2 bg-stone-900/50 border-b border-white/5 pb-2">
-                    <button onClick={() => setInvSubTab('avatars')} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all ${invSubTab === 'avatars' ? activeTheme.accent + ' bg-white/5' : 'text-stone-500'}`}>ავატარები ({unlockedAvatars.length})</button>
-                    <button onClick={() => setInvSubTab('tables')} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all ${invSubTab === 'tables' ? activeTheme.accent + ' bg-white/5' : 'text-stone-500'}`}>მაგიდები ({unlockedTables.length})</button>
-                    <button onClick={() => setInvSubTab('cards')} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all ${invSubTab === 'cards' ? activeTheme.accent + ' bg-white/5' : 'text-stone-500'}`}>კარტები ({unlockedCards.length})</button>
-                  </div>
-                  
-                  {invSubTab === 'avatars' && (
-                    <div className="grid grid-cols-4 md:grid-cols-5 gap-3">
-                      {SHOP_ITEMS.avatars.filter(item => unlockedAvatars.includes(item.id)).map(item => { 
-                        const isEquipped = profileData.avatar === item.id; 
-                        return ( <div key={item.id} className={`p-2 rounded-xl flex flex-col items-center gap-2 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5'}`}><span className="text-3xl drop-shadow-md">{item.id}</span>{isEquipped ? <span className="text-[8px] font-black text-stone-500 uppercase">მთავარი</span> : <button onClick={() => handleEquipItem('avatar', item.id)} className={`text-[8px] font-black ${activeTheme.accent} hover:underline uppercase`}>დაყენება</button>}</div> )
-                      })}
-                    </div>
-                  )}
-
-                  {invSubTab === 'tables' && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {SHOP_ITEMS.tables.filter(item => item.isVipExclusive ? amIVip : unlockedTables.includes(item.id)).map(item => { 
-                        const isEquipped = profileData.tableTheme === item.id || (!profileData.tableTheme && item.id === 'wood'); 
-                        return ( <div key={item.id} className={`p-2 rounded-xl border flex flex-col gap-2 ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5'}`}><div className="h-12 rounded-lg border border-white/10" style={{ background: themeStyles[item.id]?.bg || themeStyles.wood.bg }}></div><div className="flex justify-between items-center px-1"><span className={`text-[9px] font-bold uppercase truncate ${item.isVipExclusive ? 'text-yellow-400' : 'text-stone-200'}`}>{item.name}</span>{isEquipped ? <span className="text-[8px] font-black text-stone-500">✔</span> : <button onClick={() => handleEquipItem('table', item.id)} className={`text-[8px] font-black ${activeTheme.accent} px-2 py-1 rounded bg-stone-900 border border-white/5 hover:bg-stone-800`}>არჩევა</button>}</div></div> )
-                      })}
-                    </div>
-                  )}
-
-                  {invSubTab === 'cards' && (
-                    <div className="grid grid-cols-3 gap-3">
-                      {SHOP_ITEMS.cards.filter(item => unlockedCards.includes(item.id)).map(item => { 
-                        const isEquipped = profileData.cardBack === item.id || (!profileData.cardBack && item.id === 'classic'); 
-                        const cardStyles = { classic: 'bg-blue-900 border-white/20', crimson: 'bg-red-900 border-white/20', gold: 'bg-yellow-600 border-yellow-400', obsidian: 'bg-stone-950 border-stone-700', cyber: 'bg-fuchsia-900 border-fuchsia-400', royal: 'bg-purple-900 border-yellow-500', hacker: 'bg-black border-green-500' };
-                        return ( <div key={item.id} className={`p-3 rounded-xl flex flex-col items-center gap-2 border ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5'}`}><div className={`w-8 h-12 rounded ${cardStyles[item.id] || cardStyles.classic} border`}></div><span className="text-[8px] font-bold uppercase text-stone-300 truncate w-full text-center">{item.name}</span>{isEquipped ? <span className="text-[8px] font-black text-stone-500">✔</span> : <button onClick={() => handleEquipItem('card', item.id)} className={`text-[8px] font-black ${activeTheme.accent} hover:underline uppercase`}>არჩევა</button>}</div> )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+      {/* 🟢 ჩემი პროფილის ფანჯარა (Premium ID Modal) */}
+      {isMyProfileOpen && (
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
+          <div className={`${activeTheme.card} border ${amIVip ? 'border-yellow-500/30' : 'border-white/10'} rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative overflow-hidden group`}>
             
-            <button onClick={() => setIsMyProfileOpen(false)} className="w-full py-3 mt-4 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner uppercase">{t.close}</button>
+            {/* VIP Glow Background მოდალის შიგნით */}
+            {amIVip && <div className="absolute top-0 right-0 w-48 h-48 bg-yellow-500/10 blur-[60px] rounded-full pointer-events-none"></div>}
+            
+            {/* 1. ჰედერი (ავატარი და ინფო) */}
+            <div className="flex items-center gap-4 border-b border-white/5 pb-5 relative z-10">
+                <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-4xl border ${amIVip ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.3)]' : 'border-white/10 shadow-xl'} shrink-0 relative`}>
+                    {myAvatar}
+                    <div className={`absolute -bottom-2 -right-2 w-7 h-7 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] md:text-xs font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
+                </div>
+                
+                <div className="flex flex-col flex-1 min-w-0 justify-center">
+                    <h2 className="text-lg md:text-xl font-black text-stone-100 flex items-center gap-1.5 truncate drop-shadow-md">
+                        {safeUsername}
+                        {amIVip && <Crown size={18} className="text-yellow-500 shrink-0 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]" />}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                        <span className={`text-[9px] md:text-[10px] font-black uppercase px-2 py-0.5 rounded border ${myLeague.bg} ${myLeague.border} ${myLeague.color} shadow-sm`}>{myLeague.name}</span>
+                        <div className="flex items-center gap-1 bg-stone-950/60 px-2 py-0.5 rounded border border-white/5 shadow-inner">
+                            <Coins size={12} className="text-yellow-500"/>
+                            <span className="text-[10px] md:text-xs font-mono font-bold text-stone-200">{myCoins}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 2. XP პროგრესი (უფრო თვალსაჩინო) */}
+            <div className="mt-5 mb-6 relative z-10">
+                <div className="flex justify-between text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">
+                    <span>XP პროგრესი</span>
+                    <span className={activeTheme.accent}>{currentXp} / {targetXp}</span>
+                </div>
+                <div className="w-full h-2 md:h-2.5 bg-stone-950 rounded-full overflow-hidden border border-white/5 shadow-inner">
+                    <div className={`h-full ${activeTheme.accentBg} rounded-full transition-all duration-1000 relative`} style={{ width: `${xpPercentage}%` }}>
+                        <div className="absolute top-0 right-0 bottom-0 w-4 bg-white/40 blur-[2px]"></div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 3. ნავიგაცია (ტაბები) */}
+            <div className="flex gap-2 mb-5 bg-stone-950/60 p-1.5 rounded-xl border border-white/5 relative z-10 shadow-inner">
+                <button onClick={() => setProfileTab('stats')} className={`flex-1 py-2 md:py-2.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${profileTab === 'stats' ? `${activeTheme.accentBg} text-stone-950 shadow-md scale-100` : 'text-stone-500 hover:text-stone-300 hover:bg-white/5 scale-95'}`}>სტატისტიკა</button>
+                <button onClick={() => setProfileTab('inventory')} className={`flex-1 py-2 md:py-2.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${profileTab === 'inventory' ? `${activeTheme.accentBg} text-stone-950 shadow-md scale-100` : 'text-stone-500 hover:text-stone-300 hover:bg-white/5 scale-95'}`}>ინვენტარი</button>
+            </div>
+
+            {/* 4. შიგთავსი (სტატისტიკა / ინვენტარი) */}
+            <div className="relative z-10 min-h-[140px]">
+                {profileTab === 'stats' && (
+                    <div className="space-y-5 animate-in fade-in duration-300">
+                        {/* სტატისტიკის ყუთები */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 md:p-4 text-center shadow-inner hover:border-white/10 transition-colors">
+                                <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-stone-500">მოგება</p>
+                                <p className="text-xl md:text-2xl font-mono font-black text-stone-200 mt-1">{profileData?.stats?.gamesWon || 0}</p>
+                            </div>
+                            <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 md:p-4 text-center shadow-inner hover:border-white/10 transition-colors">
+                                <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-stone-500">WIN %</p>
+                                <p className={`text-xl md:text-2xl font-mono font-black ${activeTheme.accent} mt-1 drop-shadow-md`}>{winRate}%</p>
+                            </div>
+                        </div>
+                        
+                        {/* მიღწევები */}
+                        <div>
+                            <h3 className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-stone-500 mb-3 flex items-center gap-1.5"><Trophy size={14} className={activeTheme.accent}/> მიღწევები</h3>
+                            <div className="flex flex-wrap gap-2.5">
+                                {profileData?.achievements?.length > 0 ? (
+                                    profileData.achievements.map((ach, idx) => (
+                                        <div key={idx} className={`w-8 h-8 md:w-10 md:h-10 rounded-full bg-stone-900 border ${activeTheme.accent.replace('text-', 'border-')} flex items-center justify-center shadow-[0_0_10px_currentColor] text-sm md:text-base ${activeTheme.accent} hover:scale-110 transition-transform`} title={ach}>
+                                            🏆
+                                        </div>
+                                    ))
+                                ) : (
+                                    <span className="text-[10px] font-bold text-stone-600 uppercase tracking-widest bg-stone-950/50 px-3 py-1.5 rounded-lg border border-white/5">ჯერ მიღწევები არ გაქვს</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {profileTab === 'inventory' && (
+                    <div className="flex flex-col items-center justify-center h-full text-stone-500 space-y-3 animate-in fade-in duration-300 py-6">
+                        <PackageOpen size={32} className="opacity-20" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">ინვენტარი ცარიელია</span>
+                    </div>
+                )}
+            </div>
+
+            {/* 5. დახურვის ღილაკი */}
+            <button onClick={() => setIsMyProfileOpen(false)} className="mt-6 w-full py-3 md:py-3.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-900 border border-white/10 hover:border-white/30 hover:bg-stone-800 transition-all text-stone-300 shadow-lg active:scale-95 relative z-10 flex items-center justify-center gap-2 group/btn">
+                <XCircle size={16} className="text-stone-500 group-hover/btn:text-rose-500 transition-colors" /> დახურვა
+            </button>
+            
           </div>
         </div>
       )}
