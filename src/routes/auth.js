@@ -397,3 +397,24 @@ router.post('/contact', async (req, res) => {
 });
 
 module.exports = router;
+
+// 🟢 ერთჯერადი სკრიპტი: ყველა ღია პაროლის იძულებითი დაშიფვრა (Migration)
+router.get('/force-hash-all', async (req, res) => {
+    try {
+        const users = await User.find({});
+        let updatedCount = 0;
+        
+        for (let user of users) {
+            // თუ პაროლი არ იწყება $2b$-თი (ანუ არ არის ბკრიპტით დაშიფრული)
+            if (user.password && !user.password.startsWith('$2b$')) {
+                const salt = await bcrypt.genSalt(10);
+                user.password = await bcrypt.hash(user.password, salt);
+                await user.save();
+                updatedCount++;
+            }
+        }
+        res.json({ message: `მონაცემთა ბაზა განახლდა! წარმატებით დაშიფრა ${updatedCount} ძველი პაროლი.` });
+    } catch (err) {
+        res.status(500).json({ message: 'შეცდომა მიგრაციისას' });
+    }
+});
