@@ -43,6 +43,7 @@ export default function App() {
   
   // 🟢 იღბლიანი ბორბლის State-ები
   const [isWheelOpen, setIsWheelOpen] = useState(false);
+  const [legalModal, setLegalModal] = useState(null);
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
   const [wheelSelectedSuit, setWheelSelectedSuit] = useState('❤️');
@@ -281,6 +282,86 @@ export default function App() {
               <button onClick={() => handleConfirmGameInvite('damka')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group"><div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2"><DamkaIcon type="red" size="lg" className="z-10 animate-bounce" /><DamkaIcon type="white" size="lg" className="mt-2 animate-bounce delay-100" /></div><span className="text-[10px] font-black uppercase tracking-widest text-stone-200">შაში</span></button>
             </div>
             <button onClick={() => setInviteTarget(null)} className="w-full mt-4 py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase">გაუქმება</button>
+          </div>
+        </div>
+      )}
+
+      {/* 🟢 იურიდიული და წესების ფანჯარა (Legal Modals) */}
+      {legalModal && (
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[250] flex items-center justify-center p-4 animate-in zoom-in-95 duration-200" onClick={(e) => { if(e.target === e.currentTarget) setLegalModal(null); }}>
+          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl font-sans relative flex flex-col max-h-[85vh]`}>
+            <button onClick={() => setLegalModal(null)} className="absolute top-4 right-4 text-stone-500 hover:text-stone-300 transition-colors">
+                <XCircle size={24} />
+            </button>
+
+            <h2 className={`text-lg md:text-xl font-black ${activeTheme.accent} uppercase tracking-wider mb-4 border-b border-white/10 pb-4`}>
+              {legalModal === 'siteRules' && 'საიტის წესები'}
+              {legalModal === 'gameRules' && 'თამაშის წესები'}
+              {legalModal === 'privacy' && 'კონფიდენციალურობის პოლიტიკა'}
+            </h2>
+
+            <div className="flex-1 overflow-y-auto pr-3 custom-scrollbar text-[10px] md:text-xs text-stone-300 space-y-4 font-medium leading-relaxed pb-4">
+              {legalModal === 'siteRules' && (
+                <>
+                  <h3 className="text-sm font-black text-stone-100 uppercase">1. ზოგადი დებულებები</h3>
+                  <p>Phurti Arena-ზე რეგისტრაციით და თამაშით თქვენ ეთანხმებით მოცემულ წესებს. ადმინისტრაცია იტოვებს უფლებას შეიტანოს ცვლილებები პლატფორმის მუშაობაში და წესებში.</p>
+                  
+                  <h3 className="text-sm font-black text-stone-100 uppercase mt-4">2. აკრძალული ქმედებები</h3>
+                  <ul className="list-disc pl-5 space-y-1.5 text-stone-400">
+                    <li>გლობალურ ან ოთახის ჩატში უცენზურო სიტყვების გამოყენება, სხვა მოთამაშის შეურაცხყოფა ან მუქარა.</li>
+                    <li>მესამე მხარის პროგრამების (ე.წ. ჩიტების/ბოტების) ან ხარვეზების გამოყენება უპირატესობის მოსაპოვებლად.</li>
+                    <li>თამაშის ხელოვნურად გაწელვა, მოწინააღმდეგისთვის გამიზნულად ხელის შეშლა და პროცესის საბოტაჟი.</li>
+                  </ul>
+                  <p className="text-rose-400 font-bold mt-2 bg-rose-500/10 p-2 rounded-lg border border-rose-500/20">აღნიშნული წესების დარღვევა გამოიწვევს ანგარიშის დროებით ან სამუდამო დაბლოკვას (ბანს) და დაგროვილი XP/მონეტების განულებას!</p>
+                </>
+              )}
+              {legalModal === 'gameRules' && (
+                <>
+                  <h3 className="text-sm font-black text-stone-100 uppercase mb-2">🃏 ფურთის წესები</h3>
+                  <p>ფურთი ტრადიციული ბანქოს თამაშია. მიზანია დარიგებების ციკლში შეაგროვოთ ქულები და პირველმა მიაღწიოთ მიზნობრივ ნიშნულს (11 ქულა).</p>
+                  <ul className="list-disc pl-5 space-y-2 mt-2 text-stone-400 mb-6">
+                    <li><strong>დარიგება:</strong> ძირს იდება 4 კარტი, მოთამაშეებსაც ურიგდებათ 4-4 კარტი.</li>
+                    <li><strong>წაღება:</strong> კარტის აჭრა/წაღება ხდება იმავე რიცხვის ან სურათის კარტით (მაგალითად: ძირს დადებულ 10-იანს წაიღებთ თქვენი 10-იანით).</li>
+                    <li><strong>ფურთი:</strong> თუ მოთამაშე აჭრის და ძირს აღარცერთ კარტს არ დატოვებს (გაასუფთავებს დაფას), ის იწერს "ფურთს". <em>გამონაკლისი:</em> ბოლო დარიგების ბოლო სვლაზე აღებული ფურთი არ ითვლება.</li>
+                    <li><strong>ქულების დათვლა 11 ქულამდე:</strong> 
+                      <ul className="list-circle pl-5 mt-1 space-y-1 text-stone-300">
+                        <li>მეტობა (ყველაზე მეტი კარტი) = 2 ქულა</li>
+                        <li>ჯვრების მეტობა (♣️) = 2 ქულა</li>
+                        <li>10 აგური (♦️) = 1 ქულა</li>
+                        <li>2 ჯვარი (♣️) = 1 ქულა</li>
+                        <li>თითოეული აღებული ფურთი = 1 ქულა</li>
+                      </ul>
+                    </li>
+                  </ul>
+
+                  <h3 className="text-sm font-black text-stone-100 uppercase mt-4 mb-2">🔴 შაშის (Damka) წესები</h3>
+                  <ul className="list-disc pl-5 space-y-1.5 mt-2 text-stone-400">
+                    <li><strong>მოძრაობა:</strong> მოთამაშეები მოძრაობენ დიაგონალურად მხოლოდ წინ, თითო სვლაზე თითო უჯრით.</li>
+                    <li><strong>აყვანა (მოკვლა):</strong> თუ მოწინააღმდეგის ქვის უკან უჯრა ცარიელია, სავალდებულოა მისი გადახტომა და აყვანა.</li>
+                    <li><strong>დამკა:</strong> როდესაც ქვა მიაღწევს დაფის ბოლო, მოწინააღმდეგის ხაზს, ის ხდება "დამკა". დამკას შეუძლია დიაგონალზე იმოძრაოს შეუზღუდავი რაოდენობის უჯრაზე როგორც წინ, ისე უკან.</li>
+                    <li><strong>გამარჯვება:</strong> იგებს ის, ვინც აიყვანს მოწინააღმდეგის ყველა ქვას ან დაბლოკავს მას ისე, რომ სვლა აღარ შეეძლოს.</li>
+                  </ul>
+                </>
+              )}
+              {legalModal === 'privacy' && (
+                <>
+                  <h3 className="text-sm font-black text-stone-100 uppercase">1. მონაცემთა შეგროვება და დაცვა</h3>
+                  <p>ჩვენ ვაგროვებთ მხოლოდ იმ მინიმალურ მონაცემებს, რაც აუცილებელია თქვენი სათამაშო გამოცდილებისთვის: მოთამაშის სახელი (Username), პაროლი (ინახება დაშიფრული სახით) და თქვენი თამაშის სტატისტიკა.</p>
+                  
+                  <h3 className="text-sm font-black text-stone-100 uppercase mt-4">2. მესამე პირებთან გაზიარება</h3>
+                  <p>თქვენი პერსონალური და სათამაშო მონაცემები სრულიად კონფიდენციალურია. ისინი არ გაიყიდება და არ გადაეცემა მესამე პირებს მარკეტინგული ან სხვა კომერციული მიზნებისთვის.</p>
+                  
+                  <h3 className="text-sm font-black text-stone-100 uppercase mt-4">3. მონაცემების წაშლა</h3>
+                  <p>თქვენ ნებისმიერ დროს გაქვთ უფლება მოითხოვოთ თქვენი ანგარიშისა და მასზე მიბმული ყველა მონაცემის სრულად განადგურება ჩვენი სისტემიდან ადმინისტრაციასთან დაკავშირებით.</p>
+                </>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-white/10 shrink-0">
+                <button onClick={() => setLegalModal(null)} className={`w-full py-3 ${activeTheme.accentBg} text-stone-950 font-black text-xs md:text-sm uppercase rounded-xl transition-all active:scale-95 shadow-md tracking-widest`}>
+                    გასაგებია
+                </button>
+            </div>
           </div>
         </div>
       )}
@@ -974,11 +1055,11 @@ export default function App() {
 
                   {/* 🟢 საიტის წესები და პოლიტიკა */}
                   <div className="flex flex-wrap justify-center items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-stone-500 px-4 text-center">
-                      <button onClick={() => alert('აქ გაიხსნება საიტის წესები')} className="hover:text-stone-300 transition-colors">საიტის წესები</button>
+                      <button onClick={() => setLegalModal('siteRules')} className="hover:text-stone-300 transition-colors">საიტის წესები</button>
                       <span className="text-stone-700 hidden sm:inline">•</span>
-                      <button onClick={() => alert('აქ გაიხსნება თამაშის წესები')} className="hover:text-stone-300 transition-colors">თამაშის წესები</button>
+                      <button onClick={() => setLegalModal('gameRules')} className="hover:text-stone-300 transition-colors">თამაშის წესები</button>
                       <span className="text-stone-700 hidden sm:inline">•</span>
-                      <button onClick={() => alert('აქ გაიხსნება კონფიდენციალურობის პოლიტიკა')} className="hover:text-stone-300 transition-colors">კონფიდენციალურობა</button>
+                      <button onClick={() => setLegalModal('privacy')} className="hover:text-stone-300 transition-colors">კონფიდენციალურობა</button>
                   </div>
 
               </div>
