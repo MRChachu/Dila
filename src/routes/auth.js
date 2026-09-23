@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const bcrypt = require('bcrypt'); // 🟢 დამატებულია პაროლების დაშიფვრისთვის
 
 const ALL_DAILY_QUESTS = [
   { questId: 'play_ranked', title: 'ითამაშე 3 რეიტინგული მატჩი', target: 3, xpReward: 15 },
@@ -50,12 +51,16 @@ router.post('/register', async (req, res) => {
     const existingUser = await User.findOne({ username: caseInsensitive(username) });
     if (existingUser) return res.status(400).json({ message: 'ეს სახელი უკვე დაკავებულია!' });
 
-    // 🟢 აქ დავამატეთ coins: 1000 საწყისი ბალანსისთვის
+    // 🟢 3. პაროლის დაშიფვრა (Hashing)
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // 🟢 4. მომხმარებლის შენახვა
     const newUser = new User({ 
       username, 
       dateOfBirth, 
       secretWord, 
-      password, 
+      password: hashedPassword, // ვინახავთ დაშიფრულ პაროლს
       coins: 1000 
     }); 
     await newUser.save();
@@ -72,10 +77,30 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     
-    // ვპოულობთ მოთამაშეს, მნიშვნელობა არ აქვს "Chachu" დაწერა თუ "chachu"
+    // ვპოულობთ მოთამაშეს
     const user = await User.findOne({ username: caseInsensitive(username) });
     
-    if (!user || user.password !== password) {
+    if (!user) {
+      return res.status(400).json({ message: 'მომხმარებელი ან პაროლი არასწორია!' });
+    }
+
+    let isMatch = false;
+
+    // 🟢 ვამოწმებთ, პაროლი უკვე დაშიფრულია (იწყება $2b$-თი) თუ ძველი ღია ტექსტია
+    if (user.password && user.password.startsWith('$2b$')) {
+        isMatch = await bcrypt.compare(password, user.password);
+    } else {
+        // თუ ჯერ კიდევ ძველი (ღია) პაროლია
+        isMatch = (user.password === password);
+        if (isMatch) {
+            // რადგან სწორი პაროლი შეიყვანა, ეგრევე ვშიფრავთ და ვინახავთ ბაზაში (მიგრაცია)
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(password, salt);
+            await user.save();
+        }
+    }
+    
+    if (!isMatch) {
       return res.status(400).json({ message: 'მომხმარებელი ან პაროლი არასწორია!' });
     }
     
@@ -121,7 +146,9 @@ router.post('/reset-password', async (req, res) => {
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
     if (!regex.test(newPassword)) return res.status(400).json({ message: 'ახალი პაროლი არ არის საკმარისად ძლიერი!' });
 
-    user.password = newPassword;
+    // 🟢 ახალი პაროლის დაშიფვრა აღდგენისას
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
     res.status(200).json({ message: 'პაროლი წარმატებით შეიცვალა! შეგიძლიათ შეხვიდეთ სისტემაში.' });
@@ -137,12 +164,22 @@ router.post('/change-password', async (req, res) => {
     const user = await User.findOne({ username: caseInsensitive(username) });
     
     if (!user) return res.status(404).json({ message: 'მომხმარებელი ვერ მოიძებნა' });
-    if (user.password !== currentPassword) return res.status(400).json({ message: 'მიმდინარე პაროლი არასწორია' });
+
+    let isMatch = false;
+    if (user.password && user.password.startsWith('$2b$')) {
+        isMatch = await bcrypt.compare(currentPassword, user.password);
+    } else {
+        isMatch = (user.password === currentPassword);
+    }
+
+    if (!isMatch) return res.status(400).json({ message: 'მიმდინარე პაროლი არასწორია' });
 
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,}$/;
     if (!regex.test(newPassword)) return res.status(400).json({ message: 'ახალი პაროლი არ არის საკმარისად ძლიერი!' });
 
-    user.password = newPassword;
+    // 🟢 ახალი პაროლის დაშიფვრა
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
     res.status(200).json({ message: 'პაროლი წარმატებით შეიცვალა!' });
@@ -267,25 +304,23 @@ router.get('/profile/:username', async (req, res) => {
     const now = new Date();
     let needsSave = false;
 
-    // თუ მისიები არ აქვს ან 24 საათი გავიდა - ვაგენერირებთ თავიდან
     if (!user.dailyQuests || user.dailyQuests.length === 0 || (user.lastQuestGeneration && (now - new Date(user.lastQuestGeneration)) > 24 * 60 * 60 * 1000)) {
         const shuffled = [...ALL_DAILY_QUESTS].sort(() => 0.5 - Math.random());
         user.dailyQuests = shuffled.slice(0, 3).map(q => ({ questId: q.questId, title: q.title, target: q.target, progress: 0, xpReward: q.xpReward, isCompleted: false }));
         user.lastQuestGeneration = now;
         needsSave = true;
     } else {
-        // 🟢 ვაახლებთ უკვე არსებული მისიების XP-ს ახალი (შემცირებული) მნიშვნელობებით
         user.dailyQuests.forEach(userQuest => {
             const masterQuest = ALL_DAILY_QUESTS.find(q => q.questId === userQuest.questId);
             if (masterQuest && userQuest.xpReward !== masterQuest.xpReward) {
                 userQuest.xpReward = masterQuest.xpReward;
-                needsSave = true; // ვიმახსოვრებთ, რომ ბაზაში რაღაც შეიცვალა
+                needsSave = true;
             }
         });
     }
 
     if (needsSave) {
-        user.markModified('dailyQuests'); // სავალდებულოა, რადგან array-ში object შევცვალეთ
+        user.markModified('dailyQuests');
         await user.save();
     }
     
@@ -308,27 +343,22 @@ router.post('/daily-reward', async (req, res) => {
     const todayString = now.toISOString().split('T')[0];
     const lastRewardString = user.lastRewardDate ? user.lastRewardDate.toISOString().split('T')[0] : null;
 
-    // თუ დღეს უკვე აიღო ბონუსი
     if (todayString === lastRewardString) {
       return res.json({ success: false, message: 'ბონუსი დღეს უკვე აღებულია!' });
     }
 
-    // გუშინდელი თარიღის გამოთვლა
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayString = yesterday.toISOString().split('T')[0];
 
-    // ვამოწმებთ, გუშინ თუ შემოვიდა
     if (lastRewardString === yesterdayString) {
       user.dailyStreak = (user.dailyStreak || 0) + 1; 
     } else {
       user.dailyStreak = 1; 
     }
 
-    // ბონუსის გამოთვლა: 50 საბაზისო მონეტა + 10 მონეტა ყოველ სთრიქზე
     const rewardCoins = 50 + (user.dailyStreak * 10);
 
-    // ვუნახავთ მონაცემებს
     user.coins = (user.coins || 0) + rewardCoins;
     user.lastRewardDate = now;
     await user.save();
@@ -357,7 +387,6 @@ router.post('/contact', async (req, res) => {
       return res.status(400).json({ message: 'შეტყობინების ტექსტი სავალდებულოა!' });
     }
 
-    // ლოგირება კონსოლში (რეალურ გარემოში შეგიძლიათ ბაზაში შეინახოთ ან მეილზე გააგზავნოთ)
     console.log(`[CONTACT] ახალი მესიჯი: თემა - ${subject}, ელ-ფოსტა - ${email}, ტექსტი - ${message}`);
 
     res.json({ success: true, message: 'თქვენი შეტყობინება წარმატებით გაიგზავნა! მადლობა.' });
