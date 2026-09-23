@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
 import DamkaBoard from './DamkaBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, UserMinus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Sparkles, Share2, Briefcase } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, UserMinus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Sparkles, Share2, PackageOpen, Briefcase } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
@@ -603,16 +603,38 @@ export default function App() {
                             </div>
                         </div>
                         
-                        {/* მიღწევები */}
+                        {/* 🟢 განახლებული მიღწევები */}
                         <div>
                             <h3 className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-stone-500 mb-3 flex items-center gap-1.5"><Trophy size={14} className={activeTheme.accent}/> მიღწევები</h3>
-                            <div className="flex flex-wrap gap-2.5">
+                            <div className="flex flex-wrap gap-3">
                                 {profileData?.achievements?.length > 0 ? (
-                                    profileData.achievements.map((ach, idx) => (
-                                        <div key={idx} className={`w-8 h-8 md:w-10 md:h-10 rounded-full bg-stone-900 border ${activeTheme.accent.replace('text-', 'border-')} flex items-center justify-center shadow-[0_0_10px_currentColor] text-sm md:text-base ${activeTheme.accent} hover:scale-110 transition-transform`} title={ach}>
-                                            🏆
-                                        </div>
-                                    ))
+                                    profileData.achievements.map((ach, idx) => {
+                                        // 🟢 მიღწევების ლამაზი იკონები და სახელები ბაზის მიხედვით
+                                        const achData = {
+                                            'wc_play': { icon: '🎮', name: 'პირველი მატჩი' },
+                                            'wc_win': { icon: '👑', name: 'პირველი მოგება' },
+                                            'legionnaire': { icon: '⚔️', name: 'ლეგიონერი' },
+                                            'first_win': { icon: '🥇', name: 'პირველი გამარჯვება' },
+                                            'veteran': { icon: '🎖️', name: 'ვეტერანი' },
+                                            'wc_avatar': { icon: '🖼️', name: 'ახალი იმიჯი' },
+                                            'collector': { icon: '🎒', name: 'კოლექციონერი' },
+                                            'diamond_10': { icon: '♦️', name: '10 აგური' },
+                                            'club_2': { icon: '♣️', name: '2 ჯვარი' },
+                                            'sweeper': { icon: '🧹', name: 'მაგიდის მგველი' }
+                                        };
+                                        
+                                        const data = achData[ach] || { icon: '🏆', name: ach };
+
+                                        return (
+                                            <div key={idx} className="relative group/ach w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-stone-800 to-stone-900 border border-white/10 flex items-center justify-center hover:border-yellow-500/50 hover:shadow-[0_0_15px_rgba(234,179,8,0.3)] transition-all cursor-help">
+                                                <span className="text-lg md:text-xl drop-shadow-md">{data.icon}</span>
+                                                {/* Tooltip - გამოჩნდება მაუსის მიტანისას */}
+                                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-stone-800 text-stone-200 text-[9px] font-bold px-2.5 py-1.5 rounded-lg opacity-0 group-hover/ach:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl border border-white/10">
+                                                    {data.name}
+                                                </div>
+                                            </div>
+                                        );
+                                    })
                                 ) : (
                                     <span className="text-[10px] font-bold text-stone-600 uppercase tracking-widest bg-stone-950/50 px-3 py-1.5 rounded-lg border border-white/5">ჯერ მიღწევები არ გაქვს</span>
                                 )}
