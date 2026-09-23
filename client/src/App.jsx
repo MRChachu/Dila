@@ -429,24 +429,54 @@ export default function App() {
 
             <div className="relative z-10 flex flex-col items-center">
                 
-                {/* 🟢 2. ვიზუალური "ბორბალი" და სერვერის შედეგის პირდაპირი გამოტანა */}
-                <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full border-4 ${wheelSpinning ? `border-yellow-500 border-t-transparent animate-spin shadow-[0_0_20px_rgba(234,179,8,0.5)]` : 'border-stone-800 shadow-[0_0_30px_rgba(0,0,0,0.5)]'} flex items-center justify-center mb-6 relative bg-stone-950/50 transition-all`}>
+                {/* 🟢 2. გაუმჯობესებული ნეონის "ბორბალი" */}
+                <div className={`w-36 h-36 md:w-44 md:h-44 rounded-full border-[3px] md:border-4 flex items-center justify-center mb-6 relative transition-all duration-500 overflow-hidden ${
+                    wheelSpinning ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-stone-900/80' : 
+                    (wheelResultMsg && typeof wheelResultMsg === 'object' && wheelResultMsg.win) || (typeof wheelResultMsg === 'string' && (wheelResultMsg.includes('მოიგ') || wheelResultMsg.includes('გილოცავ'))) ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)] bg-emerald-950/20' :
+                    wheelResultMsg ? 'border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.2)] bg-rose-950/20' :
+                    'border-stone-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] bg-stone-950/50'
+                }`}>
+                    
+                    {/* შიდა მბზინავი რგოლი (Depth effect) */}
+                    <div className="absolute inset-2 rounded-full border border-white/5 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+
                     {wheelSpinning ? (
-                        <div className="text-5xl animate-spin" style={{ animationDuration: '0.5s' }}>⏳</div>
+                        /* 🟢 ტრიალის ანიმაცია: მასტები სწრაფად იცვლება წრეზე */
+                        <div className="relative w-full h-full animate-spin flex items-center justify-center" style={{ animationDuration: '0.4s' }}>
+                            <div className="absolute top-2 text-3xl text-rose-500 drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]">❤️</div>
+                            <div className="absolute bottom-2 text-3xl text-stone-300 drop-shadow-[0_0_10px_rgba(214,211,209,0.8)]">♣️</div>
+                            <div className="absolute left-2 text-3xl text-rose-500 drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]">♦️</div>
+                            <div className="absolute right-2 text-3xl text-stone-300 drop-shadow-[0_0_10px_rgba(214,211,209,0.8)]">♠️</div>
+                            <div className="absolute inset-0 bg-yellow-500/10 rounded-full blur-md"></div>
+                        </div>
                     ) : wheelResultMsg ? (
-                        <div className="text-center animate-in zoom-in duration-300 p-2 flex flex-col items-center justify-center w-full h-full">
-                            <span className={`text-[10px] md:text-[11px] font-black uppercase tracking-wider drop-shadow-md text-center leading-relaxed ${
-                                (typeof wheelResultMsg === 'string' && (wheelResultMsg.includes('მოიგ') || wheelResultMsg.includes('გილოცავ'))) 
-                                || (typeof wheelResultMsg === 'object' && wheelResultMsg.win)
-                                ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' 
-                                : 'text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]'
+                        /* 🟢 შედეგის გამოტანა */
+                        <div className="text-center animate-in zoom-in duration-300 p-2 flex flex-col items-center justify-center w-full h-full z-10">
+                            
+                            {/* გიგანტური მასტის იკონა (ბექენდიდან წამოღებული, ან ნაგულისხმევი) */}
+                            {wheelResultMsg.winningSuit && (
+                                <div className={`text-5xl md:text-6xl mb-1 animate-bounce ${
+                                    ['❤️', '♦️'].includes(wheelResultMsg.winningSuit) ? 'text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.8)]' : 'text-stone-200 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]'
+                                }`}>
+                                    {wheelResultMsg.winningSuit}
+                                </div>
+                            )}
+
+                            {/* შეტყობინების ტექსტი */}
+                            <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-relaxed px-2 ${
+                                (typeof wheelResultMsg === 'object' && wheelResultMsg.win) || (typeof wheelResultMsg === 'string' && (wheelResultMsg.includes('მოიგ') || wheelResultMsg.includes('გილოცავ')))
+                                ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' 
+                                : 'text-rose-400/80'
                             }`}>
-                                {/* ზუსტად სერვერის ტექსტის გამოტანა */}
                                 {typeof wheelResultMsg === 'object' ? (wheelResultMsg.message || wheelResultMsg.msg || wheelResultMsg.text) : wheelResultMsg}
                             </span>
                         </div>
                     ) : (
-                        <div className="text-5xl opacity-50 drop-shadow-md hover:scale-110 transition-transform">🎡</div>
+                        /* 🟢 საწყისი (უმოქმედო) მდგომარეობა */
+                        <div className="flex flex-col items-center justify-center opacity-40 hover:opacity-100 hover:scale-110 transition-all duration-300 cursor-default">
+                            <Dices size={40} className="drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] mb-2" />
+                            <span className="text-[8px] font-black tracking-widest uppercase">დაატრიალე</span>
+                        </div>
                     )}
                 </div>
 
