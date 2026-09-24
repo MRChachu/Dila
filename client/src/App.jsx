@@ -429,80 +429,89 @@ export default function App() {
 
             <div className="relative z-10 flex flex-col items-center">
                 
-                {/* 🟢 2. გაუმჯობესებული ნეონის "ბორბალი" */}
-                <div className={`w-36 h-36 md:w-44 md:h-44 rounded-full border-[3px] md:border-4 flex items-center justify-center mb-6 relative transition-all duration-500 overflow-hidden ${
-                    wheelSpinning ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-stone-900/80' : 
-                    (wheelResultMsg && typeof wheelResultMsg === 'object' && wheelResultMsg.win) || (typeof wheelResultMsg === 'string' && (wheelResultMsg.includes('მოიგ') || wheelResultMsg.includes('გილოცავ') || wheelResultMsg.includes('მოგებ'))) ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)] bg-emerald-950/20' :
-                    wheelResultMsg ? 'border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.2)] bg-rose-950/20' :
-                    'border-stone-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] bg-stone-950/50'
-                }`}>
+                {/* 🟢 2. გაუმჯობესებული ნეონის "ბორბალი" ჭკვიანი ლოგიკით */}
+                {(() => {
+                    // 1. ტექსტის უსაფრთხოდ ამოღება (იქნება ეს ობიექტი თუ პირდაპირ ტექსტი)
+                    const msgStr = typeof wheelResultMsg === 'object' && wheelResultMsg !== null 
+                        ? String(wheelResultMsg.message || wheelResultMsg.msg || wheelResultMsg.text || '') 
+                        : String(wheelResultMsg || '');
+                        
+                    // 2. მოგების დადგენა (ტექსტში ვეძებთ მოგების სიტყვებს ან პლუს ნიშანს)
+                    const isWin = (typeof wheelResultMsg === 'object' && wheelResultMsg?.win === true) 
+                        || msgStr.includes('მოიგ') 
+                        || msgStr.includes('გილოცავ') 
+                        || msgStr.includes('მოგებ') 
+                        || msgStr.includes('+');
+
+                    // 3. მასტის პოვნა
+                    let suit = null;
+                    if (typeof wheelResultMsg === 'object' && wheelResultMsg?.winningSuit) {
+                        suit = wheelResultMsg.winningSuit;
+                    } else if (msgStr.includes('❤️')) suit = '❤️';
+                    else if (msgStr.includes('♣️')) suit = '♣️';
+                    else if (msgStr.includes('♦️')) suit = '♦️';
+                    else if (msgStr.includes('♠️')) suit = '♠️';
+
+                    // 4. თუ მოვიგეთ და მასტი ტექსტში არ ერია, ვიღებთ მომხმარებლის არჩეულს
+                    if (isWin && !suit && typeof wheelSelectedSuit !== 'undefined') {
+                        suit = wheelSelectedSuit;
+                    }
+
+                    // დინამიური კლასები ბორბლის ფერებისთვის
+                    let wheelContainerClass = "w-36 h-36 md:w-44 md:h-44 rounded-full border-[3px] md:border-4 flex items-center justify-center mb-6 relative transition-all duration-500 overflow-hidden ";
                     
-                    {/* შიდა მბზინავი რგოლი (Depth effect) */}
-                    <div className="absolute inset-2 rounded-full border border-white/5 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+                    if (wheelSpinning) {
+                        wheelContainerClass += "border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-stone-900/80";
+                    } else if (wheelResultMsg && isWin) {
+                        wheelContainerClass += "border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)] bg-emerald-950/20";
+                    } else if (wheelResultMsg && !isWin) {
+                        wheelContainerClass += "border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.2)] bg-rose-950/20";
+                    } else {
+                        wheelContainerClass += "border-stone-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] bg-stone-950/50";
+                    }
 
-                    {wheelSpinning ? (
-                        /* 🟢 ტრიალის ანიმაცია: მასტები სწრაფად იცვლება წრეზე */
-                        <div className="relative w-full h-full animate-spin flex items-center justify-center" style={{ animationDuration: '0.4s' }}>
-                            <div className="absolute top-2 text-3xl text-rose-500 drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]">❤️</div>
-                            <div className="absolute bottom-2 text-3xl text-stone-300 drop-shadow-[0_0_10px_rgba(214,211,209,0.8)]">♣️</div>
-                            <div className="absolute left-2 text-3xl text-rose-500 drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]">♦️</div>
-                            <div className="absolute right-2 text-3xl text-stone-300 drop-shadow-[0_0_10px_rgba(214,211,209,0.8)]">♠️</div>
-                            <div className="absolute inset-0 bg-yellow-500/10 rounded-full blur-md"></div>
-                        </div>
-                    ) : wheelResultMsg ? (
-                        /* 🟢 შედეგის გამოტანა გონიერი ამომცნობი ლოგიკით */
-                        <div className="text-center animate-in zoom-in duration-300 p-2 flex flex-col items-center justify-center w-full h-full z-10">
-                            {(() => {
-                                // 1. ვიღებთ ტექსტს
-                                const msgString = typeof wheelResultMsg === 'object' ? (wheelResultMsg.message || wheelResultMsg.msg || wheelResultMsg.text) : wheelResultMsg;
-                                
-                                // 2. ვამოწმებთ მოგებაა თუ წაგება (დაემატა "მოგებ")
-                                const isWin = typeof wheelResultMsg === 'object' ? wheelResultMsg.win : (msgString.includes('მოიგ') || msgString.includes('გილოცავ') || msgString.includes('მოგებ'));
-                                
-                                // 3. ვეძებთ მასტს
-                                let suit = null;
-                                if (typeof wheelResultMsg === 'object' && wheelResultMsg.winningSuit) {
-                                    suit = wheelResultMsg.winningSuit;
-                                } else if (typeof msgString === 'string') {
-                                    if (msgString.includes('❤️')) suit = '❤️';
-                                    else if (msgString.includes('♣️')) suit = '♣️';
-                                    else if (msgString.includes('♦️')) suit = '♦️';
-                                    else if (msgString.includes('♠️')) suit = '♠️';
-                                }
-                                
-                                // 4. თუ მოვიგეთ და ტექსტში მასტი არ იყო, ვიღებთ მომხმარებლის არჩეულ მასტს
-                                if (isWin && !suit) {
-                                    suit = wheelSelectedSuit;
-                                }
+                    return (
+                        <div className={wheelContainerClass}>
+                            {/* შიდა მბზინავი რგოლი (Depth effect) */}
+                            <div className="absolute inset-2 rounded-full border border-white/5 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
 
-                                return (
-                                    <>
-                                        {/* გიგანტური მანათობელი მასტის იკონა */}
-                                        {suit && (
-                                            <div className={`text-5xl md:text-6xl mb-1 animate-bounce ${
-                                                ['❤️', '♦️'].includes(suit) ? 'text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.8)]' : 'text-stone-200 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]'
-                                            }`}>
-                                                {suit}
-                                            </div>
-                                        )}
-                                        {/* შეტყობინების ტექსტი */}
-                                        <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-relaxed px-2 ${
-                                            isWin ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-rose-400/80'
+                            {wheelSpinning ? (
+                                /* 🟢 ტრიალის ანიმაცია */
+                                <div className="relative w-full h-full animate-spin flex items-center justify-center" style={{ animationDuration: '0.4s' }}>
+                                    <div className="absolute top-2 text-3xl text-rose-500 drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]">❤️</div>
+                                    <div className="absolute bottom-2 text-3xl text-stone-300 drop-shadow-[0_0_10px_rgba(214,211,209,0.8)]">♣️</div>
+                                    <div className="absolute left-2 text-3xl text-rose-500 drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]">♦️</div>
+                                    <div className="absolute right-2 text-3xl text-stone-300 drop-shadow-[0_0_10px_rgba(214,211,209,0.8)]">♠️</div>
+                                    <div className="absolute inset-0 bg-yellow-500/10 rounded-full blur-md"></div>
+                                </div>
+                            ) : wheelResultMsg ? (
+                                /* 🟢 შედეგის გამოტანა */
+                                <div className="text-center animate-in zoom-in duration-300 p-2 flex flex-col items-center justify-center w-full h-full z-10">
+                                    {/* გიგანტური მანათობელი მასტის იკონა */}
+                                    {suit && (
+                                        <div className={`text-5xl md:text-6xl mb-1 animate-bounce ${
+                                            ['❤️', '♦️'].includes(suit) ? 'text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.8)]' : 'text-stone-200 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]'
                                         }`}>
-                                            {suit ? msgString.replace(suit, '').trim() : msgString}
-                                        </span>
-                                    </>
-                                );
-                            })()}
+                                            {suit}
+                                        </div>
+                                    )}
+                                    {/* შეტყობინების ტექსტი */}
+                                    <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-relaxed px-2 ${
+                                        isWin ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-rose-400/80'
+                                    }`}>
+                                        {suit ? msgStr.replace(suit, '').trim() : msgStr}
+                                    </span>
+                                </div>
+                            ) : (
+                                /* 🟢 საწყისი მდგომარეობა */
+                                <div className="flex flex-col items-center justify-center opacity-40 hover:opacity-100 hover:scale-110 transition-all duration-300 cursor-default">
+                                    <Dices size={40} className="drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] mb-2" />
+                                    <span className="text-[8px] font-black tracking-widest uppercase">დაატრიალე</span>
+                                </div>
+                            )}
                         </div>
-                    ) : (
-                        /* 🟢 საწყისი (უმოქმედო) მდგომარეობა */
-                        <div className="flex flex-col items-center justify-center opacity-40 hover:opacity-100 hover:scale-110 transition-all duration-300 cursor-default">
-                            <Dices size={40} className="drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] mb-2" />
-                            <span className="text-[8px] font-black tracking-widest uppercase">დაატრიალე</span>
-                        </div>
-                    )}
-                </div>
+                    );
+                })()}
 
                 {/* ფსონის არჩევა */}
                 <div className="w-full mb-5">
