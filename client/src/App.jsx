@@ -432,7 +432,7 @@ export default function App() {
                 {/* 🟢 2. გაუმჯობესებული ნეონის "ბორბალი" */}
                 <div className={`w-36 h-36 md:w-44 md:h-44 rounded-full border-[3px] md:border-4 flex items-center justify-center mb-6 relative transition-all duration-500 overflow-hidden ${
                     wheelSpinning ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-stone-900/80' : 
-                    (wheelResultMsg && typeof wheelResultMsg === 'object' && wheelResultMsg.win) || (typeof wheelResultMsg === 'string' && (wheelResultMsg.includes('მოიგ') || wheelResultMsg.includes('გილოცავ'))) ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)] bg-emerald-950/20' :
+                    (wheelResultMsg && typeof wheelResultMsg === 'object' && wheelResultMsg.win) || (typeof wheelResultMsg === 'string' && (wheelResultMsg.includes('მოიგ') || wheelResultMsg.includes('გილოცავ') || wheelResultMsg.includes('მოგებ'))) ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)] bg-emerald-950/20' :
                     wheelResultMsg ? 'border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.2)] bg-rose-950/20' :
                     'border-stone-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] bg-stone-950/50'
                 }`}>
@@ -455,10 +455,11 @@ export default function App() {
                             {(() => {
                                 // 1. ვიღებთ ტექსტს
                                 const msgString = typeof wheelResultMsg === 'object' ? (wheelResultMsg.message || wheelResultMsg.msg || wheelResultMsg.text) : wheelResultMsg;
-                                // 2. ვამოწმებთ მოგებაა თუ წაგება
-                                const isWin = typeof wheelResultMsg === 'object' ? wheelResultMsg.win : (msgString.includes('მოიგ') || msgString.includes('გილოცავ'));
                                 
-                                // 3. ვეძებთ მასტს ტექსტში
+                                // 2. ვამოწმებთ მოგებაა თუ წაგება (დაემატა "მოგებ")
+                                const isWin = typeof wheelResultMsg === 'object' ? wheelResultMsg.win : (msgString.includes('მოიგ') || msgString.includes('გილოცავ') || msgString.includes('მოგებ'));
+                                
+                                // 3. ვეძებთ მასტს
                                 let suit = null;
                                 if (typeof wheelResultMsg === 'object' && wheelResultMsg.winningSuit) {
                                     suit = wheelResultMsg.winningSuit;
@@ -467,6 +468,11 @@ export default function App() {
                                     else if (msgString.includes('♣️')) suit = '♣️';
                                     else if (msgString.includes('♦️')) suit = '♦️';
                                     else if (msgString.includes('♠️')) suit = '♠️';
+                                }
+                                
+                                // 4. თუ მოვიგეთ და ტექსტში მასტი არ იყო, ვიღებთ მომხმარებლის არჩეულ მასტს
+                                if (isWin && !suit) {
+                                    suit = wheelSelectedSuit;
                                 }
 
                                 return (
@@ -479,7 +485,7 @@ export default function App() {
                                                 {suit}
                                             </div>
                                         )}
-                                        {/* შეტყობინების ტექსტი (მასტის სიმბოლოს გარეშე, რადგან ის უკვე დიდად ჩანს ზემოთ) */}
+                                        {/* შეტყობინების ტექსტი */}
                                         <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-relaxed px-2 ${
                                             isWin ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-rose-400/80'
                                         }`}>
