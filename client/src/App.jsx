@@ -450,26 +450,44 @@ export default function App() {
                             <div className="absolute inset-0 bg-yellow-500/10 rounded-full blur-md"></div>
                         </div>
                     ) : wheelResultMsg ? (
-                        /* 🟢 შედეგის გამოტანა */
+                        /* 🟢 შედეგის გამოტანა გონიერი ამომცნობი ლოგიკით */
                         <div className="text-center animate-in zoom-in duration-300 p-2 flex flex-col items-center justify-center w-full h-full z-10">
-                            
-                            {/* გიგანტური მასტის იკონა (ბექენდიდან წამოღებული, ან ნაგულისხმევი) */}
-                            {wheelResultMsg.winningSuit && (
-                                <div className={`text-5xl md:text-6xl mb-1 animate-bounce ${
-                                    ['❤️', '♦️'].includes(wheelResultMsg.winningSuit) ? 'text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.8)]' : 'text-stone-200 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]'
-                                }`}>
-                                    {wheelResultMsg.winningSuit}
-                                </div>
-                            )}
+                            {(() => {
+                                // 1. ვიღებთ ტექსტს
+                                const msgString = typeof wheelResultMsg === 'object' ? (wheelResultMsg.message || wheelResultMsg.msg || wheelResultMsg.text) : wheelResultMsg;
+                                // 2. ვამოწმებთ მოგებაა თუ წაგება
+                                const isWin = typeof wheelResultMsg === 'object' ? wheelResultMsg.win : (msgString.includes('მოიგ') || msgString.includes('გილოცავ'));
+                                
+                                // 3. ვეძებთ მასტს ტექსტში
+                                let suit = null;
+                                if (typeof wheelResultMsg === 'object' && wheelResultMsg.winningSuit) {
+                                    suit = wheelResultMsg.winningSuit;
+                                } else if (typeof msgString === 'string') {
+                                    if (msgString.includes('❤️')) suit = '❤️';
+                                    else if (msgString.includes('♣️')) suit = '♣️';
+                                    else if (msgString.includes('♦️')) suit = '♦️';
+                                    else if (msgString.includes('♠️')) suit = '♠️';
+                                }
 
-                            {/* შეტყობინების ტექსტი */}
-                            <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-relaxed px-2 ${
-                                (typeof wheelResultMsg === 'object' && wheelResultMsg.win) || (typeof wheelResultMsg === 'string' && (wheelResultMsg.includes('მოიგ') || wheelResultMsg.includes('გილოცავ')))
-                                ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' 
-                                : 'text-rose-400/80'
-                            }`}>
-                                {typeof wheelResultMsg === 'object' ? (wheelResultMsg.message || wheelResultMsg.msg || wheelResultMsg.text) : wheelResultMsg}
-                            </span>
+                                return (
+                                    <>
+                                        {/* გიგანტური მანათობელი მასტის იკონა */}
+                                        {suit && (
+                                            <div className={`text-5xl md:text-6xl mb-1 animate-bounce ${
+                                                ['❤️', '♦️'].includes(suit) ? 'text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.8)]' : 'text-stone-200 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]'
+                                            }`}>
+                                                {suit}
+                                            </div>
+                                        )}
+                                        {/* შეტყობინების ტექსტი (მასტის სიმბოლოს გარეშე, რადგან ის უკვე დიდად ჩანს ზემოთ) */}
+                                        <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-relaxed px-2 ${
+                                            isWin ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-rose-400/80'
+                                        }`}>
+                                            {suit ? msgString.replace(suit, '').trim() : msgString}
+                                        </span>
+                                    </>
+                                );
+                            })()}
                         </div>
                     ) : (
                         /* 🟢 საწყისი (უმოქმედო) მდგომარეობა */
