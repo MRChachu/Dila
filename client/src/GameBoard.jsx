@@ -144,7 +144,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   };
 
-  const getSuitColor = (suit) => (['♥', '♦'].includes(suit) ? 'text-rose-600' : 'text-stone-900');
+  const getSuitColor = (suit) => (['♥', '♦', '❤️', '♦️'].includes(suit) ? 'text-red-600' : 'text-slate-800');
 
   const cardBackStyles = {
     classic: 'bg-blue-900 border-white/20',
@@ -287,7 +287,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               <div className="absolute inset-0 rounded-[92px] md:rounded-[184px] border border-white/5 shadow-inner pointer-events-none"></div>
               <div className={`absolute inset-0 opacity-20 blur-[40px] rounded-[100px] ${activeTheme.accentBg} pointer-events-none`}></div>
 
-              {/* მაგიდის კარტები (ცენტრში) */}
+              {/* მაგიდის კარტები (ცენტრში) - პროფესიონალური კაზინოს სტილი */}
               <div className="flex flex-wrap justify-center items-center gap-2 md:gap-3 z-10 px-4 md:px-8">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
                   const isSelected = selectedCardsFromTable.some(tc => tc.rank === c.rank && tc.suit === c.suit);
@@ -296,23 +296,23 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                     <div 
                       key={`${c.rank}-${c.suit}-${i}`} 
                       onClick={() => isMyTurn && toggleTableCard(c)}
-                      className={`relative w-11 h-16 md:w-16 md:h-24 bg-gradient-to-br from-stone-50 to-stone-300 rounded-md md:rounded-lg shadow-xl flex flex-col justify-between p-1 md:p-1.5 select-none transition-all duration-300 border border-stone-400 transform-gpu cursor-pointer
-                        ${isSelected ? `ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')} -translate-y-3 shadow-[0_20px_30px_rgba(0,0,0,0.5)] scale-110 z-30` : 'hover:-translate-y-1.5 hover:shadow-[0_15px_20px_rgba(0,0,0,0.4)] z-10 hover:z-20'}
+                      className={`relative w-12 h-16 md:w-[72px] md:h-[104px] bg-white rounded-[5px] md:rounded-lg shadow-sm flex items-center justify-center select-none transition-all duration-300 border border-slate-200 transform-gpu cursor-pointer
+                        ${isSelected ? `ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')} -translate-y-3 shadow-xl scale-110 z-30` : 'hover:-translate-y-1 hover:shadow-md z-10 hover:z-20'}
                         ${isBeingCaptured ? 'scale-0 opacity-0 rotate-180 z-50 pointer-events-none' : 'animate-in zoom-in-50 fade-in duration-300'}
                       `}
                     >
-                      {/* ზედა მარცხენა კუთხე (მხოლოდ რიცხვი, ოდნავ გადიდებული) */}
-                      <div className="flex flex-col items-center self-start">
-                        <span className={`text-[13px] md:text-[18px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
-                      </div>
+                      {/* ზედა მარცხენა რიცხვი (ზუსტად კუთხეში) */}
+                      <span className={`absolute top-1 left-1.5 md:top-1.5 md:left-2 text-[13px] md:text-[18px] font-bold tracking-tighter leading-none ${getSuitColor(c.suit)}`}>
+                        {c.rank}
+                      </span>
                       
-                      {/* ცენტრალური დიდი მასტი */}
-                      <span className={`text-3xl md:text-4xl self-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-md ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                      {/* ცენტრალური მასტი */}
+                      <span className={`text-2xl md:text-4xl ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       
-                      {/* ქვედა მარჯვენა კუთხე (მხოლოდ რიცხვი) */}
-                      <div className="flex flex-col items-center self-end rotate-180">
-                        <span className={`text-[13px] md:text-[18px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
-                      </div>
+                      {/* ქვედა მარჯვენა რიცხვი (შემოტრიალებული) */}
+                      <span className={`absolute bottom-1 right-1.5 md:bottom-1.5 md:right-2 text-[13px] md:text-[18px] font-bold tracking-tighter leading-none rotate-180 ${getSuitColor(c.suit)}`}>
+                        {c.rank}
+                      </span>
                     </div>
                   );
                 }) : (
@@ -463,7 +463,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </button>
             </div>
 
-            {/* 🟢 მოთამაშის ხელი (მარაო) */}
+            {/* 🟢 მოთამაშის ხელი (მარაო) - დახვეწილი დიზაინით */}
             <div className="flex justify-center items-end h-24 md:h-32 pt-8 pb-2 w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
@@ -471,8 +471,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 const centerIndex = (totalCards - 1) / 2;
                 const offset = i - centerIndex;
                 const rotation = offset * 6; 
-                const yPush = Math.abs(offset) * 5; 
-                const overlapMargin = i !== 0 ? '-ml-5 md:-ml-8' : ''; 
+                const yPush = Math.abs(offset) * 4; 
+                const overlapMargin = i !== 0 ? '-ml-6 md:-ml-10' : ''; 
 
                 return (
                   <div 
@@ -488,24 +488,24 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   >
                     <div 
                       onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
-                      className={`relative w-14 h-20 md:w-20 md:h-28 bg-gradient-to-br from-stone-50 to-stone-200 rounded-lg md:rounded-xl flex flex-col justify-between p-1.5 select-none transition-all duration-300 border border-stone-400 shadow-[0_5px_15px_rgba(0,0,0,0.5)]
-                        ${isSelected ? `-translate-y-6 md:-translate-y-8 scale-110 shadow-[0_20px_40px_rgba(0,0,0,0.7)] ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-3 hover:shadow-[0_15px_30px_rgba(0,0,0,0.6)] cursor-pointer hover:bg-white'}
-                        ${!isMyTurn && 'opacity-80 hover:opacity-100 grayscale-[0.2] hover:grayscale-0'} 
+                      className={`relative w-[60px] h-[85px] md:w-[86px] md:h-[124px] bg-white rounded-md md:rounded-xl flex items-center justify-center select-none transition-all duration-300 border border-slate-200 shadow-sm
+                        ${isSelected ? `-translate-y-6 md:-translate-y-8 scale-110 shadow-2xl ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-2 hover:shadow-lg cursor-pointer'}
+                        ${!isMyTurn && 'opacity-90 hover:opacity-100'} 
                       `}
                     >
-                      <div className="absolute inset-1 border border-stone-400/20 rounded pointer-events-none"></div>
-                      
-                      {/* ზედა მარცხენა კუთხე (მხოლოდ რიცხვი) */}
-                      <div className="flex flex-col items-center self-start">
-                        <span className={`text-[16px] md:text-[20px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
+                      {/* ზედა მარცხენა კუთხე */}
+                      <div className="absolute top-1.5 left-1.5 md:top-2 md:left-2 flex flex-col items-center leading-none">
+                        <span className={`text-[15px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
+                        <span className={`text-[8px] md:text-[10px] mt-0.5 ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       </div>
                       
-                      {/* ცენტრალური დიდი მასტი */}
-                      <span className={`text-4xl md:text-5xl self-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-md ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                      {/* ცენტრალური მასტი */}
+                      <span className={`text-3xl md:text-5xl opacity-95 ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       
-                      {/* ქვედა მარჯვენა კუთხე (მხოლოდ რიცხვი) */}
-                      <div className="flex flex-col items-center self-end rotate-180">
-                        <span className={`text-[16px] md:text-[20px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
+                      {/* ქვედა მარჯვენა კუთხე (შემოტრიალებული) */}
+                      <div className="absolute bottom-1.5 right-1.5 md:bottom-2 md:right-2 flex flex-col items-center leading-none rotate-180">
+                        <span className={`text-[15px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
+                        <span className={`text-[8px] md:text-[10px] mt-0.5 ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       </div>
                     </div>
                   </div>
