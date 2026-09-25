@@ -768,44 +768,105 @@ export default function App() {
         </div>
       )}
 
-      {/* Inspect Other Profile */}
-      {inspectProfile && (
-        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={(e) => { if(e.target === e.currentTarget) setInspectProfile(null); }}>
-          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl font-sans relative animate-in zoom-in-95 duration-200`}>
-            <div className="flex flex-col items-center gap-3 mb-6">
-               <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center text-5xl border border-white/10 shadow-xl relative`}>{inspectProfile.avatar || '😎'}<div className={`absolute -bottom-3 w-8 h-8 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{inspectProfile.level || 1}</div></div>
-               <h2 className="text-xl font-black tracking-wide mt-2"><VipName name={inspectProfile.username} isVip={checkIsVip(inspectProfile.vipUntil)} className="text-stone-100"/></h2>
-               <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${getLeague(inspectProfile.xp || 0).bg} ${getLeague(inspectProfile.xp || 0).border} shadow-sm mb-2`}><span className="text-[12px] drop-shadow-md">{getLeague(inspectProfile.xp || 0).icon}</span><span className={`text-[10px] font-black uppercase tracking-wider ${getLeague(inspectProfile.xp || 0).color}`}>{getLeague(inspectProfile.xp || 0).name}</span></div>
-               <div className="flex gap-2">
-                 {!profileData?.friends?.includes(inspectProfile.username) && inspectProfile.username !== safeUsername && ( <button onClick={() => { handleSendFriendReq(inspectProfile.username); setInspectProfile(null); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all flex items-center gap-1.5`}><UserPlus size={12} /> დამატება</button> )}
-                 {profileData?.friends?.includes(inspectProfile.username) && inspectProfile.username !== safeUsername && ( <button onClick={() => handleRemoveFriend(inspectProfile.username)} className={`px-4 py-1.5 rounded-lg text-[10px] font-black bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 shadow-md active:scale-95 transition-all flex items-center gap-1.5`}><UserMinus size={12} /> წაშლა</button> )}
-               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 mb-6">
-              <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 text-center shadow-inner"><p className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.wins}</p><p className={`text-lg font-mono font-black ${activeTheme.accent}`}>{inspectProfile.stats?.gamesWon || 0}</p></div>
-              <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 text-center shadow-inner"><p className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.winRate}</p><p className="text-lg font-mono font-black text-emerald-400">{inspectProfile.stats?.gamesPlayed > 0 ? Math.round((inspectProfile.stats.gamesWon / inspectProfile.stats.gamesPlayed) * 100) : 0}%</p></div>
-            </div>
-            <h4 className={`text-[10px] font-bold text-stone-400 flex items-center gap-2 border-b border-white/5 pb-2 uppercase tracking-widest mb-3`}><Award size={14} className={activeTheme.accent} /> {t.achievements}</h4>
+      {/* 🟢 სხვა მოთამაშის პროფილის დათვალიერება (Premium UI) */}
+      {inspectProfile && (() => {
+        const isTargetVip = checkIsVip(inspectProfile.vipUntil);
+        const targetLeague = getLeague(inspectProfile.xp || 0);
+        
+        return (
+          <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all" onClick={(e) => { if(e.target === e.currentTarget) setInspectProfile(null); }}>
             
-            <div className="flex flex-nowrap items-center justify-between w-full gap-1">
-              {AVAILABLE_BADGES.map(b => { 
-                const hasIt = inspectProfile.achievements?.includes(b.id); 
-                return ( 
-                  <div 
-                    key={b.id} 
-                    onClick={() => setToastMsg(hasIt ? `🏆 აქვს: ${b.name}` : `🔒 არ აქვს: ${b.name}`)}
-                    className={`cursor-pointer shrink-0 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg md:rounded-xl border transition-all hover:scale-110 active:scale-95 ${hasIt ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-50 border-current ${activeTheme.accent} text-sm sm:text-base md:text-lg shadow-[0_0_10px_currentColor]` : 'bg-stone-950/50 border-white/5 text-xs sm:text-sm md:text-base opacity-30 grayscale hover:opacity-80'}`}
-                  >
-                    <span className="drop-shadow-md">{b.icon}</span>
-                  </div> 
-                )
-              })}
+            <div className={`${activeTheme.card} border ${isTargetVip ? 'border-yellow-500/40 shadow-[0_0_40px_rgba(234,179,8,0.15)]' : 'border-white/10 shadow-2xl'} rounded-3xl w-full max-w-sm overflow-hidden font-sans relative animate-in zoom-in-95 duration-200`}>
+              
+              {/* 1. ზედა გრადიენტული ფონი (Cover) */}
+              <div className={`h-24 md:h-28 bg-gradient-to-br ${isTargetVip ? 'from-yellow-900/40 via-stone-900 to-stone-950 border-b border-yellow-500/30' : 'from-stone-800/40 via-stone-900 to-stone-950 border-b border-white/5'} relative`}>
+                 {isTargetVip && <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 blur-[40px] rounded-full pointer-events-none"></div>}
+                 
+                 <button onClick={() => setInspectProfile(null)} className="absolute top-4 right-4 text-stone-500 hover:text-rose-500 bg-stone-950/60 rounded-full p-1 border border-white/5 transition-all z-20">
+                    <XCircle size={20} />
+                 </button>
+              </div>
+
+              {/* 2. პროფილის ინფორმაცია */}
+              <div className="px-6 pb-6 relative">
+                
+                {/* ავატარი - აწეული Cover-ზე გადასაკვეთად */}
+                <div className="flex flex-col items-center -mt-12 md:-mt-14 mb-4 relative z-10">
+                   <div className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center text-4xl md:text-5xl border-4 border-stone-950 shadow-xl relative ${isTargetVip ? 'shadow-[0_0_20px_rgba(234,179,8,0.3)] border-yellow-500/20' : ''}`}>
+                       {inspectProfile.avatar || '😎'}
+                       <div className={`absolute -bottom-2 -right-2 w-7 h-7 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-950 shadow-md`}>
+                           {inspectProfile.level || 1}
+                       </div>
+                   </div>
+                   
+                   {/* სახელი და გვირგვინი */}
+                   <h2 className={`text-xl md:text-2xl font-black tracking-wide mt-3 flex items-center gap-1.5 drop-shadow-md ${isTargetVip ? 'text-yellow-500' : 'text-stone-100'}`}>
+                       {inspectProfile.username}
+                       {isTargetVip && <Crown size={18} className="text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]" />}
+                   </h2>
+                   
+                   {/* რანკი */}
+                   <div className="flex gap-2 mt-2">
+                       <span className={`px-2.5 py-1 rounded-md border ${targetLeague.bg} ${targetLeague.border} ${targetLeague.color} text-[9px] md:text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm`}>
+                           <span className="drop-shadow-md text-xs">{targetLeague.icon}</span> {targetLeague.name}
+                       </span>
+                   </div>
+                </div>
+
+                {/* 3. სოციალური ღილაკები */}
+                <div className="flex justify-center gap-2 mb-6 relative z-10">
+                    {!profileData?.friends?.includes(inspectProfile.username) && inspectProfile.username !== safeUsername && (
+                        <button onClick={() => { handleSendFriendReq(inspectProfile.username); setInspectProfile(null); }} className={`px-5 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black ${activeTheme.accentBg} text-stone-950 shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 uppercase tracking-wider`}>
+                            <UserPlus size={14} /> მეგობრებში დამატება
+                        </button>
+                    )}
+                    {profileData?.friends?.includes(inspectProfile.username) && inspectProfile.username !== safeUsername && (
+                        <button onClick={() => handleRemoveFriend(inspectProfile.username)} className={`px-5 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 uppercase tracking-wider`}>
+                            <UserMinus size={14} /> მეგობრებიდან წაშლა
+                        </button>
+                    )}
+                </div>
+
+                {/* 4. სტატისტიკის გრიდი */}
+                <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
+                    <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 md:p-4 text-center shadow-inner hover:border-white/10 transition-colors">
+                        <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.wins}</p>
+                        <p className={`text-xl md:text-2xl font-mono font-black ${activeTheme.accent} drop-shadow-md`}>{inspectProfile.stats?.gamesWon || 0}</p>
+                    </div>
+                    <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 md:p-4 text-center shadow-inner hover:border-white/10 transition-colors">
+                        <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.winRate}</p>
+                        <p className="text-xl md:text-2xl font-mono font-black text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.3)]">
+                            {inspectProfile.stats?.gamesPlayed > 0 ? Math.round((inspectProfile.stats.gamesWon / inspectProfile.stats.gamesPlayed) * 100) : 0}%
+                        </p>
+                    </div>
+                </div>
+
+                {/* 5. მიღწევების პანელი (Glow ეფექტით) */}
+                <div className="relative z-10 border-t border-white/5 pt-5 mt-2">
+                    <h4 className="text-[9px] md:text-[10px] font-bold text-stone-500 flex items-center justify-center gap-1.5 uppercase tracking-widest mb-4">
+                        <Award size={14} className={activeTheme.accent} /> {t.achievements}
+                    </h4>
+                    <div className="flex flex-wrap items-center justify-center gap-2.5">
+                        {AVAILABLE_BADGES.map(b => { 
+                            const hasIt = inspectProfile.achievements?.includes(b.id); 
+                            return ( 
+                                <div 
+                                    key={b.id} 
+                                    onClick={() => setToastMsg(hasIt ? `🏆 აქვს: ${b.name}` : `🔒 არ აქვს: ${b.name}`)}
+                                    className={`cursor-pointer shrink-0 w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-xl transition-all hover:scale-110 active:scale-95 border ${hasIt ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-40 border-current${activeTheme.accent} shadow-[0_0_15px_currentColor] text-lg` : 'bg-stone-950/50 border-white/5 opacity-30 grayscale hover:opacity-80 text-sm'}`}
+                                >
+                                    <span className="drop-shadow-lg">{b.icon}</span>
+                                </div> 
+                            )
+                        })}
+                    </div>
+                </div>
+                
+              </div>
             </div>
-            
-            <button onClick={() => setInspectProfile(null)} className="w-full py-3 mt-6 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner uppercase">{t.close}</button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {isShopOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
