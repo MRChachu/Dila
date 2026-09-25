@@ -396,11 +396,12 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          {/* 🟢 მთლიანი ქვედა სექცია (ღილაკები + კარტები) - მობილურზე ეკრანში ჩასატევად */}
-          <div className="flex flex-col items-center mt-auto pt-1 pb-1 md:pb-4 z-20 shrink-0 w-full max-w-lg mx-auto">
+          {/* 🟢 მთლიანი ქვედა სექცია (ღილაკები + კარტები) - მობილურზე ბოლომდე გამოჩენისთვის */}
+          <div className="flex flex-col items-center mt-auto pt-2 pb-6 md:pb-8 z-20 shrink-0 w-full max-w-lg mx-auto">
             
             {/* 🟢 ქვედა პანელი: ემოჯი, ჩატი და სვლის ღილაკი */}
-            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-5 md:mb-10 px-4">
+            {/* აქ დაშორება შევამცირეთ mb-3-მდე, რომ ღილაკები ზედმეტად მაღლა არ ავიდეს */}
+            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-3 md:mb-8 px-4">
               
               {/* ემოჯების მენიუ */}
               {showEmojiMenu && (
@@ -462,17 +463,16 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </button>
             </div>
 
-            {/* 🟢 მოთამაშის ხელი (მარაო) - მობილურზე დაპატარავებული და მორგებული ზომები */}
-            <div className="flex justify-center items-end h-[80px] md:h-[130px] w-full relative overflow-visible mb-1">
+            {/* 🟢 მოთამაშის ხელი (მარაო) */}
+            <div className="flex justify-center items-end h-[75px] md:h-[130px] w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 const totalCards = me.cards.length;
                 const centerIndex = (totalCards - 1) / 2;
                 const offset = i - centerIndex;
                 const rotation = offset * 6; 
-                // მობილურზე განაპირა კარტები ოდნავ ნაკლებად ჩამოიწევს ქვემოთ (yPush)
-                const yPush = Math.abs(offset) * 3; 
-                // გადაფარვის მანძილი (მობილურზე უფრო მჭიდროდ)
+                // მობილურზე კიდევ უფრო შევამცირეთ გადახრა რომ ქვევით არ ჩავარდეს
+                const yPush = Math.abs(offset) * 2; 
                 const overlapMargin = i !== 0 ? '-ml-5 md:-ml-10' : ''; 
 
                 return (
@@ -489,26 +489,24 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   >
                     <div 
                       onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
-                      // 🟢 აქ შევცვალეთ ზომები: w-[50px] h-[72px] მობილურისთვის (იყო 60x85)
-                      // 🟢 ამოწევის მანძილი: -translate-y-4 (იყო -translate-y-6)
-                      className={`relative w-[50px] h-[72px] md:w-[86px] md:h-[124px] bg-white rounded-md md:rounded-xl flex items-center justify-center select-none transition-all duration-300 border border-slate-200 shadow-sm
+                      className={`relative w-[48px] h-[70px] md:w-[86px] md:h-[124px] bg-white rounded-md md:rounded-xl flex items-center justify-center select-none transition-all duration-300 border border-slate-200 shadow-sm
                         ${isSelected ? `-translate-y-4 md:-translate-y-8 scale-110 shadow-2xl ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-1.5 hover:shadow-lg cursor-pointer'}
                         ${!isMyTurn && 'opacity-90 hover:opacity-100'} 
                       `}
                     >
                       {/* ზედა მარცხენა კუთხე */}
-                      <div className="absolute top-1 left-1 md:top-2 md:left-2 flex flex-col items-center leading-none">
+                      <div className="absolute top-1 left-1.5 md:top-2 md:left-2 flex flex-col items-center leading-none">
                         <span className={`text-[12px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
-                        <span className={`text-[7px] md:text-[10px] mt-0.5 ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                        <span className={`text-[7px] md:text-[10px] mt-[1px] ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       </div>
                       
                       {/* ცენტრალური მასტი */}
                       <span className={`text-2xl md:text-5xl opacity-95 ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       
                       {/* ქვედა მარჯვენა კუთხე (შემოტრიალებული) */}
-                      <div className="absolute bottom-1 right-1 md:bottom-2 md:right-2 flex flex-col items-center leading-none rotate-180">
+                      <div className="absolute bottom-1 right-1.5 md:bottom-2 md:right-2 flex flex-col items-center leading-none rotate-180">
                         <span className={`text-[12px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
-                        <span className={`text-[7px] md:text-[10px] mt-0.5 ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                        <span className={`text-[7px] md:text-[10px] mt-[1px] ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       </div>
                     </div>
                   </div>
