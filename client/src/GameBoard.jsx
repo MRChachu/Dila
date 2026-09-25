@@ -462,16 +462,18 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </button>
             </div>
 
-            {/* 🟢 მოთამაშის ხელი (მარაო) */}
-            <div className="flex justify-center items-end h-[70px] md:h-[130px] w-full relative overflow-visible">
+            {/* 🟢 მოთამაშის ხელი (მარაო) - მობილურზე დაპატარავებული და მორგებული ზომები */}
+            <div className="flex justify-center items-end h-[80px] md:h-[130px] w-full relative overflow-visible mb-1">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 const totalCards = me.cards.length;
                 const centerIndex = (totalCards - 1) / 2;
                 const offset = i - centerIndex;
                 const rotation = offset * 6; 
-                const yPush = Math.abs(offset) * 4; 
-                const overlapMargin = i !== 0 ? '-ml-6 md:-ml-10' : ''; 
+                // მობილურზე განაპირა კარტები ოდნავ ნაკლებად ჩამოიწევს ქვემოთ (yPush)
+                const yPush = Math.abs(offset) * 3; 
+                // გადაფარვის მანძილი (მობილურზე უფრო მჭიდროდ)
+                const overlapMargin = i !== 0 ? '-ml-5 md:-ml-10' : ''; 
 
                 return (
                   <div 
@@ -487,19 +489,26 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   >
                     <div 
                       onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
-                      className={`relative w-[60px] h-[85px] md:w-[86px] md:h-[124px] bg-white rounded-md md:rounded-xl flex items-center justify-center select-none transition-all duration-300 border border-slate-200 shadow-sm
-                        ${isSelected ? `-translate-y-6 md:-translate-y-8 scale-110 shadow-2xl ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-2 hover:shadow-lg cursor-pointer'}
+                      // 🟢 აქ შევცვალეთ ზომები: w-[50px] h-[72px] მობილურისთვის (იყო 60x85)
+                      // 🟢 ამოწევის მანძილი: -translate-y-4 (იყო -translate-y-6)
+                      className={`relative w-[50px] h-[72px] md:w-[86px] md:h-[124px] bg-white rounded-md md:rounded-xl flex items-center justify-center select-none transition-all duration-300 border border-slate-200 shadow-sm
+                        ${isSelected ? `-translate-y-4 md:-translate-y-8 scale-110 shadow-2xl ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-1.5 hover:shadow-lg cursor-pointer'}
                         ${!isMyTurn && 'opacity-90 hover:opacity-100'} 
                       `}
                     >
-                      <div className="absolute top-1.5 left-1.5 md:top-2 md:left-2 flex flex-col items-center leading-none">
-                        <span className={`text-[15px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
-                        <span className={`text-[8px] md:text-[10px] mt-0.5 ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                      {/* ზედა მარცხენა კუთხე */}
+                      <div className="absolute top-1 left-1 md:top-2 md:left-2 flex flex-col items-center leading-none">
+                        <span className={`text-[12px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
+                        <span className={`text-[7px] md:text-[10px] mt-0.5 ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       </div>
-                      <span className={`text-3xl md:text-5xl opacity-95 ${getSuitColor(c.suit)}`}>{c.suit}</span>
-                      <div className="absolute bottom-1.5 right-1.5 md:bottom-2 md:right-2 flex flex-col items-center leading-none rotate-180">
-                        <span className={`text-[15px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
-                        <span className={`text-[8px] md:text-[10px] mt-0.5 ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                      
+                      {/* ცენტრალური მასტი */}
+                      <span className={`text-2xl md:text-5xl opacity-95 ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                      
+                      {/* ქვედა მარჯვენა კუთხე (შემოტრიალებული) */}
+                      <div className="absolute bottom-1 right-1 md:bottom-2 md:right-2 flex flex-col items-center leading-none rotate-180">
+                        <span className={`text-[12px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
+                        <span className={`text-[7px] md:text-[10px] mt-0.5 ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       </div>
                     </div>
                   </div>
