@@ -313,14 +313,17 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 )}
               </div>
 
-              {/* 🟢 ოვალზე დასმული მოთამაშეები (ულტრა-კომპაქტური + მესიჯების Bubble-ები) */}
+              {/* 🟢 ოვალზე დასმული მოთამაშეები (ულტრა-კომპაქტური + მიკრო-სტატისტიკა) */}
               {seatedPlayers.map((p, idx) => {
                 const isMe = idx === 0;
                 const isCurrentTurn = room.currentTurn === room.players.findIndex(rp => rp.id === p.id);
                 const isDealer = room.dealerIndex === room.players.findIndex(rp => rp.id === p.id);
                 
-                // ვამოწმებთ აქვს თუ არა ამ მოთამაშეს აქტიური მესიჯი
-                const activePlayerMessage = messages.find(m => m.senderId === p.id);
+                // 🟢 წაღებული კარტების კალკულაცია
+                const capturedCards = p.captured?.length || 0;
+                const capturedClubs = p.captured?.filter(c => c.suit === '♣' || c.suit === '♣️').length || 0;
+                const has10Diamond = p.captured?.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
+                const has2Club = p.captured?.some(c => c.rank === '2' && (c.suit === '♣' || c.suit === '♣️'));
 
                 let posClass = "";
                 let isVertical = false; 
@@ -342,29 +345,42 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 return (
                   <div key={p.id} className={`absolute flex items-center justify-center z-30 ${posClass}`}>
                      
-                     {/* 🟢 ჩატის მესიჯის ღრუბელი (Speech Bubble) */}
-                     {activePlayerMessage && (
+                     {/* ჩატის მესიჯის ღრუბელი */}
+                     {messages.find(m => m.senderId === p.id) && (
                        <div className="absolute -top-12 md:-top-16 left-1/2 -translate-x-1/2 bg-stone-100 text-stone-900 px-3 py-1.5 md:py-2 rounded-xl text-[10px] md:text-xs font-black shadow-[0_5px_15px_rgba(0,0,0,0.5)] z-50 animate-in zoom-in-50 fade-in slide-in-from-bottom-2 whitespace-nowrap">
-                         {activePlayerMessage.text}
-                         {/* ღრუბლის კუდი */}
+                         {messages.find(m => m.senderId === p.id).text}
                          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-stone-100 rotate-45 rounded-sm"></div>
                        </div>
                      )}
 
                      <div className={`relative flex items-center justify-center gap-1 md:gap-1.5 p-1 md:p-1.5 rounded-xl bg-stone-900/95 border transition-all
                         ${isCurrentTurn ? `${borderColorClass} shadow-[0_0_15px_currentColor] scale-110 z-40` : 'border-white/10 shadow-md'}
-                        ${isVertical ? 'flex-col w-[45px] md:w-[55px]' : 'flex-row px-2 md:px-3'}
+                        ${isVertical ? 'flex-col w-[50px] md:w-[60px]' : 'flex-row px-2 md:px-3'}
                      `}>
                         {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-10 blur-[2px] rounded-xl`} />}
                         {isDealer && <span className="absolute -top-1.5 -right-1.5 bg-stone-800 text-stone-300 text-[6px] md:text-[7px] px-1 py-0.5 rounded border border-white/20 shadow-md font-black uppercase z-20">D</span>}
                         <span className="text-[16px] md:text-xl drop-shadow-md z-10 shrink-0 leading-none">{p.avatar || '😎'}</span>
-                        <div className={`flex flex-col justify-center z-10 ${isVertical ? 'items-center text-center w-full' : 'items-start min-w-[35px] md:min-w-[45px]'}`}>
+                        
+                        <div className={`flex flex-col justify-center z-10 ${isVertical ? 'items-center text-center w-full' : 'items-start min-w-[45px] md:min-w-[55px]'}`}>
                            <span className={`text-[6.5px] md:text-[8px] font-black uppercase truncate w-full ${isCurrentTurn ? activeTheme.accent : 'text-stone-200'}`}>
                               <VipName name={isMe ? 'შენ' : p.name} isVip={checkIsVip(p.vipUntil)} />
                            </span>
                            <span className="text-[6px] md:text-[7px] font-black text-stone-400 mt-0.5 leading-none">
                               ქულა:<span className={`ml-0.5 ${activeTheme.accent}`}>{p.totalScore}</span>
                            </span>
+
+                           {/* 🟢 მიკრო-სტატისტიკის ზოლი (წაღებული კარტები) */}
+                           <div className="flex items-center gap-1 mt-1 bg-stone-950/80 px-1 py-0.5 rounded flex-wrap border border-white/5 w-full justify-center shadow-inner">
+                              <span className="text-[6px] md:text-[7px] font-mono font-bold text-stone-300" title="წაღებული კარტები">🃏 {capturedCards}</span>
+                              <span className="text-[6px] md:text-[7px] font-mono font-bold text-stone-300" title="წაღებული ჯვრები">♣️ {capturedClubs}</span>
+                              {(has10Diamond || has2Club) && (
+                                  <div className="flex gap-0.5 ml-0.5 border-l border-white/10 pl-0.5">
+                                    {has10Diamond && <span className="text-[6px] md:text-[7px] drop-shadow-md" title="10 აგური">💎</span>}
+                                    {has2Club && <span className="text-[6px] md:text-[7px] drop-shadow-md text-sky-400" title="2 ჯვარი">♣️</span>}
+                                  </div>
+                              )}
+                           </div>
+                           
                         </div>
                      </div>
                   </div>
