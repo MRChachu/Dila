@@ -396,10 +396,12 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-4 md:gap-6 mt-auto pt-4 z-20 shrink-0 w-full max-w-lg mx-auto">
+          {/* 🟢 მთლიანი ქვედა სექცია (ღილაკები + კარტები) */}
+          <div className="flex flex-col items-center mt-auto pt-4 pb-2 z-20 shrink-0 w-full max-w-lg mx-auto">
             
-            {/* 🟢 ქვედა პანელი: ემოჯი Bubble, ჩატის Bubble და სვლის ღილაკი */}
-            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-2 px-4">
+            {/* 🟢 ქვედა პანელი: ემოჯი, ჩატი და სვლის ღილაკი */}
+            {/* ❗️ აქ გავზარდეთ დაშორება (mb-10 md:mb-14), რომ კარტებს აღარ დაედოს */}
+            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-10 md:mb-14 px-4">
               
               {/* ემოჯების მენიუ */}
               {showEmojiMenu && (
@@ -464,7 +466,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
 
             {/* 🟢 მოთამაშის ხელი (მარაო) - დახვეწილი დიზაინით */}
-            <div className="flex justify-center items-end h-24 md:h-32 pt-8 pb-2 w-full relative overflow-visible">
+            <div className="flex justify-center items-end h-[90px] md:h-[130px] w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 const totalCards = me.cards.length;
