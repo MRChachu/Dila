@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Lock, Flag, XCircle } from 'lucide-react';
+import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Lock, Maximize, Minimize, Flag, XCircle } from 'lucide-react';
 
 const getLeague = (xp = 0) => {
   if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
@@ -22,6 +22,24 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const [showSurrenderModal, setShowSurrenderModal] = useState(false); 
   const [showEmojiMenu, setShowEmojiMenu] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false); 
+  // 🟢 სრული ეკრანის (Fullscreen) სტეიტი და ლოგიკა
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => console.log(err));
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  };
 
   const me = room?.players?.find(p => p.id === socket.id);
   const isMyTurn = room?.players?.[room.currentTurn]?.id === socket.id;
@@ -203,6 +221,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
 
           <div className="flex items-center gap-3 md:gap-4">
+            {/* 🟢 სრული ეკრანის ღილაკი */}
+            <button onClick={toggleFullScreen} className={`text-stone-500 hover:${activeTheme.accent} transition-colors`} title="სრულ ეკრანზე გაშლა">
+              {isFullscreen ? <Minimize size={14} className="md:w-4 md:h-4" /> : <Maximize size={14} className="md:w-4 md:h-4" />}
+            </button>
+
             <button onClick={() => setIsMuted(!isMuted)} className={`text-stone-500 hover:${activeTheme.accent} transition-colors`}>
               {isMuted ? <VolumeX size={14} className="md:w-4 md:h-4" /> : <Volume2 size={14} className="md:w-4 md:h-4" />}
             </button>
