@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users, Lock, X, Flag } from 'lucide-react';
+import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Lock, Flag, X } from 'lucide-react';
 
-// 🟢 გლობალური League ფუნქცია
 const getLeague = (xp = 0) => {
   if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
   if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
@@ -14,17 +13,17 @@ const getLeague = (xp = 0) => {
 export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName }) {
   const [selectedCardFromHand, setSelectedCardFromHand] = useState(null);
   const [selectedCardsFromTable, setSelectedCardsFromTable] = useState([]);
+  
+  // 🟢 შეცვლილი მესიჯების ლოგიკა (მხოლოდ დროებითი ბაბლებისთვის)
   const [messages, setMessages] = useState([]);
+  
   const [activeEmotes, setActiveEmotes] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(100);
   
-  const [mobileModal, setMobileModal] = useState(null); 
-  const [unreadChat, setUnreadChat] = useState(false);
   const [showSurrenderModal, setShowSurrenderModal] = useState(false); 
   const [showEmojiMenu, setShowEmojiMenu] = useState(false);
-
-  const chatRef = useRef(null);
+  const [showChatMenu, setShowChatMenu] = useState(false); // 🟢 ახალი State ჩატის მენიუსთვის
 
   const me = room?.players?.find(p => p.id === socket.id);
   const isMyTurn = room?.players?.[room.currentTurn]?.id === socket.id;
@@ -51,14 +50,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       const audio = new Audio(soundFile);
       audio.volume = 0.3; 
       audio.play().catch(e => console.log("Audio play error:", e));
-      
-      if (isCapture) {
-        setTimeout(() => {
-          const audio2 = new Audio(soundFile);
-          audio2.volume = 0.3;
-          audio2.play().catch(e => {});
-        }, 0);
-      }
     } catch (e) {}
   };
 
@@ -98,10 +89,13 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   }, [room?.roundSummary, me?.name]);
 
   useEffect(() => {
+    // 🟢 მესიჯის ეკრანზე გამოტანის და 4 წამში გაქრობის ლოგიკა
     const handleReceiveMessage = (msg) => {
-      setMessages(prev => [...prev, msg]);
-      if (window.innerWidth < 1024 && mobileModal !== 'chat') setUnreadChat(true);
-      setTimeout(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, 100);
+      const msgId = Date.now() + Math.random();
+      setMessages(prev => [...prev, { ...msg, id: msgId }]);
+      setTimeout(() => {
+        setMessages(prev => prev.filter(m => m.id !== msgId));
+      }, 4000);
     };
     
     const handleReceiveEmote = ({ playerId, emote }) => {
@@ -117,7 +111,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       socket.off('receiveMessage', handleReceiveMessage);
       socket.off('receiveEmote', handleReceiveEmote);
     };
-  }, [socket, mobileModal]);
+  }, [socket]);
 
   const handlePlayCard = () => {
     if (!isMyTurn || !selectedCardFromHand) return;
@@ -175,87 +169,12 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   }
 
   return (
-    <div className="w-full flex flex-col lg:flex-row gap-5 md:gap-6 max-w-7xl mx-auto h-auto lg:h-[82vh] min-h-[85vh] lg:min-h-0 relative pb-6 lg:pb-0">
+    // 🟢 სრულად ცენტრალიზებული მაგიდა (გვერდითა პანელი ამოღებულია)
+    <div className="w-full flex flex-col items-center justify-center max-w-7xl mx-auto h-[82vh] md:h-[88vh] relative pb-6 lg:pb-0">
       
-      {/* მარცხენა პანელი (მოთამაშეების სია ამოღებულია სივრცისთვის) */}
-      <div className={`
-        ${mobileModal ? 'fixed inset-0 z-[100] bg-stone-950/60 backdrop-blur-sm flex flex-col justify-end p-0' : 'hidden lg:flex lg:w-80 lg:flex-col lg:gap-5 order-2 lg:order-1 h-full'}
-      `}>
+      <div className={`flex-1 w-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden`}>
         
-        {mobileModal && <div className="absolute inset-0 z-0" onClick={() => setMobileModal(null)}></div>}
-
-        <div className={`
-          ${mobileModal ? 'bg-stone-900 w-full h-[65dvh] rounded-t-[2rem] p-4 md:p-5 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] relative z-10 animate-in slide-in-from-bottom-full duration-300' : 'flex flex-col gap-5 w-full h-full'}
-        `}>
-          
-          {mobileModal && (
-            <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10 lg:hidden shrink-0">
-              <span className={`text-sm font-black uppercase tracking-widest ${activeTheme.accent}`}>
-                💬 Quick Chat
-              </span>
-              <button onClick={() => setMobileModal(null)} className="p-2 bg-stone-800 text-stone-400 hover:text-white rounded-xl transition-all active:scale-95 border border-white/5 shadow-md">
-                <X size={18} />
-              </button>
-            </div>
-          )}
-
-          <div className="flex flex-col w-full flex-1 min-h-0 overflow-hidden">
-            <div className={`${mobileModal ? 'bg-transparent shadow-none border-none p-0' : `${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl shadow-2xl transition-colors`} flex flex-col h-full overflow-hidden`}>
-              
-              {!mobileModal && (
-                <div className={`p-4 border-b border-white/5 flex items-center gap-2 shrink-0`}>
-                  <MessageSquare size={14} className={activeTheme.accent} />
-                  <h3 className="text-[10px] md:text-xs font-black text-stone-400 uppercase tracking-widest">Quick Chat</h3>
-                </div>
-              )}
-              
-              <div ref={chatRef} className="flex-1 p-3 md:p-4 overflow-y-auto custom-scrollbar flex flex-col gap-3 min-h-[150px]">
-                {messages.length === 0 ? (
-                  <div className="m-auto text-[10px] font-bold text-stone-600 uppercase tracking-widest text-center">ფრაზები არ არის</div>
-                ) : (
-                  messages.map((m, i) => {
-                    const isMsgVip = checkIsVip(m.isVip);
-                    return (
-                      <div key={i} className={`flex flex-col max-w-[85%] ${m.senderId === socket.id ? 'self-end items-end' : 'self-start items-start'}`}>
-                        <span className="text-[8px] md:text-[9px] text-stone-500 font-bold mb-1 ml-1">
-                           <VipName name={m.sender} isVip={isMsgVip} />
-                        </span>
-                        <div className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-2xl text-[10px] md:text-xs font-medium shadow-md transition-all
-                          ${m.senderId === socket.id 
-                            ? (isMsgVip ? `${activeTheme.accentBg} text-stone-950 rounded-tr-sm ring-1 ring-yellow-400` : `${activeTheme.accentBg} text-stone-950 rounded-tr-sm`) 
-                            : (isMsgVip ? 'bg-stone-800/90 text-yellow-500 rounded-tl-sm border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.1)]' : 'bg-stone-800 text-stone-200 rounded-tl-sm border border-white/5')
-                          }`}
-                        >
-                          {m.text}
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-              
-              <div className={`p-2.5 md:p-3 ${mobileModal ? 'bg-stone-950/60 rounded-2xl mt-2' : 'bg-stone-950/60 border-t border-white/5'} shrink-0 grid grid-cols-2 gap-2`}>
-                {QUICK_PHRASES.map((phrase, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      handleSendQuickMessage(phrase);
-                      if(mobileModal) setMobileModal(null);
-                    }}
-                    className="bg-stone-900 hover:bg-stone-800 border border-white/5 hover:border-white/10 rounded-lg py-2 px-2.5 text-[9px] md:text-[11px] font-bold text-stone-300 text-left truncate active:scale-95 transition-all shadow-sm"
-                  >
-                    {phrase}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <div className={`flex-1 bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden order-1 lg:order-2 ${mobileModal ? 'hidden lg:flex' : 'flex'}`}>
-        
+        {/* ემოჯიების ანიმაცია (გლობალური) */}
         {activeEmotes.length > 0 && (
           <div className="absolute right-4 md:right-8 top-[20%] md:top-[25%] z-[150] pointer-events-none flex flex-col gap-4 items-end">
             {activeEmotes.map(e => {
@@ -270,7 +189,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         )}
 
-        <div className="flex items-center justify-between p-2.5 md:p-4 border-b border-white/5 bg-stone-950/40 rounded-t-3xl shrink-0">
+        {/* 🟢 Header ნაწილი */}
+        <div className="flex items-center justify-between p-2.5 md:p-4 border-b border-white/5 bg-stone-950/40 rounded-t-3xl shrink-0 z-20">
           
           <div className="flex items-center gap-2">
             <span className={`text-[10px] md:text-xs font-black tracking-widest font-mono ${activeTheme.accent} hidden sm:block`}>ROOM: {room.id}</span>
@@ -286,14 +206,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </button>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
-            <div className="flex lg:hidden items-center gap-2 mr-2 border-r border-white/10 pr-2">
-               <button onClick={() => { setMobileModal('chat'); setUnreadChat(false); }} className="relative p-1.5 bg-stone-900 border border-white/5 rounded-lg text-stone-300 active:scale-95 shadow-sm">
-                 <MessageSquare size={14} className={activeTheme.accent} />
-                 {unreadChat && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border border-stone-900 animate-pulse shadow-[0_0_5px_rgba(244,63,94,0.8)]"></span>}
-               </button>
-            </div>
-
+          <div className="flex items-center gap-3 md:gap-4">
             <button onClick={() => setIsMuted(!isMuted)} className={`text-stone-500 hover:${activeTheme.accent} transition-colors`}>
               {isMuted ? <VolumeX size={14} className="md:w-4 md:h-4" /> : <Volume2 size={14} className="md:w-4 md:h-4" />}
             </button>
@@ -309,7 +222,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         )}
 
-        <div className="flex-1 flex flex-col justify-between p-3 md:p-6 relative min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col justify-between p-3 md:p-6 relative min-h-0 overflow-hidden w-full">
           
           {room.deck?.length > 0 && (
             <div className="absolute top-2 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title="დარჩენილი ბანქო">
@@ -324,7 +237,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
           {/* 🟢 სტატუსი და მოქმედებების ჟურნალი (მაგიდის ზემოთ) */}
           <div className="flex flex-col items-center gap-2 relative z-20 shrink-0 mt-2 min-h-[70px]">
-            {/* 1. შენი სვლაა / ველოდებით */}
             {isMyTurn ? (
               <div className={`inline-flex items-center gap-1.5 md:gap-2 px-5 py-2.5 bg-stone-900 border border-white/10 rounded-full ${activeTheme.accent} text-[10px] md:text-xs font-black shadow-[0_0_15px_currentColor] animate-pulse`}>
                 <Sparkles size={14} className="md:w-[16px] md:h-[16px]" /> შენი სვლაა!
@@ -335,7 +247,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </div>
             )}
 
-            {/* 2. ჟურნალი (მოჭრა/დაგდება) */}
             {room.lastAction && (() => {
               const isCapture = room.lastAction.type === 'CAPTURE';
               const isSweep = isCapture && ['J', 'j', 'ვალეტი'].includes(room.lastAction.cardFromHand.rank);
@@ -369,9 +280,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             })()}
           </div>
 
-          {/* 🟢 ოვალური მაგიდა (საბოლოო) */}
-          <div className="flex-1 flex flex-col items-center justify-center relative mt-4 md:mt-8 mb-4 md:mb-8 w-full z-10 min-h-[300px]">
-            <div className={`relative w-[92%] md:w-[80%] max-w-4xl aspect-[4/3] md:aspect-[2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
+          {/* 🟢 ოვალური მაგიდა (სრულად გასუფთავებული) */}
+          <div className="flex-1 flex flex-col items-center justify-center relative mt-4 md:mt-8 mb-4 md:mb-8 w-full z-10 min-h-[250px]">
+            <div className={`relative w-[92%] md:w-[85%] max-w-3xl aspect-[4/3] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
               
               <div className="absolute inset-0 rounded-[92px] md:rounded-[184px] border border-white/5 shadow-inner pointer-events-none"></div>
               <div className={`absolute inset-0 opacity-20 blur-[40px] rounded-[100px] ${activeTheme.accentBg} pointer-events-none`}></div>
@@ -402,12 +313,15 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 )}
               </div>
 
-              {/* 🟢 ოვალზე დასმული მოთამაშეები */}
+              {/* 🟢 ოვალზე დასმული მოთამაშეები (ულტრა-კომპაქტური + მესიჯების Bubble-ები) */}
               {seatedPlayers.map((p, idx) => {
                 const isMe = idx === 0;
                 const isCurrentTurn = room.currentTurn === room.players.findIndex(rp => rp.id === p.id);
                 const isDealer = room.dealerIndex === room.players.findIndex(rp => rp.id === p.id);
                 
+                // ვამოწმებთ აქვს თუ არა ამ მოთამაშეს აქტიური მესიჯი
+                const activePlayerMessage = messages.find(m => m.senderId === p.id);
+
                 let posClass = "";
                 let isVertical = false; 
 
@@ -427,6 +341,16 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 
                 return (
                   <div key={p.id} className={`absolute flex items-center justify-center z-30 ${posClass}`}>
+                     
+                     {/* 🟢 ჩატის მესიჯის ღრუბელი (Speech Bubble) */}
+                     {activePlayerMessage && (
+                       <div className="absolute -top-12 md:-top-16 left-1/2 -translate-x-1/2 bg-stone-100 text-stone-900 px-3 py-1.5 md:py-2 rounded-xl text-[10px] md:text-xs font-black shadow-[0_5px_15px_rgba(0,0,0,0.5)] z-50 animate-in zoom-in-50 fade-in slide-in-from-bottom-2 whitespace-nowrap">
+                         {activePlayerMessage.text}
+                         {/* ღრუბლის კუდი */}
+                         <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-stone-100 rotate-45 rounded-sm"></div>
+                       </div>
+                     )}
+
                      <div className={`relative flex items-center justify-center gap-1 md:gap-1.5 p-1 md:p-1.5 rounded-xl bg-stone-900/95 border transition-all
                         ${isCurrentTurn ? `${borderColorClass} shadow-[0_0_15px_currentColor] scale-110 z-40` : 'border-white/10 shadow-md'}
                         ${isVertical ? 'flex-col w-[45px] md:w-[55px]' : 'flex-row px-2 md:px-3'}
@@ -449,49 +373,70 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-4 md:gap-6 mt-auto pt-4 z-20 shrink-0 w-full">
-            {/* 🟢 ქვედა პანელი: ემოჯი Bubble და სვლის ღილაკი */}
-            <div className="relative flex justify-center items-center gap-3 w-full max-w-sm mx-auto z-40 mb-2">
+          <div className="flex flex-col items-center gap-4 md:gap-6 mt-auto pt-4 z-20 shrink-0 w-full max-w-lg mx-auto">
+            
+            {/* 🟢 ქვედა პანელი: ემოჯი Bubble, ჩატის Bubble და სვლის ღილაკი */}
+            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-2 px-4">
+              
+              {/* ემოჯების მენიუ */}
               {showEmojiMenu && (
-                <div className="absolute bottom-[110%] left-0 md:-left-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex gap-1.5 md:gap-2 w-max max-w-[90vw] overflow-x-auto custom-scrollbar animate-in zoom-in-95 slide-in-from-bottom-2">
+                <div className="absolute bottom-[115%] left-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex gap-1.5 md:gap-2 w-max max-w-[90vw] overflow-x-auto custom-scrollbar animate-in zoom-in-95 slide-in-from-bottom-2">
                   {standardEmotes.map(emo => (
-                    <button 
-                      key={emo} 
-                      onClick={() => { if(!hasActiveEmote) { handleSendEmote(emo); setShowEmojiMenu(false); } }} 
-                      disabled={hasActiveEmote}
-                      className={`text-xl md:text-2xl p-1.5 transition-all flex-shrink-0 rounded-lg hover:bg-stone-800 ${hasActiveEmote ? 'opacity-20 cursor-not-allowed grayscale' : 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100'}`}
-                    >
+                    <button key={emo} onClick={() => { if(!hasActiveEmote) { handleSendEmote(emo); setShowEmojiMenu(false); } }} disabled={hasActiveEmote} className={`text-xl md:text-2xl p-1.5 transition-all flex-shrink-0 rounded-lg hover:bg-stone-800 ${hasActiveEmote ? 'opacity-20 cursor-not-allowed grayscale' : 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100'}`}>
                       {emo}
                     </button>
                   ))}
                   <div className="w-px h-8 bg-white/10 shrink-0 mx-1"></div>
                   {vipEmotes.map(emo => (
-                    <button 
-                      key={emo} 
-                      onClick={() => { if(amIVip && !hasActiveEmote) { handleSendEmote(emo); setShowEmojiMenu(false); } }} 
-                      disabled={!amIVip || hasActiveEmote}
-                      className={`relative text-xl md:text-2xl p-1.5 transition-all shrink-0 flex-shrink-0 rounded-lg hover:bg-stone-800 ${amIVip && !hasActiveEmote ? 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' : 'opacity-20 cursor-not-allowed grayscale'}`}
-                    >
+                    <button key={emo} onClick={() => { if(amIVip && !hasActiveEmote) { handleSendEmote(emo); setShowEmojiMenu(false); } }} disabled={!amIVip || hasActiveEmote} className={`relative text-xl md:text-2xl p-1.5 transition-all shrink-0 flex-shrink-0 rounded-lg hover:bg-stone-800 ${amIVip && !hasActiveEmote ? 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' : 'opacity-20 cursor-not-allowed grayscale'}`}>
                       {emo} {!amIVip && <Lock size={10} className="absolute -bottom-0 -right-0 text-yellow-500/50"/>}
                     </button>
                   ))}
                 </div>
               )}
+
+              {/* ჩატის ფრაზების მენიუ (მარჯვნივ) */}
+              {showChatMenu && (
+                <div className="absolute bottom-[115%] right-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col gap-1.5 w-max max-w-[200px] md:max-w-[250px] animate-in zoom-in-95 slide-in-from-bottom-2 z-50">
+                  <h4 className="text-[9px] font-black text-stone-400 uppercase tracking-widest border-b border-white/10 pb-1 mb-1 text-center">Quick Chat</h4>
+                  <div className="flex flex-col gap-1 max-h-[30vh] overflow-y-auto custom-scrollbar pr-1">
+                    {QUICK_PHRASES.map(phrase => (
+                      <button key={phrase} onClick={() => { handleSendQuickMessage(phrase); setShowChatMenu(false); }} className="text-[10px] md:text-xs font-bold text-stone-300 bg-stone-800/50 hover:bg-stone-700 hover:text-white py-1.5 px-3 rounded-lg text-left transition-all active:scale-95 border border-white/5">
+                        {phrase}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ემოჯის ღილაკი */}
               <button 
-                onClick={() => setShowEmojiMenu(!showEmojiMenu)}
-                className={`p-3 md:p-3.5 rounded-full transition-all active:scale-95 border shadow-lg flex items-center justify-center
+                onClick={() => { setShowEmojiMenu(!showEmojiMenu); setShowChatMenu(false); }}
+                className={`p-3 md:p-3.5 rounded-full transition-all active:scale-95 border shadow-lg flex items-center justify-center shrink-0
                   ${showEmojiMenu ? 'bg-stone-700 border-white/30 text-white shadow-inner' : 'bg-stone-900 border-white/10 text-stone-400 hover:bg-stone-800 hover:text-stone-200'}`}
                 title="ემოციები"
               >
                  <span className="text-lg leading-none">😀</span>
               </button>
+
+              {/* სვლის ღილაკი */}
               <button 
-                onClick={() => { handlePlayCard(); setShowEmojiMenu(false); }}
+                onClick={() => { handlePlayCard(); setShowEmojiMenu(false); setShowChatMenu(false); }}
                 disabled={!isMyTurn || !selectedCardFromHand}
                 className={`flex-1 px-4 md:px-6 py-3.5 rounded-2xl md:rounded-full text-xs font-black transition-all shadow-md active:scale-95 uppercase tracking-wider 
                   ${!isMyTurn || !selectedCardFromHand ? 'bg-stone-800 text-stone-500 cursor-not-allowed' : selectedCardsFromTable.length > 0 ? 'bg-white text-stone-900 shadow-xl' : `${activeTheme.accentBg} text-stone-950 shadow-xl`}`}
               >
                 {selectedCardsFromTable.length > 0 ? 'მოჭრა ⚔️' : 'დაგდება 🃏'}
+              </button>
+
+              {/* ჩატის ღილაკი */}
+              <button 
+                onClick={() => { setShowChatMenu(!showChatMenu); setShowEmojiMenu(false); }}
+                className={`p-3 md:p-3.5 rounded-full transition-all active:scale-95 border shadow-lg flex items-center justify-center shrink-0
+                  ${showChatMenu ? 'bg-stone-700 border-white/30 text-white shadow-inner' : 'bg-stone-900 border-white/10 text-stone-400 hover:bg-stone-800 hover:text-stone-200'}`}
+                title="ფრაზები"
+              >
+                 <MessageSquare size={18} />
               </button>
             </div>
 
