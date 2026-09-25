@@ -444,8 +444,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               <div className="absolute inset-0 rounded-[92px] md:rounded-[184px] border border-white/5 shadow-inner pointer-events-none"></div>
               <div className={`absolute inset-0 opacity-20 blur-[40px] rounded-[100px] ${activeTheme.accentBg} pointer-events-none`}></div>
 
-              {/* Action Log (ჟურნალი) */}
-              <div className="absolute top-[20%] left-1/2 -translate-x-1/2 z-20 w-full max-w-[85%] flex justify-center pointer-events-none">
+              {/* Action Log (ჟურნალი აწეულია მაღლა, რომ კარტებს არ დაედოს) */}
+              <div className="absolute top-[8%] md:top-[10%] left-1/2 -translate-x-1/2 z-50 w-full max-w-[85%] flex justify-center pointer-events-none">
                 {room.lastAction && (() => {
                   const isCapture = room.lastAction.type === 'CAPTURE';
                   const isSweep = isCapture && ['J', 'j', 'ვალეტი'].includes(room.lastAction.cardFromHand.rank);
@@ -463,7 +463,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   if (isSweep) { containerBorder = "border-yellow-500 bg-yellow-900/50 shadow-[0_0_20px_rgba(234,179,8,0.4)]"; actionText = "გაასუფთავა 🧹"; actionColor = "text-yellow-400 font-black uppercase"; } 
 
                   return (
-                    <div className={`border px-3 md:px-4 py-1.5 md:py-2 rounded-xl flex items-center gap-1.5 md:gap-2 animate-in slide-in-from-top-5 fade-in duration-300 ${containerBorder}`}>
+                    <div className={`border px-3 md:px-4 py-1.5 md:py-2 rounded-xl flex items-center gap-1.5 md:gap-2 animate-in slide-in-from-top-2 fade-in duration-300 ${containerBorder}`}>
                       <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-1 text-stone-300">
                         <VipName name={room.lastAction.playerName} isVip={checkIsVip(room.lastAction.isVip)} className={activeTheme.accent} /> 
                         <span className={actionColor}>{actionText}</span>
