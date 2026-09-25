@@ -505,57 +505,57 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 )}
               </div>
 
-              {/* 🟢 ოვალზე დასმული მოთამაშეები (აბსოლუტური სიზუსტით) */}
+              {/* 🟢 ოვალზე დასმული მოთამაშეები (კომპაქტური, მართკუთხა პროფილები) */}
               {seatedPlayers.map((p, idx) => {
                 const isMe = idx === 0;
                 const isCurrentTurn = room.currentTurn === room.players.findIndex(rp => rp.id === p.id);
                 const isDealer = room.dealerIndex === room.players.findIndex(rp => rp.id === p.id);
                 
-                // ზუსტი კოორდინატები 100%-იანი სიზუსტისთვის
+                // ზუსტი კოორდინატები
                 let posClass = "";
-                let flexDir = "";
 
                 if (seatedPlayers.length === 2) {
-                   if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; flexDir = "flex-col-reverse"; }
-                   if (idx === 1) { posClass = "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2"; flexDir = "flex-col"; }
+                   if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; }
+                   if (idx === 1) { posClass = "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2"; }
                 } else if (seatedPlayers.length === 3) {
-                   if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; flexDir = "flex-col-reverse"; }
-                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; flexDir = "flex-row"; }
-                   if (idx === 2) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; flexDir = "flex-row-reverse"; }
+                   if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; }
+                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; }
+                   if (idx === 2) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; }
                 } else if (seatedPlayers.length === 4) {
-                   if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; flexDir = "flex-col-reverse"; }
-                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; flexDir = "flex-row"; }
-                   if (idx === 2) { posClass = "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2"; flexDir = "flex-col"; }
-                   if (idx === 3) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; flexDir = "flex-row-reverse"; }
+                   if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; }
+                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; }
+                   if (idx === 2) { posClass = "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2"; }
+                   if (idx === 3) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; }
                 }
                 
                 return (
-                  <div key={p.id} className={`absolute flex items-center justify-center gap-1.5 md:gap-3 z-30 ${posClass} ${flexDir}`}>
+                  <div key={p.id} className={`absolute flex items-center justify-center z-30 ${posClass}`}>
                      
-                     <div className={`relative flex flex-col items-center p-2 md:p-2.5 rounded-2xl bg-stone-900/95 border transition-all ${isCurrentTurn ? `${borderColorClass} shadow-[0_0_20px_currentColor] scale-110 z-40` : 'border-white/10 shadow-lg'}`}>
-                        {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-10 blur-sm rounded-2xl`} />}
-                        {isDealer && <span className="absolute -top-2 -right-2 bg-stone-800 text-stone-300 text-[8px] md:text-[10px] px-1.5 py-0.5 rounded-full border border-white/20 shadow-md font-black uppercase z-20">D</span>}
+                     {/* 🟢 ჰორიზონტალური, მართკუთხა პროფილი */}
+                     <div className={`relative flex items-center gap-2 md:gap-3 px-3 md:px-4 py-1.5 md:py-2 rounded-xl bg-stone-900/95 border transition-all ${isCurrentTurn ? `${borderColorClass} shadow-[0_0_20px_currentColor] scale-110 z-40` : 'border-white/10 shadow-lg'}`}>
                         
-                        <span className="text-2xl md:text-3xl drop-shadow-md z-10">{p.avatar || '😎'}</span>
-                        <span className={`text-[8px] md:text-[10px] font-black uppercase mt-1 z-10 truncate max-w-[60px] md:max-w-[80px] text-center ${isCurrentTurn ? activeTheme.accent : 'text-stone-200'}`}>
-                           <VipName name={isMe ? 'შენ' : p.name} isVip={checkIsVip(p.vipUntil)} />
-                        </span>
+                        {/* აქტიური მოთამაშის განათება */}
+                        {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-10 blur-sm rounded-xl`} />}
                         
-                        <div className="bg-stone-950/80 px-2 py-0.5 rounded border border-white/5 mt-0.5 z-10">
-                           <span className="text-[7px] md:text-[9px] font-black text-stone-300">ქულა: <span className={activeTheme.accent}>{p.totalScore}</span></span>
+                        {/* დილერის ნიშანი (D) */}
+                        {isDealer && <span className="absolute -top-2 -right-2 bg-stone-800 text-stone-300 text-[8px] md:text-[10px] px-1.5 py-0.5 rounded border border-white/20 shadow-md font-black uppercase z-20">D</span>}
+                        
+                        {/* ავატარი (მარცხნივ) */}
+                        <span className="text-2xl md:text-3xl drop-shadow-md z-10 shrink-0">{p.avatar || '😎'}</span>
+                        
+                        {/* სახელი და ქულა (მარჯვნივ) */}
+                        <div className="flex flex-col justify-center z-10 min-w-[60px] md:min-w-[80px]">
+                           <span className={`text-[9px] md:text-[11px] font-black uppercase truncate ${isCurrentTurn ? activeTheme.accent : 'text-stone-200'}`}>
+                              <VipName name={isMe ? 'შენ' : p.name} isVip={checkIsVip(p.vipUntil)} />
+                           </span>
+                           
+                           <span className="text-[8px] md:text-[10px] font-black text-stone-400 mt-0.5">
+                              ქულა: <span className={activeTheme.accent}>{p.totalScore}</span>
+                           </span>
                         </div>
                      </div>
-
-                     {!isMe && p.cards?.length > 0 && (
-                       <div className={`flex z-20 justify-center items-center ${['flex-row', 'flex-row-reverse'].includes(flexDir) ? 'flex-col -space-y-4 md:-space-y-5' : '-space-x-3 md:-space-x-4'}`}>
-                         {Array.from({length: p.cards.length}).map((_, cIdx) => (
-                            <div 
-                              key={cIdx} 
-                              className={`rounded-sm border shadow-md ${activeCardBack} ${['flex-row', 'flex-row-reverse'].includes(flexDir) ? 'w-9 h-6 md:w-11 md:h-7' : 'w-6 h-9 md:w-7 md:h-11'}`}
-                            ></div>
-                         ))}
-                       </div>
-                     )}
+                     
+                     {/* ამოღებულია: სხვისი კარტების რენდერის კოდი! */}
                   </div>
                 );
               })}
