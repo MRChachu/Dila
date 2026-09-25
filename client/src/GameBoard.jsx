@@ -172,23 +172,25 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   }
 
-  // პოზიციების გამოსათვლელი ფუნქცია ოვალის გარშემო (გასწორებული)
+  // 🟢 პოზიციების გამოსათვლელი ფუნქცია ოვალის გარშემო (გასწორებული)
   const getSeatClass = (index, total) => {
-    // 1. მე (ყოველთვის ქვემოთ, ზუსტად საზღვარზე)
-    if (index === 0) return "bottom-0 translate-y-[55%] left-1/2 -translate-x-1/2 flex-col-reverse"; 
+    // 1. მე (ყოველთვის ქვემოთ, მაგიდის შიგნით უსაფრთხოდ)
+    if (index === 0) return "bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex-col-reverse"; 
     
     if (total === 2) {
-      if (index === 1) return "top-0 -translate-y-[55%] left-1/2 -translate-x-1/2 flex-col";
+      // 2. მოწინააღმდეგე (ზემოთ, მაგიდის შიგნით)
+      if (index === 1) return "top-2 md:top-4 left-1/2 -translate-x-1/2 flex-col";
     } else if (total === 3) {
-      if (index === 1) return "top-[20%] left-0 -translate-x-[45%] flex-row";
-      if (index === 2) return "top-[20%] right-0 translate-x-[45%] flex-row-reverse";
+      if (index === 1) return "top-[20%] left-2 md:left-4 flex-row";
+      if (index === 2) return "top-[20%] right-2 md:right-4 flex-row-reverse";
     } else if (total === 4) {
-      // 4 მოთამაშე: მარცხნივ, ზემოთ, მარჯვნივ
-      if (index === 1) return "top-1/2 left-0 -translate-x-[50%] -translate-y-1/2 flex-row"; 
-      if (index === 2) return "top-0 -translate-y-[55%] left-1/2 -translate-x-1/2 flex-col"; 
-      if (index === 3) return "top-1/2 right-0 translate-x-[50%] -translate-y-1/2 flex-row-reverse"; 
+      // 4 მოთამაშე (მარცხნივ, ზემოთ, მარჯვნივ)
+      if (index === 1) return "top-1/2 left-2 md:left-4 -translate-y-1/2 flex-row"; 
+      if (index === 2) return "top-2 md:top-4 left-1/2 -translate-x-1/2 flex-col"; 
+      if (index === 3) return "top-1/2 right-2 md:right-4 -translate-y-1/2 flex-row-reverse"; 
     }
     return "";
+  };
   };
 
   return (
