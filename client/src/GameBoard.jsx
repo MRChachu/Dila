@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Users, Lock, X, Flag } from 'lucide-react';
 
-// 🟢 აქ დავამატეთ getLeague ფუნქცია გლობალურად, რათა ავირიდოთ ერორი
+// 🟢 გლობალური League ფუნქცია
 const getLeague = (xp = 0) => {
   if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
   if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' };
@@ -22,6 +22,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const [mobileModal, setMobileModal] = useState(null); 
   const [unreadChat, setUnreadChat] = useState(false);
   const [showSurrenderModal, setShowSurrenderModal] = useState(false); 
+  const [showEmojiMenu, setShowEmojiMenu] = useState(false);
 
   const chatRef = useRef(null);
 
@@ -160,10 +161,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     royal: 'bg-purple-900 border-yellow-500',
     hacker: 'bg-black border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]'
   };
+  
   const activeCardBack = cardBackStyles[room?.hostCardBack] || cardBackStyles['classic'];
   const borderColorClass = activeTheme.accent.replace('text-', 'border-');
 
-  // 🟢 ოვალური მაგიდისთვის მოთამაშეების გადალაგება (შენ ყოველთვის ქვემოთ)
+  // 🟢 ოვალური მაგიდისთვის მოთამაშეების გადალაგება
   const myIndex = room?.players?.findIndex(p => p.id === socket.id) || 0;
   const seatedPlayers = [];
   if (room?.players) {
@@ -172,29 +174,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   }
 
-  // 🟢 პოზიციების გამოსათვლელი ფუნქცია ოვალის გარშემო (გასწორებული)
-  const getSeatClass = (index, total) => {
-    // 1. მე (ყოველთვის ქვემოთ, მაგიდის შიგნით უსაფრთხოდ)
-    if (index === 0) return "bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex-col-reverse"; 
-    
-    if (total === 2) {
-      // 2. მოწინააღმდეგე (ზემოთ, მაგიდის შიგნით)
-      if (index === 1) return "top-2 md:top-4 left-1/2 -translate-x-1/2 flex-col";
-    } else if (total === 3) {
-      if (index === 1) return "top-[20%] left-2 md:left-4 flex-row";
-      if (index === 2) return "top-[20%] right-2 md:right-4 flex-row-reverse";
-    } else if (total === 4) {
-      // 4 მოთამაშე (მარცხნივ, ზემოთ, მარჯვნივ)
-      if (index === 1) return "top-1/2 left-2 md:left-4 -translate-y-1/2 flex-row"; 
-      if (index === 2) return "top-2 md:top-4 left-1/2 -translate-x-1/2 flex-col"; 
-      if (index === 3) return "top-1/2 right-2 md:right-4 -translate-y-1/2 flex-row-reverse"; 
-    }
-    return "";
-  };
-
   return (
     <div className="w-full flex flex-col lg:flex-row gap-5 md:gap-6 max-w-7xl mx-auto h-auto lg:h-[82vh] min-h-[85vh] lg:min-h-0 relative pb-6 lg:pb-0">
       
+      {/* მარცხენა პანელი (მოთამაშეების სია ამოღებულია სივრცისთვის) */}
       <div className={`
         ${mobileModal ? 'fixed inset-0 z-[100] bg-stone-950/60 backdrop-blur-sm flex flex-col justify-end p-0' : 'hidden lg:flex lg:w-80 lg:flex-col lg:gap-5 order-2 lg:order-1 h-full'}
       `}>
@@ -208,7 +191,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           {mobileModal && (
             <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10 lg:hidden shrink-0">
               <span className={`text-sm font-black uppercase tracking-widest ${activeTheme.accent}`}>
-                {mobileModal === 'players' ? '👥 მოთამაშეები' : '💬 Quick Chat'}
+                💬 Quick Chat
               </span>
               <button onClick={() => setMobileModal(null)} className="p-2 bg-stone-800 text-stone-400 hover:text-white rounded-xl transition-all active:scale-95 border border-white/5 shadow-md">
                 <X size={18} />
@@ -216,88 +199,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           )}
 
-          <div className={`${mobileModal === 'chat' ? 'hidden lg:flex' : 'flex'} flex-col w-full shrink-0 ${mobileModal ? 'h-full overflow-hidden' : 'max-h-[50%]'}`}>
-            <div className={`${mobileModal ? 'bg-transparent shadow-none border-none p-0 h-full' : `${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl p-4 shadow-2xl relative flex flex-col h-full`} transition-colors`}>
-              
-              {!mobileModal && <div className={`absolute top-0 left-0 w-full h-1 rounded-t-3xl bg-gradient-to-r from-transparent via-current to-transparent opacity-50 ${activeTheme.accent}`}></div>}
-              
-              {!mobileModal && (
-                <h3 className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 mb-3 shrink-0 ${activeTheme.accent}`}>
-                  <Users size={14} /> მოთამაშეები
-                </h3>
-              )}
-              
-              <div className={`flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 pr-2 min-h-0`}>
-                {room?.players?.map((p, i) => {
-                  const isCurrentTurn = room.currentTurn === i;
-                  const isDealer = room.dealerIndex === i; 
-                  const capturedCards = p.captured?.length || 0;
-                  const capturedClubs = p.captured?.filter(c => c.suit === '♣' || c.suit === '♣️').length || 0;
-                  const has10Diamond = p.captured?.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
-                  const has2Club = p.captured?.some(c => c.rank === '2' && (c.suit === '♣' || c.suit === '♣️'));
-                  const league = getLeague(p.xp);
-
-                  return (
-                    <div key={p.id} className={`relative flex items-center justify-between p-2.5 md:p-3 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${isCurrentTurn ? `bg-stone-900 ${borderColorClass} shadow-[0_0_20px_currentColor] z-10 scale-[1.02]` : 'bg-stone-950/40 border-white/5 opacity-70'}`}>
-                      {/* აქტიური მოთამაშის მბზინავი ფონი */}
-                      {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-10 blur-md`} />}
-                      {isCurrentTurn && <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-white to-transparent opacity-50 animate-pulse"></div>}
-                      
-                      <div className="flex items-start gap-2.5 z-10 relative">
-                        <span className="text-2xl drop-shadow-md mt-0.5">{p.avatar || '😎'}</span>
-                        <div className="flex flex-col">
-                          
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-xs md:text-sm truncate max-w-[120px]">
-                              <VipName name={`${p.name} ${p.id === socket.id ? '(შენ)' : ''}`} isVip={checkIsVip(p.vipUntil)} className={isCurrentTurn ? activeTheme.accent : 'text-stone-200'} />
-                            </span>
-                            {isDealer && (
-                              <span className="bg-stone-800 text-stone-400 text-[8px] px-1.5 py-0.5 rounded border border-white/10 uppercase font-black" title="ამჟამინდელი დილერი">D</span>
-                            )}
-                          </div>
-                          
-                          <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mt-1">
-                            <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${league.bg} ${league.border} shadow-sm`}>
-                               <span className="text-[9px] drop-shadow-md">{league.icon}</span>
-                               <span className={`text-[8px] font-black uppercase tracking-wider ${league.color}`}>{league.name}</span>
-                            </div>
-
-                            <span className="text-[9px] text-stone-500 font-bold">ქულა: <span className="text-stone-200">{p.totalScore}</span></span>
-                            
-                            <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-stone-950/60 rounded border border-white/5 shrink-0">
-                              <span className="text-[9px] font-mono font-black text-stone-300">🃏 {capturedCards}</span>
-                              <span className="text-stone-700 text-[8px]">|</span>
-                              <span className="text-[9px] font-mono font-black text-stone-300">♣️ {capturedClubs}</span>
-                            </div>
-                            
-                            <div className="flex gap-1">
-                              {has10Diamond && <span className="text-[11px] drop-shadow-md" title="10 აგური">💎</span>}
-                              {has2Club && <span className="text-[11px] drop-shadow-md" title="2 ჯვარი">♣️</span>}
-                            </div>
-                          </div>
-
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-end z-10">
-                        <div className="flex items-center -space-x-1.5">
-                          {Array.from({length: p.cards?.length || 0}).map((_, idx) => (
-                              <div 
-                                key={idx} 
-                                style={{ animationDelay: `${idx * 100}ms`, animationFillMode: 'backwards' }}
-                                className={`w-3.5 h-5 md:w-4 md:h-6 rounded-sm border shadow-md ${activeCardBack} animate-in zoom-in-50 fade-in duration-500`}
-                              ></div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className={`${mobileModal === 'players' ? 'hidden lg:flex' : 'flex'} flex-col w-full flex-1 min-h-0 overflow-hidden`}>
+          <div className="flex flex-col w-full flex-1 min-h-0 overflow-hidden">
             <div className={`${mobileModal ? 'bg-transparent shadow-none border-none p-0' : `${activeTheme.card} backdrop-blur-md border border-white/5 rounded-3xl shadow-2xl transition-colors`} flex flex-col h-full overflow-hidden`}>
               
               {!mobileModal && (
@@ -386,9 +288,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
           <div className="flex items-center gap-2 md:gap-4">
             <div className="flex lg:hidden items-center gap-2 mr-2 border-r border-white/10 pr-2">
-               <button onClick={() => setMobileModal('players')} className="p-1.5 bg-stone-900 border border-white/5 rounded-lg text-stone-300 active:scale-95 shadow-sm">
-                 <Users size={14} className={activeTheme.accent} />
-               </button>
                <button onClick={() => { setMobileModal('chat'); setUnreadChat(false); }} className="relative p-1.5 bg-stone-900 border border-white/5 rounded-lg text-stone-300 active:scale-95 shadow-sm">
                  <MessageSquare size={14} className={activeTheme.accent} />
                  {unreadChat && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border border-stone-900 animate-pulse shadow-[0_0_5px_rgba(244,63,94,0.8)]"></span>}
@@ -410,7 +309,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         )}
 
-        <div className="flex-1 flex flex-col justify-between p-3 md:p-6 relative min-h-0">
+        <div className="flex-1 flex flex-col justify-between p-3 md:p-6 relative min-h-0 overflow-hidden">
           
           {room.deck?.length > 0 && (
             <div className="absolute top-2 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title="დარჩენილი ბანქო">
@@ -423,8 +322,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           )}
 
-          {/* 🟢 ერთადერთი სტატუსის ბეჯი (შენი სვლაა / ველოდებით) */}
-          <div className="text-center h-8 md:h-10 relative z-20 shrink-0 mt-2">
+          {/* 🟢 სტატუსი და მოქმედებების ჟურნალი (მაგიდის ზემოთ) */}
+          <div className="flex flex-col items-center gap-2 relative z-20 shrink-0 mt-2 min-h-[70px]">
+            {/* 1. შენი სვლაა / ველოდებით */}
             {isMyTurn ? (
               <div className={`inline-flex items-center gap-1.5 md:gap-2 px-5 py-2.5 bg-stone-900 border border-white/10 rounded-full ${activeTheme.accent} text-[10px] md:text-xs font-black shadow-[0_0_15px_currentColor] animate-pulse`}>
                 <Sparkles size={14} className="md:w-[16px] md:h-[16px]" /> შენი სვლაა!
@@ -434,53 +334,50 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 <Clock size={12} className="animate-spin-slow md:w-[14px] md:h-[14px]" /> ველოდებით...
               </div>
             )}
+
+            {/* 2. ჟურნალი (მოჭრა/დაგდება) */}
+            {room.lastAction && (() => {
+              const isCapture = room.lastAction.type === 'CAPTURE';
+              const isSweep = isCapture && ['J', 'j', 'ვალეტი'].includes(room.lastAction.cardFromHand.rank);
+              
+              const renderCardInLog = (c, isHandCard = false) => (
+                <div key={`${c.rank}-${c.suit}-${isHandCard ? 'hand' : 'table'}`} className="flex items-center gap-0.5 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md border bg-stone-950 border-white/5 shadow-md">
+                  <span className={`text-[9px] md:text-[11px] font-black ${getSuitColor(c.suit)}`}>{c.rank}</span>
+                  <span className={`text-[10px] md:text-xs ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                </div>
+              );
+
+              let containerBorder = "border-white/10 bg-stone-900/95";
+              let actionText = isCapture ? 'მოჭრა' : 'დააგდო';
+              let actionColor = "text-stone-400";
+              if (isSweep) { containerBorder = "border-yellow-500 bg-yellow-900/50 shadow-[0_0_15px_rgba(234,179,8,0.4)]"; actionText = "გაასუფთავა 🧹"; actionColor = "text-yellow-400 font-black uppercase"; } 
+
+              return (
+                <div className={`border px-3 py-1.5 rounded-xl flex items-center gap-1.5 animate-in slide-in-from-top-2 fade-in duration-300 shadow-lg ${containerBorder}`}>
+                  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-stone-300">
+                    <VipName name={room.lastAction.playerName} isVip={checkIsVip(room.lastAction.isVip)} className={activeTheme.accent} /> 
+                    <span className={actionColor}>{actionText}</span>
+                  </span>
+                  <div className="flex items-center gap-1 ml-1">
+                    {renderCardInLog(room.lastAction.cardFromHand, true)}
+                    {isCapture && room.lastAction.cardsFromTable?.length > 0 && (
+                      <><span className="text-stone-500 font-black">+</span><div className="flex items-center gap-0.5">{room.lastAction.cardsFromTable.map(c => renderCardInLog(c))}</div></>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
-          {/* 🟢 ოვალური მაგიდა (საბოლოო, 100% ზუსტი განლაგება) */}
-          <div className="flex-1 flex flex-col items-center justify-center relative mt-16 md:mt-20 mb-10 w-full z-10 min-h-[350px]">
-            
+          {/* 🟢 ოვალური მაგიდა (საბოლოო) */}
+          <div className="flex-1 flex flex-col items-center justify-center relative mt-4 md:mt-8 mb-4 md:mb-8 w-full z-10 min-h-[300px]">
             <div className={`relative w-[92%] md:w-[80%] max-w-4xl aspect-[4/3] md:aspect-[2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
               
               <div className="absolute inset-0 rounded-[92px] md:rounded-[184px] border border-white/5 shadow-inner pointer-events-none"></div>
               <div className={`absolute inset-0 opacity-20 blur-[40px] rounded-[100px] ${activeTheme.accentBg} pointer-events-none`}></div>
 
-              {/* Action Log (ჟურნალი აწეულია მაღლა, რომ კარტებს არ დაედოს) */}
-              <div className="absolute top-[8%] md:top-[10%] left-1/2 -translate-x-1/2 z-50 w-full max-w-[85%] flex justify-center pointer-events-none">
-                {room.lastAction && (() => {
-                  const isCapture = room.lastAction.type === 'CAPTURE';
-                  const isSweep = isCapture && ['J', 'j', 'ვალეტი'].includes(room.lastAction.cardFromHand.rank);
-                  
-                  const renderCardInLog = (c, isHandCard = false) => (
-                    <div key={`${c.rank}-${c.suit}-${isHandCard ? 'hand' : 'table'}`} className="flex items-center gap-0.5 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md border bg-stone-950 border-white/5 shadow-md">
-                      <span className={`text-[9px] md:text-[11px] font-black ${getSuitColor(c.suit)}`}>{c.rank}</span>
-                      <span className={`text-[10px] md:text-xs ${getSuitColor(c.suit)}`}>{c.suit}</span>
-                    </div>
-                  );
-
-                  let containerBorder = "border-white/10 bg-stone-900/95";
-                  let actionText = isCapture ? 'მოჭრა' : 'დააგდო';
-                  let actionColor = "text-stone-400";
-                  if (isSweep) { containerBorder = "border-yellow-500 bg-yellow-900/50 shadow-[0_0_20px_rgba(234,179,8,0.4)]"; actionText = "გაასუფთავა 🧹"; actionColor = "text-yellow-400 font-black uppercase"; } 
-
-                  return (
-                    <div className={`border px-3 md:px-4 py-1.5 md:py-2 rounded-xl flex items-center gap-1.5 md:gap-2 animate-in slide-in-from-top-2 fade-in duration-300 ${containerBorder}`}>
-                      <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-1 text-stone-300">
-                        <VipName name={room.lastAction.playerName} isVip={checkIsVip(room.lastAction.isVip)} className={activeTheme.accent} /> 
-                        <span className={actionColor}>{actionText}</span>
-                      </span>
-                      <div className="flex items-center gap-1 ml-1">
-                        {renderCardInLog(room.lastAction.cardFromHand, true)}
-                        {isCapture && room.lastAction.cardsFromTable?.length > 0 && (
-                          <><span className="text-stone-500 font-black">+</span><div className="flex items-center gap-0.5">{room.lastAction.cardsFromTable.map(c => renderCardInLog(c))}</div></>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
               {/* მაგიდის კარტები (ცენტრში) */}
-              <div className="flex flex-wrap justify-center items-center gap-2 md:gap-3 z-10 px-4 md:px-8 mt-6">
+              <div className="flex flex-wrap justify-center items-center gap-2 md:gap-3 z-10 px-4 md:px-8">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
                   const isSelected = selectedCardsFromTable.some(tc => tc.rank === c.rank && tc.suit === c.suit);
                   const isBeingCaptured = room.lastAction?.type === 'CAPTURE' && room.lastAction.cardsFromTable.some(cap => cap.rank === c.rank && cap.suit === c.suit);
@@ -505,54 +402,42 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 )}
               </div>
 
-              {/* 🟢 ოვალზე დასმული მოთამაშეები (ულტრა-კომპაქტური და დინამიური) */}
+              {/* 🟢 ოვალზე დასმული მოთამაშეები */}
               {seatedPlayers.map((p, idx) => {
                 const isMe = idx === 0;
                 const isCurrentTurn = room.currentTurn === room.players.findIndex(rp => rp.id === p.id);
                 const isDealer = room.dealerIndex === room.players.findIndex(rp => rp.id === p.id);
                 
-                // ზუსტი კოორდინატები და ორიენტაციის დადგენა
                 let posClass = "";
-                let isVertical = false; // განვსაზღვროთ, უნდა იყოს თუ არა ვერტიკალური
+                let isVertical = false; 
 
                 if (seatedPlayers.length === 2) {
                    if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; }
                    if (idx === 1) { posClass = "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2"; }
                 } else if (seatedPlayers.length === 3) {
                    if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; }
-                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; isVertical = true; } // მარცხნივ
-                   if (idx === 2) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; isVertical = true; } // მარჯვნივ
+                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; isVertical = true; }
+                   if (idx === 2) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; isVertical = true; }
                 } else if (seatedPlayers.length === 4) {
                    if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; }
-                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; isVertical = true; } // მარცხნივ
+                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; isVertical = true; }
                    if (idx === 2) { posClass = "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2"; }
-                   if (idx === 3) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; isVertical = true; } // მარჯვნივ
+                   if (idx === 3) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; isVertical = true; }
                 }
                 
                 return (
                   <div key={p.id} className={`absolute flex items-center justify-center z-30 ${posClass}`}>
-                     
-                     {/* 🟢 ულტრა-კომპაქტური პროფილი */}
                      <div className={`relative flex items-center justify-center gap-1 md:gap-1.5 p-1 md:p-1.5 rounded-xl bg-stone-900/95 border transition-all
                         ${isCurrentTurn ? `${borderColorClass} shadow-[0_0_15px_currentColor] scale-110 z-40` : 'border-white/10 shadow-md'}
                         ${isVertical ? 'flex-col w-[45px] md:w-[55px]' : 'flex-row px-2 md:px-3'}
                      `}>
-                        
-                        {/* აქტიური მოთამაშის განათება */}
                         {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-10 blur-[2px] rounded-xl`} />}
-                        
-                        {/* დილერის ნიშანი (D) */}
                         {isDealer && <span className="absolute -top-1.5 -right-1.5 bg-stone-800 text-stone-300 text-[6px] md:text-[7px] px-1 py-0.5 rounded border border-white/20 shadow-md font-black uppercase z-20">D</span>}
-                        
-                        {/* ავატარი (მაქსიმალურად დაპატარავებული) */}
                         <span className="text-[16px] md:text-xl drop-shadow-md z-10 shrink-0 leading-none">{p.avatar || '😎'}</span>
-                        
-                        {/* სახელი და ქულა */}
                         <div className={`flex flex-col justify-center z-10 ${isVertical ? 'items-center text-center w-full' : 'items-start min-w-[35px] md:min-w-[45px]'}`}>
                            <span className={`text-[6.5px] md:text-[8px] font-black uppercase truncate w-full ${isCurrentTurn ? activeTheme.accent : 'text-stone-200'}`}>
                               <VipName name={isMe ? 'შენ' : p.name} isVip={checkIsVip(p.vipUntil)} />
                            </span>
-                           
                            <span className="text-[6px] md:text-[7px] font-black text-stone-400 mt-0.5 leading-none">
                               ქულა:<span className={`ml-0.5 ${activeTheme.accent}`}>{p.totalScore}</span>
                            </span>
@@ -565,59 +450,61 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
 
           <div className="flex flex-col items-center gap-4 md:gap-6 mt-auto pt-4 z-20 shrink-0 w-full">
-            
-            {/* 🟢 ემოჯიების და მოქმედების პანელი */}
-            <div className="flex flex-col md:flex-row justify-between items-center bg-stone-950/60 p-1.5 md:p-2 rounded-2xl md:rounded-full border border-white/5 backdrop-blur-md shadow-lg z-10 w-full max-w-[95vw] md:max-w-max mx-auto overflow-hidden gap-2 md:gap-0">
-              <div className="flex overflow-x-auto custom-scrollbar gap-2 md:gap-3 px-2 py-1 items-center flex-1 w-full md:w-auto md:max-w-max">
-                {standardEmotes.map(emo => (
-                  <button 
-                    key={emo} 
-                    onClick={() => !hasActiveEmote && handleSendEmote(emo)} 
-                    disabled={hasActiveEmote}
-                    className={`text-lg md:text-xl transition-all flex-shrink-0 ${hasActiveEmote ? 'opacity-20 cursor-not-allowed grayscale' : 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100'}`}
-                  >
-                    {emo}
-                  </button>
-                ))}
-                
-                <div className="w-px h-6 bg-white/10 shrink-0 mx-1 hidden md:block"></div>
-                
-                {vipEmotes.map(emo => (
-                  <button 
-                    key={emo} 
-                    onClick={() => amIVip && !hasActiveEmote && handleSendEmote(emo)} 
-                    disabled={!amIVip || hasActiveEmote}
-                    className={`relative text-lg md:text-xl transition-all shrink-0 flex-shrink-0 ${amIVip && !hasActiveEmote ? 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' : 'opacity-20 cursor-not-allowed grayscale'}`}
-                  >
-                    {emo} {!amIVip && <Lock size={10} className="absolute -bottom-1 -right-1 text-yellow-500/50"/>}
-                  </button>
-                ))}
-              </div>
-              
-              <div className="w-full h-px md:w-px md:h-8 bg-white/10 shrink-0 mx-1"></div>
-              
+            {/* 🟢 ქვედა პანელი: ემოჯი Bubble და სვლის ღილაკი */}
+            <div className="relative flex justify-center items-center gap-3 w-full max-w-sm mx-auto z-40 mb-2">
+              {showEmojiMenu && (
+                <div className="absolute bottom-[110%] left-0 md:-left-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex gap-1.5 md:gap-2 w-max max-w-[90vw] overflow-x-auto custom-scrollbar animate-in zoom-in-95 slide-in-from-bottom-2">
+                  {standardEmotes.map(emo => (
+                    <button 
+                      key={emo} 
+                      onClick={() => { if(!hasActiveEmote) { handleSendEmote(emo); setShowEmojiMenu(false); } }} 
+                      disabled={hasActiveEmote}
+                      className={`text-xl md:text-2xl p-1.5 transition-all flex-shrink-0 rounded-lg hover:bg-stone-800 ${hasActiveEmote ? 'opacity-20 cursor-not-allowed grayscale' : 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100'}`}
+                    >
+                      {emo}
+                    </button>
+                  ))}
+                  <div className="w-px h-8 bg-white/10 shrink-0 mx-1"></div>
+                  {vipEmotes.map(emo => (
+                    <button 
+                      key={emo} 
+                      onClick={() => { if(amIVip && !hasActiveEmote) { handleSendEmote(emo); setShowEmojiMenu(false); } }} 
+                      disabled={!amIVip || hasActiveEmote}
+                      className={`relative text-xl md:text-2xl p-1.5 transition-all shrink-0 flex-shrink-0 rounded-lg hover:bg-stone-800 ${amIVip && !hasActiveEmote ? 'hover:scale-125 hover:-translate-y-1 active:scale-95 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' : 'opacity-20 cursor-not-allowed grayscale'}`}
+                    >
+                      {emo} {!amIVip && <Lock size={10} className="absolute -bottom-0 -right-0 text-yellow-500/50"/>}
+                    </button>
+                  ))}
+                </div>
+              )}
               <button 
-                onClick={handlePlayCard}
+                onClick={() => setShowEmojiMenu(!showEmojiMenu)}
+                className={`p-3 md:p-3.5 rounded-full transition-all active:scale-95 border shadow-lg flex items-center justify-center
+                  ${showEmojiMenu ? 'bg-stone-700 border-white/30 text-white shadow-inner' : 'bg-stone-900 border-white/10 text-stone-400 hover:bg-stone-800 hover:text-stone-200'}`}
+                title="ემოციები"
+              >
+                 <span className="text-lg leading-none">😀</span>
+              </button>
+              <button 
+                onClick={() => { handlePlayCard(); setShowEmojiMenu(false); }}
                 disabled={!isMyTurn || !selectedCardFromHand}
-                className={`w-full md:w-auto shrink-0 px-4 md:px-6 py-2.5 md:py-2.5 rounded-xl md:rounded-full text-[11px] md:text-xs font-black transition-all shadow-md active:scale-95 uppercase tracking-wide ${!isMyTurn || !selectedCardFromHand ? 'bg-stone-800 text-stone-500 cursor-not-allowed' : selectedCardsFromTable.length > 0 ? 'bg-white text-stone-900 shadow-xl' : `${activeTheme.accentBg} text-stone-950 shadow-xl`}`}
+                className={`flex-1 px-4 md:px-6 py-3.5 rounded-2xl md:rounded-full text-xs font-black transition-all shadow-md active:scale-95 uppercase tracking-wider 
+                  ${!isMyTurn || !selectedCardFromHand ? 'bg-stone-800 text-stone-500 cursor-not-allowed' : selectedCardsFromTable.length > 0 ? 'bg-white text-stone-900 shadow-xl' : `${activeTheme.accentBg} text-stone-950 shadow-xl`}`}
               >
                 {selectedCardsFromTable.length > 0 ? 'მოჭრა ⚔️' : 'დაგდება 🃏'}
               </button>
             </div>
 
-            {/* 🟢 მოთამაშის ხელი (მარაო) - გაზრდილი სივრცით */}
-            <div className="flex justify-center items-end h-28 md:h-36 pt-8 pb-2 w-full relative overflow-visible">
+            {/* 🟢 მოთამაშის ხელი (მარაო) */}
+            <div className="flex justify-center items-end h-24 md:h-32 pt-8 pb-2 w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
-                
                 const totalCards = me.cards.length;
                 const centerIndex = (totalCards - 1) / 2;
                 const offset = i - centerIndex;
-                
-                // გამართული მარაოს ფორმულა
-                const rotation = offset * 6; // დახრის კუთხე
-                const yPush = Math.abs(offset) * 5; // განაპირა კარტების ქვემოთ ჩაწევა
-                const overlapMargin = i !== 0 ? '-ml-5 md:-ml-8' : ''; // ნორმალური გადაფარვა
+                const rotation = offset * 6; 
+                const yPush = Math.abs(offset) * 5; 
+                const overlapMargin = i !== 0 ? '-ml-5 md:-ml-8' : ''; 
 
                 return (
                   <div 
@@ -638,9 +525,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                         ${!isMyTurn && 'opacity-80 hover:opacity-100 grayscale-[0.2] hover:grayscale-0'} 
                       `}
                     >
-                      {/* შიდა ჩარჩო სიღრმისთვის */}
                       <div className="absolute inset-1 border border-stone-400/20 rounded pointer-events-none"></div>
-
                       <div className="flex flex-col items-center self-start">
                         <span className={`text-[12px] md:text-[16px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
                         <span className={`text-[10px] md:text-[12px] ${getSuitColor(c.suit)} leading-none mt-0.5`}>{c.suit}</span>
@@ -655,7 +540,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 );
               })}
             </div>
-
           </div>
         </div>
 
@@ -690,7 +574,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 
                 {room.roundSummary.matchWinner && (
                   <div className="bg-stone-950/80 border border-white/10 rounded-2xl p-4 md:p-5 mb-4 md:mb-6 shadow-inner ring-1 ring-white/5 relative">
-                    {/* 🟢 შეტყობინება, თუ ვინმე დანებდა */}
                     {room.roundSummary.surrendered && (
                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rose-600 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase shadow-md whitespace-nowrap">
                          {room.roundSummary.surrendered} დანებდა 🏳️
