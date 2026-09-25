@@ -169,8 +169,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   }
 
   return (
-    // 🟢 სრულად ცენტრალიზებული მაგიდა (გვერდითა პანელი ამოღებულია)
-    <div className="w-full flex flex-col items-center justify-center max-w-7xl mx-auto h-[82vh] md:h-[88vh] relative pb-6 lg:pb-0">
+    // 🟢 სრულად ცენტრალიზებული მაგიდა (dvh იცავს მობილურის ბრაუზერის ზოლებისგან)
+    <div className="w-full flex flex-col items-center justify-center max-w-7xl mx-auto h-[82dvh] md:h-[88vh] relative pb-2 lg:pb-0">
       
       <div className={`flex-1 w-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden`}>
         
@@ -396,12 +396,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          {/* 🟢 მთლიანი ქვედა სექცია (ღილაკები + კარტები) */}
-          <div className="flex flex-col items-center mt-auto pt-4 pb-2 z-20 shrink-0 w-full max-w-lg mx-auto">
+          {/* 🟢 მთლიანი ქვედა სექცია (ღილაკები + კარტები) - მობილურზე ეკრანში ჩასატევად */}
+          <div className="flex flex-col items-center mt-auto pt-1 pb-1 md:pb-4 z-20 shrink-0 w-full max-w-lg mx-auto">
             
             {/* 🟢 ქვედა პანელი: ემოჯი, ჩატი და სვლის ღილაკი */}
-            {/* ❗️ აქ გავზარდეთ დაშორება (mb-10 md:mb-14), რომ კარტებს აღარ დაედოს */}
-            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-10 md:mb-14 px-4">
+            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-5 md:mb-10 px-4">
               
               {/* ემოჯების მენიუ */}
               {showEmojiMenu && (
@@ -420,7 +419,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 </div>
               )}
 
-              {/* ჩატის ფრაზების მენიუ (მარჯვნივ) */}
+              {/* ჩატის ფრაზების მენიუ */}
               {showChatMenu && (
                 <div className="absolute bottom-[115%] right-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col gap-1.5 w-max max-w-[200px] md:max-w-[250px] animate-in zoom-in-95 slide-in-from-bottom-2 z-50">
                   <h4 className="text-[9px] font-black text-stone-400 uppercase tracking-widest border-b border-white/10 pb-1 mb-1 text-center">Quick Chat</h4>
@@ -439,7 +438,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 onClick={() => { setShowEmojiMenu(!showEmojiMenu); setShowChatMenu(false); }}
                 className={`p-3 md:p-3.5 rounded-full transition-all active:scale-95 border shadow-lg flex items-center justify-center shrink-0
                   ${showEmojiMenu ? 'bg-stone-700 border-white/30 text-white shadow-inner' : 'bg-stone-900 border-white/10 text-stone-400 hover:bg-stone-800 hover:text-stone-200'}`}
-                title="ემოციები"
               >
                  <span className="text-lg leading-none">😀</span>
               </button>
@@ -459,14 +457,13 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 onClick={() => { setShowChatMenu(!showChatMenu); setShowEmojiMenu(false); }}
                 className={`p-3 md:p-3.5 rounded-full transition-all active:scale-95 border shadow-lg flex items-center justify-center shrink-0
                   ${showChatMenu ? 'bg-stone-700 border-white/30 text-white shadow-inner' : 'bg-stone-900 border-white/10 text-stone-400 hover:bg-stone-800 hover:text-stone-200'}`}
-                title="ფრაზები"
               >
                  <MessageSquare size={18} />
               </button>
             </div>
 
-            {/* 🟢 მოთამაშის ხელი (მარაო) - დახვეწილი დიზაინით */}
-            <div className="flex justify-center items-end h-[90px] md:h-[130px] w-full relative overflow-visible">
+            {/* 🟢 მოთამაშის ხელი (მარაო) */}
+            <div className="flex justify-center items-end h-[70px] md:h-[130px] w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 const totalCards = me.cards.length;
@@ -495,16 +492,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                         ${!isMyTurn && 'opacity-90 hover:opacity-100'} 
                       `}
                     >
-                      {/* ზედა მარცხენა კუთხე */}
                       <div className="absolute top-1.5 left-1.5 md:top-2 md:left-2 flex flex-col items-center leading-none">
                         <span className={`text-[15px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
                         <span className={`text-[8px] md:text-[10px] mt-0.5 ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       </div>
-                      
-                      {/* ცენტრალური მასტი */}
                       <span className={`text-3xl md:text-5xl opacity-95 ${getSuitColor(c.suit)}`}>{c.suit}</span>
-                      
-                      {/* ქვედა მარჯვენა კუთხე (შემოტრიალებული) */}
                       <div className="absolute bottom-1.5 right-1.5 md:bottom-2 md:right-2 flex flex-col items-center leading-none rotate-180">
                         <span className={`text-[15px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
                         <span className={`text-[8px] md:text-[10px] mt-0.5 ${getSuitColor(c.suit)}`}>{c.suit}</span>
