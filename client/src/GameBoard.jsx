@@ -523,8 +523,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-3 md:gap-5 mt-4 z-20 shrink-0">
+          <div className="flex flex-col items-center gap-4 md:gap-6 mt-auto pt-4 z-20 shrink-0 w-full">
             
+            {/* 🟢 ემოჯიების და მოქმედების პანელი */}
             <div className="flex flex-col md:flex-row justify-between items-center bg-stone-950/60 p-1.5 md:p-2 rounded-2xl md:rounded-full border border-white/5 backdrop-blur-md shadow-lg z-10 w-full max-w-[95vw] md:max-w-max mx-auto overflow-hidden gap-2 md:gap-0">
               <div className="flex overflow-x-auto custom-scrollbar gap-2 md:gap-3 px-2 py-1 items-center flex-1 w-full md:w-auto md:max-w-max">
                 {standardEmotes.map(emo => (
@@ -563,7 +564,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </button>
             </div>
 
-            <div className="flex justify-center items-end h-24 md:h-32 pt-4 pb-2 perspective-1000 w-full mt-2 md:mt-4 overflow-visible">
+            {/* 🟢 მოთამაშის ხელი (მარაო) - გაზრდილი სივრცით */}
+            <div className="flex justify-center items-end h-28 md:h-36 pt-8 pb-2 w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 
@@ -571,10 +573,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 const centerIndex = (totalCards - 1) / 2;
                 const offset = i - centerIndex;
                 
-                // მარაოს (Fan) ფორმულა
-                const rotation = offset * 5; // ნაკლები კუთხე უკეთესი კითხვადობისთვის
-                const yPush = Math.abs(offset) * 3; 
-                const overlapMargin = i !== 0 ? '-ml-6 md:-ml-10' : ''; // უკეთესი გადაფარვა
+                // გამართული მარაოს ფორმულა
+                const rotation = offset * 6; // დახრის კუთხე
+                const yPush = Math.abs(offset) * 5; // განაპირა კარტების ქვემოთ ჩაწევა
+                const overlapMargin = i !== 0 ? '-ml-5 md:-ml-8' : ''; // ნორმალური გადაფარვა
 
                 return (
                   <div 
@@ -583,34 +585,36 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                       transform: `rotate(${rotation}deg) translateY(${yPush}px)`,
                       transformOrigin: 'bottom center',
                       zIndex: isSelected ? 50 : i + 10,
-                      animationDelay: `${i * 100}ms`
+                      animationDelay: `${(i + 1) * 100}ms`, 
+                      animationFillMode: 'backwards'
                     }}
-                    className={`relative transition-all duration-300 ease-out transform-gpu animate-in slide-in-from-bottom-20 zoom-in-75 fade-in ${overlapMargin} group`}
+                    className={`relative transition-all duration-300 ease-out transform-gpu animate-in slide-in-from-bottom-10 zoom-in-75 fade-in ${overlapMargin} group`}
                   >
                     <div 
                       onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
-                      className={`relative w-16 h-24 md:w-24 md:h-36 bg-gradient-to-br from-stone-50 to-stone-200 rounded-lg md:rounded-xl flex flex-col justify-between p-1.5 md:p-2 select-none transition-all duration-300 border border-stone-400 shadow-[0_5px_15px_rgba(0,0,0,0.5)]
-                        ${isSelected ? `-translate-y-8 md:-translate-y-12 scale-110 shadow-[0_20px_40px_rgba(0,0,0,0.7)] ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-4 md:hover:-translate-y-6 hover:shadow-[0_15px_30px_rgba(0,0,0,0.6)] cursor-pointer group-hover:bg-white'}
+                      className={`relative w-14 h-20 md:w-20 md:h-28 bg-gradient-to-br from-stone-50 to-stone-200 rounded-lg md:rounded-xl flex flex-col justify-between p-1.5 select-none transition-all duration-300 border border-stone-400 shadow-[0_5px_15px_rgba(0,0,0,0.5)]
+                        ${isSelected ? `-translate-y-6 md:-translate-y-8 scale-110 shadow-[0_20px_40px_rgba(0,0,0,0.7)] ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-3 hover:shadow-[0_15px_30px_rgba(0,0,0,0.6)] cursor-pointer hover:bg-white'}
                         ${!isMyTurn && 'opacity-80 hover:opacity-100 grayscale-[0.2] hover:grayscale-0'} 
                       `}
                     >
-                      {/* შიდა ჩარჩო */}
-                      <div className="absolute inset-1 md:inset-1.5 border border-stone-400/20 rounded pointer-events-none"></div>
+                      {/* შიდა ჩარჩო სიღრმისთვის */}
+                      <div className="absolute inset-1 border border-stone-400/20 rounded pointer-events-none"></div>
 
                       <div className="flex flex-col items-center self-start">
-                        <span className={`text-[12px] md:text-[18px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
-                        <span className={`text-[10px] md:text-[14px] ${getSuitColor(c.suit)} leading-none mt-0.5 md:mt-1`}>{c.suit}</span>
+                        <span className={`text-[12px] md:text-[16px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
+                        <span className={`text-[10px] md:text-[12px] ${getSuitColor(c.suit)} leading-none mt-0.5`}>{c.suit}</span>
                       </div>
-                      <span className={`text-3xl md:text-5xl self-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-md ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                      <span className={`text-3xl md:text-4xl self-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-md ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       <div className="flex flex-col items-center self-end rotate-180">
-                        <span className={`text-[12px] md:text-[18px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
-                        <span className={`text-[10px] md:text-[14px] ${getSuitColor(c.suit)} leading-none mt-0.5 md:mt-1`}>{c.suit}</span>
+                        <span className={`text-[12px] md:text-[16px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
+                        <span className={`text-[10px] md:text-[12px] ${getSuitColor(c.suit)} leading-none mt-0.5`}>{c.suit}</span>
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
+
           </div>
         </div>
 
