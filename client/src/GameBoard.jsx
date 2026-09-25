@@ -301,11 +301,18 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                         ${isBeingCaptured ? 'scale-0 opacity-0 rotate-180 z-50 pointer-events-none' : 'animate-in zoom-in-50 fade-in duration-300'}
                       `}
                     >
+                      {/* ზედა მარცხენა კუთხე (მხოლოდ რიცხვი, ოდნავ გადიდებული) */}
                       <div className="flex flex-col items-center self-start">
-                        <span className={`text-[10px] md:text-[14px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
-                        <span className={`text-[8px] md:text-[10px] ${getSuitColor(c.suit)} leading-none mt-0.5`}>{c.suit}</span>
+                        <span className={`text-[13px] md:text-[18px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
                       </div>
-                      <span className={`text-2xl md:text-3xl self-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-md ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                      
+                      {/* ცენტრალური დიდი მასტი */}
+                      <span className={`text-3xl md:text-4xl self-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-md ${getSuitColor(c.suit)}`}>{c.suit}</span>
+                      
+                      {/* ქვედა მარჯვენა კუთხე (მხოლოდ რიცხვი) */}
+                      <div className="flex flex-col items-center self-end rotate-180">
+                        <span className={`text-[13px] md:text-[18px] font-black ${getSuitColor(c.suit)} leading-none`}>{c.rank}</span>
+                      </div>
                     </div>
                   );
                 }) : (
