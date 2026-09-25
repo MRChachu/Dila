@@ -841,24 +841,45 @@ export default function App() {
                     </div>
                 </div>
 
-                {/* 5. მიღწევების პანელი (Glow ეფექტით) */}
+                {/* 5. მიღწევების პანელი (საკუთარი პროფილის იდენტური მრგვალი დიზაინით) */}
                 <div className="relative z-10 border-t border-white/5 pt-5 mt-2">
                     <h4 className="text-[9px] md:text-[10px] font-bold text-stone-500 flex items-center justify-center gap-1.5 uppercase tracking-widest mb-4">
                         <Award size={14} className={activeTheme.accent} /> {t.achievements}
                     </h4>
-                    <div className="flex flex-wrap items-center justify-center gap-2.5">
-                        {AVAILABLE_BADGES.map(b => { 
-                            const hasIt = inspectProfile.achievements?.includes(b.id); 
-                            return ( 
-                                <div 
-                                    key={b.id} 
-                                    onClick={() => setToastMsg(hasIt ? `🏆 აქვს: ${b.name}` : `🔒 არ აქვს: ${b.name}`)}
-                                    className={`cursor-pointer shrink-0 w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-xl transition-all hover:scale-110 active:scale-95 border ${hasIt ? `${activeTheme.accentBg} bg-opacity-10 border-opacity-40 border-current${activeTheme.accent} shadow-[0_0_15px_currentColor] text-lg` : 'bg-stone-950/50 border-white/5 opacity-30 grayscale hover:opacity-80 text-sm'}`}
-                                >
-                                    <span className="drop-shadow-lg">{b.icon}</span>
-                                </div> 
-                            )
-                        })}
+                    <div className="flex flex-wrap justify-center gap-3 md:gap-4">
+                        {inspectProfile?.achievements?.length > 0 ? (
+                            inspectProfile.achievements.map((ach, idx) => {
+                                // ზუსტად იგივე მონაცემები, რაც შენს პროფილშია
+                                const achData = {
+                                    'wc_play': { icon: '🎮', name: 'პირველი მატჩი' },
+                                    'wc_win': { icon: '👑', name: 'პირველი მოგება' },
+                                    'legionnaire': { icon: '⚔️', name: 'ლეგიონერი' },
+                                    'first_win': { icon: '🥇', name: '1 გამარჯვება' },
+                                    'veteran': { icon: '🎖️', name: 'ვეტერანი' },
+                                    'wc_avatar': { icon: '🖼️', name: 'ახალი იმიჯი' },
+                                    'collector': { icon: '🎒', name: 'კოლექციონერი' },
+                                    'diamond_10': { icon: '♦️', name: '10 აგური' },
+                                    'club_2': { icon: '♣️', name: '2 ჯვარი' },
+                                    'sweeper': { icon: '🧹', name: 'მგველი' }
+                                };
+                                const data = achData[ach] || { icon: '🏆', name: ach };
+
+                                return (
+                                    <div key={idx} className="flex flex-col items-center gap-1.5 w-[50px] md:w-[60px] hover:scale-110 transition-transform cursor-default">
+                                        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-stone-800 to-stone-900 border flex items-center justify-center shadow-lg ${activeTheme.accentBg} bg-opacity-10 border-opacity-40 border-current ${activeTheme.accent} shadow-[0_0_15px_currentColor]`}>
+                                            <span className="text-lg md:text-xl drop-shadow-md">{data.icon}</span>
+                                        </div>
+                                        <span className="text-[7px] md:text-[8px] font-bold text-stone-400 uppercase tracking-wider text-center leading-tight">
+                                            {data.name}
+                                        </span>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <span className="text-[10px] font-bold text-stone-600 uppercase tracking-widest bg-stone-950/50 px-3 py-1.5 rounded-lg border border-white/5">
+                                ჯერ არ აქვს
+                            </span>
+                        )}
                     </div>
                 </div>
                 
