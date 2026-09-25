@@ -505,57 +505,59 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 )}
               </div>
 
-              {/* 🟢 ოვალზე დასმული მოთამაშეები (კომპაქტური, მართკუთხა პროფილები) */}
+              {/* 🟢 ოვალზე დასმული მოთამაშეები (ულტრა-კომპაქტური და დინამიური) */}
               {seatedPlayers.map((p, idx) => {
                 const isMe = idx === 0;
                 const isCurrentTurn = room.currentTurn === room.players.findIndex(rp => rp.id === p.id);
                 const isDealer = room.dealerIndex === room.players.findIndex(rp => rp.id === p.id);
                 
-                // ზუსტი კოორდინატები
+                // ზუსტი კოორდინატები და ორიენტაციის დადგენა
                 let posClass = "";
+                let isVertical = false; // განვსაზღვროთ, უნდა იყოს თუ არა ვერტიკალური
 
                 if (seatedPlayers.length === 2) {
                    if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; }
                    if (idx === 1) { posClass = "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2"; }
                 } else if (seatedPlayers.length === 3) {
                    if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; }
-                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; }
-                   if (idx === 2) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; }
+                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; isVertical = true; } // მარცხნივ
+                   if (idx === 2) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; isVertical = true; } // მარჯვნივ
                 } else if (seatedPlayers.length === 4) {
                    if (idx === 0) { posClass = "top-[100%] left-1/2 -translate-x-1/2 -translate-y-1/2"; }
-                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; }
+                   if (idx === 1) { posClass = "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2"; isVertical = true; } // მარცხნივ
                    if (idx === 2) { posClass = "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2"; }
-                   if (idx === 3) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; }
+                   if (idx === 3) { posClass = "top-1/2 left-[100%] -translate-x-1/2 -translate-y-1/2"; isVertical = true; } // მარჯვნივ
                 }
                 
                 return (
                   <div key={p.id} className={`absolute flex items-center justify-center z-30 ${posClass}`}>
                      
-                     {/* 🟢 ჰორიზონტალური, მართკუთხა პროფილი */}
-                     <div className={`relative flex items-center gap-2 md:gap-3 px-3 md:px-4 py-1.5 md:py-2 rounded-xl bg-stone-900/95 border transition-all ${isCurrentTurn ? `${borderColorClass} shadow-[0_0_20px_currentColor] scale-110 z-40` : 'border-white/10 shadow-lg'}`}>
+                     {/* 🟢 ულტრა-კომპაქტური პროფილი */}
+                     <div className={`relative flex items-center justify-center gap-1 md:gap-1.5 p-1 md:p-1.5 rounded-xl bg-stone-900/95 border transition-all
+                        ${isCurrentTurn ? `${borderColorClass} shadow-[0_0_15px_currentColor] scale-110 z-40` : 'border-white/10 shadow-md'}
+                        ${isVertical ? 'flex-col w-[45px] md:w-[55px]' : 'flex-row px-2 md:px-3'}
+                     `}>
                         
                         {/* აქტიური მოთამაშის განათება */}
-                        {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-10 blur-sm rounded-xl`} />}
+                        {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-10 blur-[2px] rounded-xl`} />}
                         
                         {/* დილერის ნიშანი (D) */}
-                        {isDealer && <span className="absolute -top-2 -right-2 bg-stone-800 text-stone-300 text-[8px] md:text-[10px] px-1.5 py-0.5 rounded border border-white/20 shadow-md font-black uppercase z-20">D</span>}
+                        {isDealer && <span className="absolute -top-1.5 -right-1.5 bg-stone-800 text-stone-300 text-[6px] md:text-[7px] px-1 py-0.5 rounded border border-white/20 shadow-md font-black uppercase z-20">D</span>}
                         
-                        {/* ავატარი (მარცხნივ) */}
-                        <span className="text-2xl md:text-3xl drop-shadow-md z-10 shrink-0">{p.avatar || '😎'}</span>
+                        {/* ავატარი (მაქსიმალურად დაპატარავებული) */}
+                        <span className="text-[16px] md:text-xl drop-shadow-md z-10 shrink-0 leading-none">{p.avatar || '😎'}</span>
                         
-                        {/* სახელი და ქულა (მარჯვნივ) */}
-                        <div className="flex flex-col justify-center z-10 min-w-[60px] md:min-w-[80px]">
-                           <span className={`text-[9px] md:text-[11px] font-black uppercase truncate ${isCurrentTurn ? activeTheme.accent : 'text-stone-200'}`}>
+                        {/* სახელი და ქულა */}
+                        <div className={`flex flex-col justify-center z-10 ${isVertical ? 'items-center text-center w-full' : 'items-start min-w-[35px] md:min-w-[45px]'}`}>
+                           <span className={`text-[6.5px] md:text-[8px] font-black uppercase truncate w-full ${isCurrentTurn ? activeTheme.accent : 'text-stone-200'}`}>
                               <VipName name={isMe ? 'შენ' : p.name} isVip={checkIsVip(p.vipUntil)} />
                            </span>
                            
-                           <span className="text-[8px] md:text-[10px] font-black text-stone-400 mt-0.5">
-                              ქულა: <span className={activeTheme.accent}>{p.totalScore}</span>
+                           <span className="text-[6px] md:text-[7px] font-black text-stone-400 mt-0.5 leading-none">
+                              ქულა:<span className={`ml-0.5 ${activeTheme.accent}`}>{p.totalScore}</span>
                            </span>
                         </div>
                      </div>
-                     
-                     {/* ამოღებულია: სხვისი კარტების რენდერის კოდი! */}
                   </div>
                 );
               })}
