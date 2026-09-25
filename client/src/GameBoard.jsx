@@ -191,7 +191,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
     return "";
   };
-  };
 
   return (
     <div className="w-full flex flex-col lg:flex-row gap-5 md:gap-6 max-w-7xl mx-auto h-auto lg:h-[82vh] min-h-[85vh] lg:min-h-0 relative pb-6 lg:pb-0">
