@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Lock, Flag, X } from 'lucide-react';
+import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Lock, Flag, XCircle } from 'lucide-react';
 
 const getLeague = (xp = 0) => {
   if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
@@ -14,16 +14,14 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const [selectedCardFromHand, setSelectedCardFromHand] = useState(null);
   const [selectedCardsFromTable, setSelectedCardsFromTable] = useState([]);
   
-  // 🟢 შეცვლილი მესიჯების ლოგიკა (მხოლოდ დროებითი ბაბლებისთვის)
   const [messages, setMessages] = useState([]);
-  
   const [activeEmotes, setActiveEmotes] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(100);
   
   const [showSurrenderModal, setShowSurrenderModal] = useState(false); 
   const [showEmojiMenu, setShowEmojiMenu] = useState(false);
-  const [showChatMenu, setShowChatMenu] = useState(false); // 🟢 ახალი State ჩატის მენიუსთვის
+  const [showChatMenu, setShowChatMenu] = useState(false); 
 
   const me = room?.players?.find(p => p.id === socket.id);
   const isMyTurn = room?.players?.[room.currentTurn]?.id === socket.id;
@@ -49,7 +47,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       const soundFile = isCapture ? '/card-drop.wav' : '/card-drop.wav'; 
       const audio = new Audio(soundFile);
       audio.volume = 0.3; 
-      audio.play().catch(e => console.log("Audio play error:", e));
+      audio.play().catch(e => console.log("Audio error:", e));
     } catch (e) {}
   };
 
@@ -89,7 +87,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   }, [room?.roundSummary, me?.name]);
 
   useEffect(() => {
-    // 🟢 მესიჯის ეკრანზე გამოტანის და 4 წამში გაქრობის ლოგიკა
     const handleReceiveMessage = (msg) => {
       const msgId = Date.now() + Math.random();
       setMessages(prev => [...prev, { ...msg, id: msgId }]);
@@ -144,6 +141,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   };
 
+  // 🟢 დახვეწილი ფერები კლასიკური ბანქოსთვის
   const getSuitColor = (suit) => (['♥', '♦', '❤️', '♦️'].includes(suit) ? 'text-red-600' : 'text-slate-800');
 
   const cardBackStyles = {
@@ -159,7 +157,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const activeCardBack = cardBackStyles[room?.hostCardBack] || cardBackStyles['classic'];
   const borderColorClass = activeTheme.accent.replace('text-', 'border-');
 
-  // 🟢 ოვალური მაგიდისთვის მოთამაშეების გადალაგება
   const myIndex = room?.players?.findIndex(p => p.id === socket.id) || 0;
   const seatedPlayers = [];
   if (room?.players) {
@@ -174,7 +171,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       
       <div className={`flex-1 w-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden`}>
         
-        {/* ემოჯიების ანიმაცია (გლობალური) */}
+        {/* გლობალური ემოჯიების ანიმაცია */}
         {activeEmotes.length > 0 && (
           <div className="absolute right-4 md:right-8 top-[20%] md:top-[25%] z-[150] pointer-events-none flex flex-col gap-4 items-end">
             {activeEmotes.map(e => {
@@ -191,7 +188,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
         {/* 🟢 Header ნაწილი */}
         <div className="flex items-center justify-between p-2.5 md:p-4 border-b border-white/5 bg-stone-950/40 rounded-t-3xl shrink-0 z-20">
-          
           <div className="flex items-center gap-2">
             <span className={`text-[10px] md:text-xs font-black tracking-widest font-mono ${activeTheme.accent} hidden sm:block`}>ROOM: {room.id}</span>
             
@@ -222,10 +218,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         )}
 
-        <div className="flex-1 flex flex-col justify-between p-3 md:p-6 relative min-h-0 overflow-hidden w-full">
+        {/* 🟢 pt-1 და px-2-ით შევამცირეთ ზედა დაშორება მობილურზე, რათა მაგიდა მაღლა აიწიოს */}
+        <div className="flex-1 flex flex-col justify-between px-2 pt-1 pb-3 md:p-6 relative min-h-0 overflow-hidden w-full">
           
           {room.deck?.length > 0 && (
-            <div className="absolute top-2 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title="დარჩენილი ბანქო">
+            <div className="absolute top-1 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title="დარჩენილი ბანქო">
               <div className={`relative w-10 h-14 md:w-14 md:h-20 rounded-md md:rounded-lg border shadow-lg flex items-center justify-center ${activeCardBack}`}>
                 <div className={`absolute inset-0 rounded-md md:rounded-lg border ${activeCardBack} translate-x-[3px] -translate-y-[3px] -z-10 shadow-sm`}></div>
                 <div className="bg-stone-950/90 px-2 py-0.5 md:py-1 rounded text-white text-[10px] md:text-xs font-black shadow-inner border border-white/10">
@@ -235,8 +232,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           )}
 
-          {/* 🟢 სტატუსი და მოქმედებების ჟურნალი (მაგიდის ზემოთ) */}
-          <div className="flex flex-col items-center gap-2 relative z-20 shrink-0 mt-2 min-h-[70px]">
+          {/* 🟢 სტატუსი და მოქმედებების ჟურნალი (აწეული მაღლა) */}
+          <div className="flex flex-col items-center gap-2 relative z-20 shrink-0 mt-1 md:mt-2 min-h-[40px] md:min-h-[60px]">
             {isMyTurn ? (
               <div className={`inline-flex items-center gap-1.5 md:gap-2 px-5 py-2.5 bg-stone-900 border border-white/10 rounded-full ${activeTheme.accent} text-[10px] md:text-xs font-black shadow-[0_0_15px_currentColor] animate-pulse`}>
                 <Sparkles size={14} className="md:w-[16px] md:h-[16px]" /> შენი სვლაა!
@@ -280,14 +277,14 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             })()}
           </div>
 
-          {/* 🟢 ოვალური მაგიდა (სრულად გასუფთავებული) */}
-          <div className="flex-1 flex flex-col items-center justify-center relative mt-4 md:mt-8 mb-4 md:mb-8 w-full z-10 min-h-[250px]">
+          {/* 🟢 ოვალური მაგიდა (აწეული მაღლა) */}
+          <div className="flex-1 flex flex-col items-center justify-center relative mt-1 md:mt-8 mb-2 md:mb-8 w-full z-10 min-h-[250px]">
             <div className={`relative w-[92%] md:w-[85%] max-w-3xl aspect-[4/3] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
               
               <div className="absolute inset-0 rounded-[92px] md:rounded-[184px] border border-white/5 shadow-inner pointer-events-none"></div>
               <div className={`absolute inset-0 opacity-20 blur-[40px] rounded-[100px] ${activeTheme.accentBg} pointer-events-none`}></div>
 
-              {/* მაგიდის კარტები (ცენტრში) - პროფესიონალური კაზინოს სტილი */}
+              {/* 🟢 მაგიდის კარტები (ცენტრში) - პროფესიონალური კაზინოს სტილი */}
               <div className="flex flex-wrap justify-center items-center gap-2 md:gap-3 z-10 px-4 md:px-8">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
                   const isSelected = selectedCardsFromTable.some(tc => tc.rank === c.rank && tc.suit === c.suit);
@@ -301,15 +298,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                         ${isBeingCaptured ? 'scale-0 opacity-0 rotate-180 z-50 pointer-events-none' : 'animate-in zoom-in-50 fade-in duration-300'}
                       `}
                     >
-                      {/* ზედა მარცხენა რიცხვი (ზუსტად კუთხეში) */}
                       <span className={`absolute top-1 left-1.5 md:top-1.5 md:left-2 text-[13px] md:text-[18px] font-bold tracking-tighter leading-none ${getSuitColor(c.suit)}`}>
                         {c.rank}
                       </span>
-                      
-                      {/* ცენტრალური მასტი */}
                       <span className={`text-2xl md:text-4xl ${getSuitColor(c.suit)}`}>{c.suit}</span>
-                      
-                      {/* ქვედა მარჯვენა რიცხვი (შემოტრიალებული) */}
                       <span className={`absolute bottom-1 right-1.5 md:bottom-1.5 md:right-2 text-[13px] md:text-[18px] font-bold tracking-tighter leading-none rotate-180 ${getSuitColor(c.suit)}`}>
                         {c.rank}
                       </span>
@@ -326,11 +318,13 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 const isCurrentTurn = room.currentTurn === room.players.findIndex(rp => rp.id === p.id);
                 const isDealer = room.dealerIndex === room.players.findIndex(rp => rp.id === p.id);
                 
-                // 🟢 წაღებული კარტების კალკულაცია
+                // წაღებული კარტების კალკულაცია
                 const capturedCards = p.captured?.length || 0;
                 const capturedClubs = p.captured?.filter(c => c.suit === '♣' || c.suit === '♣️').length || 0;
                 const has10Diamond = p.captured?.some(c => c.rank === '10' && (c.suit === '♦' || c.suit === '♦️'));
                 const has2Club = p.captured?.some(c => c.rank === '2' && (c.suit === '♣' || c.suit === '♣️'));
+
+                const activePlayerMessage = messages.find(m => m.senderId === p.id);
 
                 let posClass = "";
                 let isVertical = false; 
@@ -353,9 +347,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                   <div key={p.id} className={`absolute flex items-center justify-center z-30 ${posClass}`}>
                      
                      {/* ჩატის მესიჯის ღრუბელი */}
-                     {messages.find(m => m.senderId === p.id) && (
+                     {activePlayerMessage && (
                        <div className="absolute -top-12 md:-top-16 left-1/2 -translate-x-1/2 bg-stone-100 text-stone-900 px-3 py-1.5 md:py-2 rounded-xl text-[10px] md:text-xs font-black shadow-[0_5px_15px_rgba(0,0,0,0.5)] z-50 animate-in zoom-in-50 fade-in slide-in-from-bottom-2 whitespace-nowrap">
-                         {messages.find(m => m.senderId === p.id).text}
+                         {activePlayerMessage.text}
                          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-stone-100 rotate-45 rounded-sm"></div>
                        </div>
                      )}
@@ -376,7 +370,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                               ქულა:<span className={`ml-0.5 ${activeTheme.accent}`}>{p.totalScore}</span>
                            </span>
 
-                           {/* 🟢 მიკრო-სტატისტიკის ზოლი (წაღებული კარტები) */}
+                           {/* მიკრო-სტატისტიკის ზოლი */}
                            <div className="flex items-center gap-1 mt-1 bg-stone-950/80 px-1 py-0.5 rounded flex-wrap border border-white/5 w-full justify-center shadow-inner">
                               <span className="text-[6px] md:text-[7px] font-mono font-bold text-stone-300" title="წაღებული კარტები">🃏 {capturedCards}</span>
                               <span className="text-[6px] md:text-[7px] font-mono font-bold text-stone-300" title="წაღებული ჯვრები">♣️ {capturedClubs}</span>
@@ -400,10 +394,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           <div className="flex flex-col items-center mt-auto pt-2 pb-6 md:pb-8 z-20 shrink-0 w-full max-w-lg mx-auto">
             
             {/* 🟢 ქვედა პანელი: ემოჯი, ჩატი და სვლის ღილაკი */}
-            {/* აქ დაშორება შევამცირეთ mb-3-მდე, რომ ღილაკები ზედმეტად მაღლა არ ავიდეს */}
             <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-3 md:mb-8 px-4">
               
-              {/* ემოჯების მენიუ */}
               {showEmojiMenu && (
                 <div className="absolute bottom-[115%] left-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex gap-1.5 md:gap-2 w-max max-w-[90vw] overflow-x-auto custom-scrollbar animate-in zoom-in-95 slide-in-from-bottom-2">
                   {standardEmotes.map(emo => (
@@ -420,7 +412,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 </div>
               )}
 
-              {/* ჩატის ფრაზების მენიუ */}
               {showChatMenu && (
                 <div className="absolute bottom-[115%] right-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col gap-1.5 w-max max-w-[200px] md:max-w-[250px] animate-in zoom-in-95 slide-in-from-bottom-2 z-50">
                   <h4 className="text-[9px] font-black text-stone-400 uppercase tracking-widest border-b border-white/10 pb-1 mb-1 text-center">Quick Chat</h4>
@@ -434,7 +425,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 </div>
               )}
 
-              {/* ემოჯის ღილაკი */}
               <button 
                 onClick={() => { setShowEmojiMenu(!showEmojiMenu); setShowChatMenu(false); }}
                 className={`p-3 md:p-3.5 rounded-full transition-all active:scale-95 border shadow-lg flex items-center justify-center shrink-0
@@ -443,7 +433,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                  <span className="text-lg leading-none">😀</span>
               </button>
 
-              {/* სვლის ღილაკი */}
               <button 
                 onClick={() => { handlePlayCard(); setShowEmojiMenu(false); setShowChatMenu(false); }}
                 disabled={!isMyTurn || !selectedCardFromHand}
@@ -453,7 +442,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 {selectedCardsFromTable.length > 0 ? 'მოჭრა ⚔️' : 'დაგდება 🃏'}
               </button>
 
-              {/* ჩატის ღილაკი */}
               <button 
                 onClick={() => { setShowChatMenu(!showChatMenu); setShowEmojiMenu(false); }}
                 className={`p-3 md:p-3.5 rounded-full transition-all active:scale-95 border shadow-lg flex items-center justify-center shrink-0
@@ -463,7 +451,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </button>
             </div>
 
-            {/* 🟢 მოთამაშის ხელი (მარაო) */}
+            {/* 🟢 მოთამაშის ხელი (მარაო) - დახვეწილი დიზაინით */}
             <div className="flex justify-center items-end h-[75px] md:h-[130px] w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
@@ -471,7 +459,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 const centerIndex = (totalCards - 1) / 2;
                 const offset = i - centerIndex;
                 const rotation = offset * 6; 
-                // მობილურზე კიდევ უფრო შევამცირეთ გადახრა რომ ქვევით არ ჩავარდეს
                 const yPush = Math.abs(offset) * 2; 
                 const overlapMargin = i !== 0 ? '-ml-5 md:-ml-10' : ''; 
 
@@ -494,19 +481,14 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                         ${!isMyTurn && 'opacity-90 hover:opacity-100'} 
                       `}
                     >
-                      {/* ზედა მარცხენა კუთხე */}
                       <div className="absolute top-1 left-1.5 md:top-2 md:left-2 flex flex-col items-center leading-none">
                         <span className={`text-[12px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
-                        <span className={`text-[7px] md:text-[10px] mt-[1px] ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       </div>
                       
-                      {/* ცენტრალური მასტი */}
                       <span className={`text-2xl md:text-5xl opacity-95 ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       
-                      {/* ქვედა მარჯვენა კუთხე (შემოტრიალებული) */}
                       <div className="absolute bottom-1 right-1.5 md:bottom-2 md:right-2 flex flex-col items-center leading-none rotate-180">
                         <span className={`text-[12px] md:text-[20px] font-bold tracking-tighter ${getSuitColor(c.suit)}`}>{c.rank}</span>
-                        <span className={`text-[7px] md:text-[10px] mt-[1px] ${getSuitColor(c.suit)}`}>{c.suit}</span>
                       </div>
                     </div>
                   </div>
@@ -534,6 +516,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         )}
 
+        {/* 🟢 რაუნდის/თამაშის დასასრულის მოდალი */}
         {room?.roundSummary && (
           <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
             <div className={`bg-stone-900 border border-opacity-30 border-current rounded-2xl md:rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl text-center space-y-4 md:space-y-6 relative overflow-hidden ${activeTheme.accent}`}>
