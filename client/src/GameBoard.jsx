@@ -390,11 +390,12 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          {/* 🟢 მთლიანი ქვედა სექცია (ღილაკები + კარტები) - მობილურზე ბოლომდე გამოჩენისთვის */}
+          {/* 🟢 მთლიანი ქვედა სექცია (ღილაკები + კარტები) */}
           <div className="flex flex-col items-center mt-auto pt-2 pb-6 md:pb-8 z-20 shrink-0 w-full max-w-lg mx-auto">
             
             {/* 🟢 ქვედა პანელი: ემოჯი, ჩატი და სვლის ღილაკი */}
-            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-3 md:mb-8 px-4">
+            {/* ❗️ აქ გავზარდეთ დაშორება (mb-10 md:mb-16), რათა ამოწეული კარტი ღილაკს აღარ შეეხოს */}
+            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-10 md:mb-16 px-4">
               
               {showEmojiMenu && (
                 <div className="absolute bottom-[115%] left-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex gap-1.5 md:gap-2 w-max max-w-[90vw] overflow-x-auto custom-scrollbar animate-in zoom-in-95 slide-in-from-bottom-2">
@@ -451,8 +452,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </button>
             </div>
 
-            {/* 🟢 მოთამაშის ხელი (მარაო) - დახვეწილი დიზაინით */}
-            <div className="flex justify-center items-end h-[75px] md:h-[130px] w-full relative overflow-visible">
+            {/* 🟢 მოთამაშის ხელი (მარაო) */}
+            {/* ❗️ კონტეინერის სიმაღლე ოდნავ გავზარდეთ (h-[85px]), რომ კარტები არ მოიჭრას */}
+            <div className="flex justify-center items-end h-[85px] md:h-[140px] w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 const totalCards = me.cards.length;
