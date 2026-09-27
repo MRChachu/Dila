@@ -23,6 +23,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const [showEmojiMenu, setShowEmojiMenu] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false); 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  // 🟢 ეკრანის ორიენტაციის სტეიტი
+  const [isPortrait, setIsPortrait] = useState(false);
 
   const me = room?.players?.find(p => p.id === socket.id);
   const isMyTurn = room?.players?.[room.currentTurn]?.id === socket.id;
@@ -42,7 +45,24 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     "კარგი თამაში იყო 🤝"
   ];
 
-  // 🟢 სრული ეკრანის ლოგიკა (iPhone შეზღუდვების ინფორმირებით)
+  // 🟢 ორიენტაციის შემმოწმებელი ლოგიკა (მხოლოდ მობილურებისთვის)
+  useEffect(() => {
+    const checkOrientation = () => {
+      // ვამოწმებთ არის თუ არა მობილური (სიგანე < 768) და უჭირავს თუ არა ვერტიკალურად
+      setIsPortrait(window.innerHeight > window.innerWidth && window.innerWidth < 768);
+    };
+    
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
+
+  // სრული ეკრანის ლოგიკა
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement));
@@ -61,10 +81,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       if (docElm.requestFullscreen) {
         docElm.requestFullscreen().catch(() => alert("თქვენი ბრაუზერი არ უჭერს მხარს სრულ ეკრანს."));
       } else if (docElm.webkitRequestFullscreen) {
-        docElm.webkitRequestFullscreen(); // ძველი Safari/Chrome
+        docElm.webkitRequestFullscreen();
       } else {
-        // iPhone მომხმარებლებისთვის მეგობრული შეტყობინება
-        alert("ℹ️ iPhone/iOS სისტემაზე, Apple-ის უსაფრთხოების წესების გამო, სრულ ეკრანზე გაშლა შეზღუდულია. უკეთესი გამოცდილებისთვის უბრალოდ ჩამოსქროლეთ ეკრანი ქვემოთ.");
+        alert("ℹ️ iPhone/iOS სისტემაზე სრულ ეკრანზე გაშლა შეზღუდულია. უბრალოდ ჩამოსქროლეთ ეკრანი ქვემოთ.");
       }
     } else {
       if (document.exitFullscreen) {
@@ -199,10 +218,33 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   }
 
   return (
-    // 🟢 აქ მკაცრად დავაბრუნეთ h-[88dvh] რათა მაგიდამ ზუსტად იცოდეს თავისი სიმაღლე და არ შეიკუმშოს!
-    <div className="w-full flex flex-col items-center justify-center max-w-7xl mx-auto h-[88dvh] md:h-[88vh] relative pb-1 lg:pb-0">
+    // 🟢 აქ დავამატეთ min-h-[100dvh], რათა ჰორიზონტალურ რეჟიმში მაგიდამ თავისუფლად ისუნთქოს და იზომოს მთლიანი ეკრანი
+    <div className="w-full flex flex-col items-center justify-center max-w-7xl mx-auto min-h-[100dvh] lg:min-h-0 lg:h-[88vh] relative pb-2 lg:pb-0">
       
-      <div className={`flex-1 w-full h-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden`}>
+      {/* 🟢 მობილურის ამოტრიალების (Force Landscape) დამბლოკავი ეკრანი */}
+      {isPortrait && (
+        <div className="fixed inset-0 z-[99999] bg-stone-950 flex flex-col items-center justify-center text-center p-6 backdrop-blur-2xl">
+           <div className="relative w-24 h-24 mb-8 flex items-center justify-center animate-[spin_2s_ease-in-out_infinite]">
+              <div className="w-14 h-24 border-4 border-stone-400 rounded-xl flex flex-col items-center justify-between py-1.5 bg-stone-900 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                 <div className="w-4 h-1 bg-stone-500 rounded-full"></div>
+                 <div className="w-3 h-3 border-2 border-stone-500 rounded-full"></div>
+              </div>
+              <div className="absolute -right-4 -bottom-2 text-yellow-500 animate-pulse drop-shadow-[0_0_10px_rgba(234,179,8,0.8)]">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                </svg>
+              </div>
+           </div>
+           <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-widest mb-3">მოაბრუნეთ ეკრანი</h2>
+           <p className="text-xs text-stone-400 font-bold max-w-[280px] leading-relaxed">
+             საუკეთესო ვიზუალისთვის და კომფორტული თამაშისთვის, გთხოვთ დაიკავოთ ტელეფონი <span className="text-yellow-500">ჰორიზონტალურად</span>.
+           </p>
+        </div>
+      )}
+
+      {/* 🟢 მთავარი სათამაშო დაფა */}
+      <div className={`flex-1 w-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-none md:rounded-3xl shadow-2xl flex flex-col relative overflow-y-auto overflow-x-hidden custom-scrollbar`}>
         
         {/* გლობალური ემოჯიების ანიმაცია */}
         {activeEmotes.length > 0 && (
@@ -220,7 +262,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
         )}
 
         {/* 🟢 Header ნაწილი */}
-        <div className="flex items-center justify-between p-2.5 md:p-4 border-b border-white/5 bg-stone-950/40 rounded-t-3xl shrink-0 z-20">
+        <div className="flex items-center justify-between p-2.5 md:p-4 border-b border-white/5 bg-stone-950/40 md:rounded-t-3xl shrink-0 z-20 sticky top-0">
           <div className="flex items-center gap-2">
             <span className={`text-[10px] md:text-xs font-black tracking-widest font-mono ${activeTheme.accent} hidden sm:block`}>ROOM: {room.id}</span>
             
@@ -236,7 +278,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
 
           <div className="flex items-center gap-3 md:gap-4">
-            <button onClick={toggleFullScreen} className={`text-stone-500 hover:${activeTheme.accent} transition-colors`} title="სრულ ეკრანზე გაშლა">
+            <button onClick={toggleFullScreen} className={`text-stone-500 hover:${activeTheme.accent} transition-colors hidden md:block`} title="სრულ ეკრანზე გაშლა">
               {isFullscreen ? <Minimize size={14} className="md:w-4 md:h-4" /> : <Maximize size={14} className="md:w-4 md:h-4" />}
             </button>
 
@@ -255,7 +297,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         )}
 
-        <div className="flex-1 flex flex-col justify-between px-2 pt-2 pb-2 md:p-6 relative min-h-0 overflow-hidden w-full">
+        <div className="flex-1 flex flex-col justify-between px-2 pt-2 pb-2 md:p-6 relative min-h-0 w-full">
           
           {room.deck?.length > 0 && (
             <div className="absolute top-1 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title="დარჩენილი ბანქო">
@@ -326,7 +368,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             })()}
           </div>
 
-          {/* 🟢 ოვალური მაგიდა (სწორი დაშორებებით) */}
+          {/* 🟢 ოვალური მაგიდა */}
           <div className="flex-1 flex flex-col items-center justify-center relative mt-6 md:mt-10 mb-6 md:mb-10 w-full z-10 min-h-[180px] md:min-h-[250px]">
             <div className={`relative w-[92%] md:w-[85%] max-w-3xl aspect-[1.5/1] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
               
@@ -446,9 +488,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
 
           {/* 🟢 მთლიანი ქვედა სექცია */}
-          <div className="flex flex-col items-center mt-auto pt-2 pb-2 md:pb-6 z-20 shrink-0 w-full max-w-lg mx-auto">
+          <div className="flex flex-col items-center mt-auto pt-2 pb-6 md:pb-8 z-20 shrink-0 w-full max-w-lg mx-auto">
             
-            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-6 md:mb-10 px-4">
+            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-8 md:mb-12 px-4">
               
               {showEmojiMenu && (
                 <div className="absolute bottom-[115%] left-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex gap-1.5 md:gap-2 w-max max-w-[90vw] overflow-x-auto custom-scrollbar animate-in zoom-in-95 slide-in-from-bottom-2">
@@ -506,7 +548,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
 
             {/* 🟢 მოთამაშის ხელი */}
-            <div className="flex justify-center items-end h-[85px] md:h-[130px] w-full relative overflow-visible">
+            <div className="flex justify-center items-end h-[75px] md:h-[130px] w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 const totalCards = me.cards.length;
@@ -537,7 +579,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                       onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
                       className={`relative w-[48px] h-[70px] md:w-[86px] md:h-[124px] bg-white rounded-md md:rounded-xl flex items-center justify-center select-none transition-all duration-300 border
                         ${specialBorder}
-                        ${isSelected ? `-translate-y-6 md:-translate-y-8 scale-110 shadow-2xl ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-1.5 hover:shadow-lg cursor-pointer'}
+                        ${isSelected ? `-translate-y-4 md:-translate-y-8 scale-110 shadow-2xl ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-1.5 hover:shadow-lg cursor-pointer'}
                         ${!isMyTurn && 'opacity-90 hover:opacity-100'} 
                       `}
                     >
