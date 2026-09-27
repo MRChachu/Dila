@@ -968,7 +968,7 @@ export default function App() {
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6 items-start">
               
               {/* მარცხენა სვეტი */}
-              <div className="space-y-4 md:space-y-5">
+              <div className="space-y-4 md:space-y-5 animate-in slide-in-from-bottom-8 fade-in duration-700">
                 {/* 🟢 1. პრემიუმ პროფილის ბარათი (Gaming ID Card) */}
                 <div className={`relative overflow-hidden ${activeTheme.card} backdrop-blur-xl border ${amIVip ? 'border-yellow-500/30' : 'border-white/10'} rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 group`}>
                   {/* VIP Glow Background */}
@@ -1144,7 +1144,7 @@ export default function App() {
               </div>
 
               {/* მარჯვენა სვეტი */}
-              <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full relative">
+              <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full relative animate-in slide-in-from-bottom-12 fade-in duration-700 delay-150 fill-mode-both">
                 
                 {showWelcomeChallenge && (
                   <div className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/80 to-stone-900 p-4 md:p-6 shadow-[0_0_30px_rgba(16,185,129,0.15)] group">
@@ -1246,7 +1246,34 @@ export default function App() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700 h-full`}>
                     <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3"><h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest"><LayoutGrid size={14} className={activeTheme.accent} /> {t.tables}</h3><button onClick={() => socket.emit('getLiveRooms')} className={`p-1.5 md:p-2 hover:bg-stone-800 ${activeTheme.accent} rounded-lg bg-stone-950/60 border border-white/5 shadow-md active:scale-95`}><RefreshCw size={12}/></button></div>
-                    {liveRooms.length === 0 ? ( <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-stone-950/30 h-[160px] flex items-center justify-center"><p className="text-[10px] md:text-xs text-stone-500 font-bold">{t.noTables}</p></div> ) : ( <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">{liveRooms.map((room) => ( <div key={room.id} className="p-2.5 md:p-3 rounded-xl bg-stone-950/40 border border-white/5 flex justify-between items-center shadow-md"><div className="flex flex-col gap-1"><div className={`flex items-center gap-1.5 text-[10px] md:text-xs font-black ${activeTheme.accent} font-mono`}><span className="text-xs">{room.hostAvatar || '😎'}</span> <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> {room.isPrivate && <Lock size={10} className="text-stone-500" />}<span className="text-[8px] bg-stone-900 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md uppercase ml-1 shadow-sm flex items-center gap-1">{room.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}</span></div><div className="flex gap-1.5 items-center">{room.isRanked ? <span className={`text-[8px] font-bold ${activeTheme.accentBg} bg-opacity-10 border-opacity-20 border-current px-1 py-0.5 rounded border`}>RANKED</span> : <span className="text-[8px] font-bold text-stone-400 bg-stone-500/10 px-1 py-0.5 rounded border border-stone-500/20">CASUAL</span>}<span className="text-[8px] font-bold text-stone-400 bg-stone-900/80 px-1 py-0.5 rounded border border-white/5 font-mono">👥 {room.currentPlayers}/{room.maxPlayers}</span></div></div><button onClick={() => handleRoomClickFromList(room)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all active:scale-95 ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300' : `bg-white text-stone-900 shadow-md`}`}>{t.join}</button></div> ))}</div> )}
+                    {liveRooms.length === 0 ? ( <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-stone-950/30 h-[160px] flex items-center justify-center"><p className="text-[10px] md:text-xs text-stone-500 font-bold">{t.noTables}</p></div> ) : ( <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">{liveRooms.map((room) => ( <div key={room.id} className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-stone-900/60 border border-white/5 hover:border-white/20 hover:bg-stone-800/80 transition-all flex justify-between items-center shadow-lg group relative overflow-hidden">
+                              {/* ნეონის ხაზი გვერდზე */}
+                              <div className={`absolute left-0 top-0 bottom-0 w-1 ${room.isRanked ? activeTheme.accentBg : 'bg-stone-500'} opacity-50 group-hover:opacity-100 transition-opacity`}></div>
+                              
+                              <div className="flex flex-col gap-1.5 pl-2">
+                                <div className={`flex items-center gap-2 text-[11px] md:text-xs font-black ${activeTheme.accent} font-mono drop-shadow-md`}>
+                                  <span className="text-sm md:text-base">{room.hostAvatar || '😎'}</span> 
+                                  <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> 
+                                  {room.isPrivate && <Lock size={12} className="text-stone-500" />}
+                                  <span className="text-[8px] md:text-[9px] bg-stone-950 border border-white/10 text-stone-300 px-2 py-0.5 rounded-md uppercase ml-1 shadow-sm flex items-center gap-1">
+                                    {room.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}
+                                  </span>
+                                </div>
+                                <div className="flex gap-2 items-center">
+                                  {room.isRanked ? (
+                                    <span className={`text-[9px] font-black ${activeTheme.accentBg} bg-opacity-20 border-opacity-30 border-current px-1.5 py-0.5 rounded border tracking-wider`}>RANKED</span>
+                                  ) : (
+                                    <span className="text-[9px] font-black text-stone-400 bg-stone-500/10 px-1.5 py-0.5 rounded border border-stone-500/20 tracking-wider">CASUAL</span>
+                                  )}
+                                  <span className="text-[9px] font-black text-stone-400 bg-stone-950 px-2 py-0.5 rounded border border-white/10 font-mono tracking-widest flex items-center gap-1">
+                                    <User size={10} /> {room.currentPlayers}/{room.maxPlayers}
+                                  </span>
+                                </div>
+                              </div>
+                              <button onClick={() => handleRoomClickFromList(room)} className={`px-4 py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-md uppercase tracking-wider ${room.isPrivate ? 'bg-stone-800 border border-white/10 text-stone-300 hover:bg-stone-700' : `${activeTheme.accentBg} text-stone-950 hover:scale-105 shadow-[0_0_15px_currentColor]`}`}>
+                                {t.join}
+                              </button>
+                            </div> ))}</div> )}
                   </div>
 
                   {/* 🟢 3. ყოველდღიური მისიები (Premium Quests) */}
@@ -1439,11 +1466,22 @@ export default function App() {
                   </div>
               </div>
             ) : isSearching ? (
-               <div className="py-8 flex flex-col items-center">
-                  <Search className={`w-12 h-12 mb-4 animate-spin-slow ${activeTheme.accent}`} />
-                  <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">ვეძებთ მოთამაშეებს...</h3>
-                  <p className="text-xs text-stone-400 mt-2 font-bold">გთხოვთ დაელოდოთ</p>
-                  <button onClick={cancelSearch} className="mt-8 py-2.5 px-8 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner uppercase tracking-wider">გაუქმება</button>
+               <div className="py-12 flex flex-col items-center relative overflow-hidden">
+                  {/* სკანირების რადარის რგოლები */}
+                  <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border-2 ${activeTheme.accent.replace('text-', 'border-')} border-dashed animate-[spin_3s_linear_infinite] opacity-30 pointer-events-none`}></div>
+                  <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border border-white/10 animate-ping opacity-20 pointer-events-none`}></div>
+                  <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full border border-white/5 opacity-10 pointer-events-none`}></div>
+                  
+                  <div className={`relative z-10 w-20 h-20 mb-6 rounded-full ${activeTheme.accentBg} bg-opacity-20 flex items-center justify-center border border-current border-opacity-50 shadow-[0_0_30px_currentColor] animate-pulse`}>
+                      <Search className={`w-10 h-10 ${activeTheme.accent}`} />
+                  </div>
+                  
+                  <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest relative z-10 drop-shadow-md">ვეძებთ მოწინააღმდეგეს</h3>
+                  <p className={`text-xs ${activeTheme.accent} mt-2 font-bold animate-pulse relative z-10`}>სკანირება მიმდინარეობს...</p>
+                  
+                  <button onClick={cancelSearch} className="mt-10 relative z-10 py-3 px-10 bg-rose-900/40 border border-rose-500/30 hover:bg-rose-600 hover:text-white text-rose-400 rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg uppercase tracking-wider">
+                      გაუქმება
+                  </button>
                </div>
             ) : (
               <form onSubmit={handleFindMatchSubmit} className="space-y-4 md:space-y-5 text-left">
