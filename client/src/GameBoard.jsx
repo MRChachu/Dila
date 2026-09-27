@@ -201,7 +201,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     <div className="w-full flex flex-col items-center justify-center max-w-7xl mx-auto h-[85dvh] md:h-[88vh] relative pb-1 lg:pb-0">
       
       {/* 🟢 Landscape რეჟიმის ბლოკერი (გამოჩნდება მხოლოდ ტელეფონის გადმოტრიალებისას) */}
-      <div className="hidden landscape:flex md:hidden fixed inset-0 z-[99999] bg-stone-950/98 backdrop-blur-2xl flex-col items-center justify-center text-center p-6">
+      <div className="hidden landscape:flex md:!hidden fixed inset-0 z-[99999] bg-stone-950/98 backdrop-blur-2xl flex-col items-center justify-center text-center p-6">
         <div className="w-24 h-24 bg-stone-900 border border-white/10 rounded-3xl flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(0,0,0,0.8)]">
           <span className="text-6xl -rotate-90 animate-pulse">📱</span>
         </div>
