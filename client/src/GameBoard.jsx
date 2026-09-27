@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Lock, Flag, XCircle, Maximize, Minimize } from 'lucide-react';
+import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Lock, Flag, Maximize, Minimize } from 'lucide-react';
 
 const getLeague = (xp = 0) => {
   if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
@@ -42,20 +42,35 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     "კარგი თამაში იყო 🤝"
   ];
 
-  // 🟢 სრული ეკრანის ლოგიკა
+  // 🟢 სრული ეკრანის ლოგიკა (iOS და Android მხარდაჭერით)
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement));
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   const toggleFullScreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => console.log(err));
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      const docElm = document.documentElement;
+      if (docElm.requestFullscreen) {
+        docElm.requestFullscreen().catch(() => alert("თქვენი ბრაუზერი არ უჭერს მხარს სრულ ეკრანს."));
+      } else if (docElm.webkitRequestFullscreen) {
+        docElm.webkitRequestFullscreen(); // Safari / iOS
+      } else {
+        alert("iOS სისტემაზე ბრაუზერიდან სრულ ეკრანზე გაშლა შეზღუდულია.");
+      }
     } else {
-      if (document.exitFullscreen) document.exitFullscreen();
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
     }
   };
 
@@ -183,9 +198,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   }
 
   return (
-    <div className="w-full flex flex-col items-center justify-center max-w-7xl mx-auto h-[82dvh] md:h-[88vh] relative pb-2 lg:pb-0">
+    // 🟢 dvh-ის ნაცვლად ვიყენებთ flex-1 და min-h-0, რათა ბრაუზერის პანელებმა არ გადაფაროს
+    <div className="w-full flex-1 h-full flex flex-col items-center justify-center max-w-7xl mx-auto relative pb-2 lg:pb-0 min-h-0">
       
-      <div className={`flex-1 w-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden`}>
+      <div className={`flex-1 w-full h-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden min-h-0`}>
         
         {/* გლობალური ემოჯიების ანიმაცია */}
         {activeEmotes.length > 0 && (
@@ -310,8 +326,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             })()}
           </div>
 
-          {/* 🟢 ოვალური მაგიდა */}
-          <div className="flex-1 flex flex-col items-center justify-center relative mt-1 md:mt-8 mb-2 md:mb-8 w-full z-10 min-h-[250px]">
+          {/* 🟢 ოვალური მაგიდა (მობილურზე მინიმალური სიმაღლე შევამცირეთ min-h-[160px]-მდე) */}
+          <div className="flex-1 flex flex-col items-center justify-center relative mt-1 md:mt-8 mb-1 md:mb-8 w-full z-10 min-h-[160px] md:min-h-[250px]">
             <div className={`relative w-[92%] md:w-[85%] max-w-3xl aspect-[4/3] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
               
               <div className="absolute inset-0 rounded-[92px] md:rounded-[184px] border border-white/5 shadow-inner pointer-events-none"></div>
@@ -429,8 +445,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          {/* 🟢 მთლიანი ქვედა სექცია */}
-          <div className="flex flex-col items-center mt-auto pt-2 pb-6 md:pb-8 z-20 shrink-0 w-full max-w-lg mx-auto">
+          {/* 🟢 მთლიანი ქვედა სექცია (pb-8 მობილურზე კარტებს კიდევ უფრო მაღლა წევს) */}
+          <div className="flex flex-col items-center mt-auto pt-2 pb-8 md:pb-8 z-20 shrink-0 w-full max-w-lg mx-auto">
             
             <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-3 md:mb-8 px-4">
               
