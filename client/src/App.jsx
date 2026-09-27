@@ -1510,26 +1510,76 @@ export default function App() {
       )}
 
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-2xl font-sans relative`}>
-            <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} border-b border-white/10 pb-2.5 md:pb-3 uppercase tracking-wider`}>თამაშის შექმნა</h3>
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <button type="button" onClick={() => setMGameType('phurti')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'phurti' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}><span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span><span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-300'}`}>ფურთი</span></button>
-              <button type="button" onClick={() => setMGameType('damka')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}><div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2"><DamkaIcon type="red" size="lg" className="z-10" /><DamkaIcon type="white" size="lg" className="mt-2" /></div><span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-300'}`}>შაში (დამკა)</span></button>
+        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
+          <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-[0_0_50px_rgba(0,0,0,0.5)] font-sans relative overflow-hidden group`}>
+            
+            {/* ფონის ნეონის ეფექტი კუთხეში */}
+            <div className={`absolute -top-16 -right-16 w-32 h-32 ${activeTheme.accentBg} opacity-10 blur-[40px] rounded-full pointer-events-none`}></div>
+
+            <h3 className={`text-base md:text-lg font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2 relative z-10`}>
+              <PlusCircle size={18} /> თამაშის შექმნა
+            </h3>
+
+            <div className="grid grid-cols-2 gap-3 mt-4 relative z-10">
+              <button type="button" onClick={() => setMGameType('phurti')} className={`p-3 md:p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md group/btn ${mGameType === 'phurti' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105 shadow-[0_0_15px_currentColor]' : 'border-white/5 bg-stone-950/50 opacity-60 hover:opacity-100 hover:bg-stone-900'}`}>
+                <span className="text-3xl drop-shadow-md group-hover/btn:scale-110 transition-transform">🃏</span>
+                <span className={`text-[10px] md:text-xs font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-400'}`}>ფურთი</span>
+              </button>
+              <button type="button" onClick={() => setMGameType('damka')} className={`p-3 md:p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md group/btn ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105 shadow-[0_0_15px_currentColor]' : 'border-white/5 bg-stone-950/50 opacity-60 hover:opacity-100 hover:bg-stone-900'}`}>
+                <div className="flex -space-x-3 group-hover/btn:scale-110 transition-transform drop-shadow-md pb-2">
+                  <DamkaIcon type="red" size="md" className="z-10" />
+                  <DamkaIcon type="white" size="md" className="mt-2" />
+                </div>
+                <span className={`text-[10px] md:text-xs font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-400'}`}>შაში (Damka)</span>
+              </button>
             </div>
-            <div className="space-y-2 md:space-y-2.5">
-              <div className="grid grid-cols-2 gap-2"><button type="button" disabled={mAllowBots} onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button><button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 {t.casual}</button></div>
+
+            <div className="space-y-2.5 relative z-10">
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" disabled={mAllowBots} onClick={() => setMIsRanked(true)} className={`py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
+                <button type="button" onClick={() => setMIsRanked(false)} className={`py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
+              </div>
             </div>
-            <div className="space-y-2 md:space-y-2.5">
-              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">🤖 {t.bots}</label>
-              <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => { setMAllowBots(true); setMIsRanked(false); }} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mAllowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.on}</button><button type="button" onClick={() => setMAllowBots(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mAllowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.off}</button></div>
-              {mAllowBots && <p className="text-[9px] text-stone-500 font-bold text-center pt-1 w-full col-span-2">ბოტებთან თამაშისას რეიტინგი (XP) არ ითვლება</p>}
+
+            <div className="space-y-2 relative z-10">
+              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5">🤖 {t.bots}</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => { setMAllowBots(true); setMIsRanked(false); }} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${mAllowBots ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.on}</button>
+                <button type="button" onClick={() => setMAllowBots(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase transition-all ${!mAllowBots ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{t.off}</button>
+              </div>
+              {mAllowBots && <p className="text-[8px] md:text-[9px] text-stone-500 font-bold text-center pt-1 w-full bg-stone-950/50 py-1 rounded-md border border-white/5">ბოტებთან რეიტინგი (XP) არ ითვლება</p>}
             </div>
+
             {mGameType === 'phurti' && (
-              <><div className="space-y-2 md:space-y-2.5 mt-2"><label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.targetScore}</label><div className="grid grid-cols-2 gap-2">{[11, 21].map(sc => ( <button type="button" key={sc} onClick={() => setMTargetScore(sc)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mTargetScore === sc ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{sc}</button> ))}</div></div><div className="space-y-2 md:space-y-2.5"><label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.playerLimit}</label><div className="grid grid-cols-3 gap-2">{[2, 3, 4].map(num => ( <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button> ))}</div></div></>
+              <div className="flex gap-3 relative z-10">
+                <div className="space-y-2 flex-1">
+                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.targetScore}</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[11, 21].map(sc => (
+                      <button type="button" key={sc} onClick={() => setMTargetScore(sc)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mTargetScore === sc ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{sc}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2 flex-1">
+                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.playerLimit}</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[2, 3, 4].map(num => (
+                      <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
-            <div className="space-y-1.5 md:space-y-2 mt-2"><label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.password}</label><input type="password" value={mRoomPassword} onChange={(e) => setMRoomPassword(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold text-stone-100 outline-none placeholder-stone-700 shadow-inner`} placeholder="••••••••" /></div>
-            <div className="grid grid-cols-2 gap-2 md:gap-3 pt-2 md:pt-3 border-t border-white/5"><button type="button" onClick={() => setIsCreateModalOpen(false)} className="py-2 md:py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner">{t.cancel}</button><button type="submit" className={`py-2 md:py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg`}>{t.create}</button></div>
+
+            <div className="space-y-2 relative z-10 pt-2">
+              <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5"><Lock size={12}/> ოთახის პაროლი (სურვილისამებრ)</label>
+              <input type="password" value={mRoomPassword} onChange={(e) => setMRoomPassword(e.target.value)} className={`w-full rounded-xl bg-stone-950/80 border border-white/10 px-3 md:px-4 py-2.5 md:py-3 text-[10px] md:text-xs font-bold text-stone-100 outline-none focus:border-white/30 transition-all placeholder-stone-700 shadow-inner`} placeholder="••••••••" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 md:gap-3 pt-4 border-t border-white/5 relative z-10">
+              <button type="button" onClick={() => setIsCreateModalOpen(false)} className="py-2.5 md:py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase tracking-wider">{t.cancel}</button>
+              <button type="submit" className={`py-2.5 md:py-3 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-[0_0_15px_currentColor] uppercase tracking-wider`}>{t.create}</button>
+            </div>
           </form>
         </div>
       )}
