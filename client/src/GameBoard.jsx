@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import confetti from 'canvas-confetti';
 import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Lock, Flag, Maximize, Minimize } from 'lucide-react';
 
 const getLeague = (xp = 0) => {
@@ -104,21 +103,19 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   }, [isMyTurn, room.turnExpiresAt]);
 
+  // 🟢 მსუბუქი ზეიმის ლოგიკა (მძიმე confetti-ს გარეშე)
   useEffect(() => {
     if (room?.roundSummary?.matchWinner) {
       const isMeWinner = room.roundSummary.matchWinner === me?.name;
-      if (isMeWinner) {
-        const duration = 3000;
-        const end = Date.now() + duration;
-        const frame = () => {
-          confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#f59e0b', '#fbbf24', '#d97706'] });
-          confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#f59e0b', '#fbbf24', '#d97706'] });
-          if (Date.now() < end) requestAnimationFrame(frame);
-        };
-        frame();
+      if (isMeWinner && !isMuted) {
+        try {
+          const audio = new Audio('/win.wav'); // (თუ გაქვს ხმის ფაილი)
+          audio.volume = 0.5; 
+          audio.play().catch(e => console.log(e));
+        } catch(e) {}
       }
     }
-  }, [room?.roundSummary, me?.name]);
+  }, [room?.roundSummary, me?.name, isMuted]);
 
   useEffect(() => {
     const handleReceiveMessage = (msg) => {
@@ -581,7 +578,24 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
         {/* 🟢 რაუნდის/თამაშის დასასრულის მოდალი */}
         {room?.roundSummary && (
           <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-            <div className={`bg-stone-900 border border-opacity-30 border-current rounded-2xl md:rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl text-center space-y-4 md:space-y-6 relative overflow-hidden ${activeTheme.accent}`}>
+            
+            {/* 🟢 მსუბუქი CSS ზეიმი გამარჯვებულისთვის (არ ჭედავს!) */}
+            {room.roundSummary.matchWinner === me?.name && (
+              <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center z-0">
+                {/* მფეთქავი ფონი */}
+                <div className="absolute w-[150vw] h-[150vw] bg-[radial-gradient(circle,rgba(234,179,8,0.15)_0%,transparent_60%)] animate-pulse"></div>
+                {/* მოძრავი ემოჯიები */}
+                <div className="absolute top-[10%] left-[10%] text-4xl md:text-6xl animate-bounce">🎉</div>
+                <div className="absolute top-[15%] right-[15%] text-5xl md:text-7xl animate-bounce" style={{ animationDelay: '0.2s' }}>🏆</div>
+                <div className="absolute bottom-[20%] left-[15%] text-5xl md:text-7xl animate-bounce" style={{ animationDelay: '0.4s' }}>💰</div>
+                <div className="absolute bottom-[15%] right-[10%] text-4xl md:text-6xl animate-bounce" style={{ animationDelay: '0.1s' }}>🎊</div>
+                <div className="absolute top-[30%] left-[25%] text-3xl animate-ping opacity-75">✨</div>
+                <div className="absolute top-[70%] right-[25%] text-4xl animate-ping opacity-75" style={{ animationDelay: '0.3s' }}>✨</div>
+              </div>
+            )}
+
+            {/* 🟢 მთავარი მოდალის ჩარჩო (გამარჯვებულზე ინთება ოქროსფრად) */}
+            <div className={`bg-stone-900 border border-opacity-30 border-current rounded-2xl md:rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full text-center space-y-4 md:space-y-6 relative overflow-hidden z-10 ${activeTheme.accent} ${room.roundSummary.matchWinner === me?.name ? 'shadow-[0_0_50px_rgba(234,179,8,0.4)] ring-2 ring-yellow-500 scale-105 transition-all' : 'shadow-2xl'}`}>
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-current/10 via-stone-900 to-stone-900"></div>
               
               <div className="relative z-10">
