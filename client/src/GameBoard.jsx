@@ -42,7 +42,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     "კარგი თამაში იყო 🤝"
   ];
 
-  // 🟢 სრული ეკრანის ლოგიკა (iOS და Android მხარდაჭერით)
+  // 🟢 სრული ეკრანის ლოგიკა (iPhone შეზღუდვების ინფორმირებით)
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement));
@@ -61,9 +61,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       if (docElm.requestFullscreen) {
         docElm.requestFullscreen().catch(() => alert("თქვენი ბრაუზერი არ უჭერს მხარს სრულ ეკრანს."));
       } else if (docElm.webkitRequestFullscreen) {
-        docElm.webkitRequestFullscreen(); // Safari / iOS
+        docElm.webkitRequestFullscreen(); // ძველი Safari/Chrome
       } else {
-        alert("iOS სისტემაზე ბრაუზერიდან სრულ ეკრანზე გაშლა შეზღუდულია.");
+        // iPhone მომხმარებლებისთვის მეგობრული შეტყობინება
+        alert("ℹ️ iPhone/iOS სისტემაზე, Apple-ის უსაფრთხოების წესების გამო, სრულ ეკრანზე გაშლა შეზღუდულია. უკეთესი გამოცდილებისთვის უბრალოდ ჩამოსქროლეთ ეკრანი ქვემოთ.");
       }
     } else {
       if (document.exitFullscreen) {
@@ -198,10 +199,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   }
 
   return (
-    // 🟢 dvh-ის ნაცვლად ვიყენებთ flex-1 და min-h-0, რათა ბრაუზერის პანელებმა არ გადაფაროს
-    <div className="w-full flex-1 h-full flex flex-col items-center justify-center max-w-7xl mx-auto relative pb-2 lg:pb-0 min-h-0">
+    // 🟢 აქ მკაცრად დავაბრუნეთ h-[88dvh] რათა მაგიდამ ზუსტად იცოდეს თავისი სიმაღლე და არ შეიკუმშოს!
+    <div className="w-full flex flex-col items-center justify-center max-w-7xl mx-auto h-[88dvh] md:h-[88vh] relative pb-1 lg:pb-0">
       
-      <div className={`flex-1 w-full h-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden min-h-0`}>
+      <div className={`flex-1 w-full h-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden`}>
         
         {/* გლობალური ემოჯიების ანიმაცია */}
         {activeEmotes.length > 0 && (
@@ -235,7 +236,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
 
           <div className="flex items-center gap-3 md:gap-4">
-            {/* სრული ეკრანის ღილაკი */}
             <button onClick={toggleFullScreen} className={`text-stone-500 hover:${activeTheme.accent} transition-colors`} title="სრულ ეკრანზე გაშლა">
               {isFullscreen ? <Minimize size={14} className="md:w-4 md:h-4" /> : <Maximize size={14} className="md:w-4 md:h-4" />}
             </button>
@@ -255,7 +255,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         )}
 
-        <div className="flex-1 flex flex-col justify-between px-2 pt-1 pb-3 md:p-6 relative min-h-0 overflow-hidden w-full">
+        <div className="flex-1 flex flex-col justify-between px-2 pt-2 pb-2 md:p-6 relative min-h-0 overflow-hidden w-full">
           
           {room.deck?.length > 0 && (
             <div className="absolute top-1 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title="დარჩენილი ბანქო">
@@ -269,7 +269,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           )}
 
           {/* 🟢 სტატუსი და მოქმედებების ჟურნალი */}
-          <div className="flex flex-col items-center gap-2 relative z-20 shrink-0 mt-1 md:mt-2 min-h-[40px] md:min-h-[60px]">
+          <div className="flex flex-col items-center gap-2 relative z-20 shrink-0 mt-2 md:mt-4 min-h-[50px] md:min-h-[60px]">
             {isMyTurn ? (
               <div className={`inline-flex items-center gap-1.5 md:gap-2 px-5 py-2.5 bg-stone-900 border border-white/10 rounded-full ${activeTheme.accent} text-[10px] md:text-xs font-black shadow-[0_0_15px_currentColor] animate-pulse`}>
                 <Sparkles size={14} className="md:w-[16px] md:h-[16px]" /> შენი სვლაა!
@@ -326,14 +326,14 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             })()}
           </div>
 
-          {/* 🟢 ოვალური მაგიდა (მობილურზე მინიმალური სიმაღლე შევამცირეთ min-h-[160px]-მდე) */}
-          <div className="flex-1 flex flex-col items-center justify-center relative mt-1 md:mt-8 mb-1 md:mb-8 w-full z-10 min-h-[160px] md:min-h-[250px]">
-            <div className={`relative w-[92%] md:w-[85%] max-w-3xl aspect-[4/3] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
+          {/* 🟢 ოვალური მაგიდა (სწორი დაშორებებით) */}
+          <div className="flex-1 flex flex-col items-center justify-center relative mt-6 md:mt-10 mb-6 md:mb-10 w-full z-10 min-h-[180px] md:min-h-[250px]">
+            <div className={`relative w-[92%] md:w-[85%] max-w-3xl aspect-[1.5/1] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
               
               <div className="absolute inset-0 rounded-[92px] md:rounded-[184px] border border-white/5 shadow-inner pointer-events-none"></div>
               <div className={`absolute inset-0 opacity-20 blur-[40px] rounded-[100px] ${activeTheme.accentBg} pointer-events-none`}></div>
 
-              {/* 🟢 მაგიდის კარტები (ცენტრში) */}
+              {/* მაგიდის კარტები */}
               <div className="flex flex-wrap justify-center items-center gap-2 md:gap-3 z-10 px-4 md:px-8">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
                   const isSelected = selectedCardsFromTable.some(tc => tc.rank === c.rank && tc.suit === c.suit);
@@ -371,7 +371,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 )}
               </div>
 
-              {/* 🟢 ოვალზე დასმული მოთამაშეები */}
+              {/* ოვალზე დასმული მოთამაშეები */}
               {seatedPlayers.map((p, idx) => {
                 const isMe = idx === 0;
                 const isCurrentTurn = room.currentTurn === room.players.findIndex(rp => rp.id === p.id);
@@ -445,10 +445,10 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
           </div>
 
-          {/* 🟢 მთლიანი ქვედა სექცია (pb-8 მობილურზე კარტებს კიდევ უფრო მაღლა წევს) */}
-          <div className="flex flex-col items-center mt-auto pt-2 pb-8 md:pb-8 z-20 shrink-0 w-full max-w-lg mx-auto">
+          {/* 🟢 მთლიანი ქვედა სექცია */}
+          <div className="flex flex-col items-center mt-auto pt-2 pb-2 md:pb-6 z-20 shrink-0 w-full max-w-lg mx-auto">
             
-            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-3 md:mb-8 px-4">
+            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-6 md:mb-10 px-4">
               
               {showEmojiMenu && (
                 <div className="absolute bottom-[115%] left-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex gap-1.5 md:gap-2 w-max max-w-[90vw] overflow-x-auto custom-scrollbar animate-in zoom-in-95 slide-in-from-bottom-2">
@@ -506,7 +506,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
 
             {/* 🟢 მოთამაშის ხელი */}
-            <div className="flex justify-center items-end h-[75px] md:h-[130px] w-full relative overflow-visible">
+            <div className="flex justify-center items-end h-[85px] md:h-[130px] w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 const totalCards = me.cards.length;
@@ -537,7 +537,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                       onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
                       className={`relative w-[48px] h-[70px] md:w-[86px] md:h-[124px] bg-white rounded-md md:rounded-xl flex items-center justify-center select-none transition-all duration-300 border
                         ${specialBorder}
-                        ${isSelected ? `-translate-y-4 md:-translate-y-8 scale-110 shadow-2xl ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-1.5 hover:shadow-lg cursor-pointer'}
+                        ${isSelected ? `-translate-y-6 md:-translate-y-8 scale-110 shadow-2xl ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-1.5 hover:shadow-lg cursor-pointer'}
                         ${!isMyTurn && 'opacity-90 hover:opacity-100'} 
                       `}
                     >
