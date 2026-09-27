@@ -890,46 +890,208 @@ export default function App() {
       })()}
 
       {isShopOpen && (
-        <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-5 md:p-6 max-w-xl w-full shadow-2xl font-sans relative flex flex-col max-h-[85vh]`}>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4 mb-4">
-              <div className="flex gap-2 bg-stone-950/50 p-1 rounded-xl border border-white/5 overflow-x-auto custom-scrollbar">
-                <button onClick={() => setShopTab('vip')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all flex items-center gap-1 ${shopTab==='vip' ? `bg-yellow-500 text-stone-950 shadow-[0_0_10px_rgba(234,179,8,0.5)]` : 'text-stone-500 hover:bg-stone-900'}`}><Crown size={14}/> VIP</button>
-                <button onClick={() => setShopTab('avatars')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='avatars' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>ავატარები</button>
-                <button onClick={() => setShopTab('tables')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='tables' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>{t.tables}</button>
-                <button onClick={() => setShopTab('cards')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${shopTab==='cards' ? `${activeTheme.accentBg} text-stone-950` : 'text-stone-500 hover:bg-stone-900'}`}>კარტები</button>
-              </div>
-              <div className="flex items-center gap-2 bg-stone-950 px-3 py-2 rounded-lg border border-white/5 shrink-0 w-fit"><Coins size={16} className="text-yellow-500"/><span className="font-mono font-black text-stone-200">{myCoins}</span></div>
+        <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in zoom-in-95 duration-300">
+          <div className={`${activeTheme.card} border border-white/10 rounded-[2rem] w-full max-w-4xl h-[85vh] shadow-[0_0_80px_rgba(0,0,0,0.6)] font-sans relative flex flex-col overflow-hidden group/shop`}>
+
+            {/* 🟢 ფონის დინამიური განათება (Ambient Light) */}
+            <div className={`absolute top-0 right-0 w-96 h-96 ${activeTheme.accentBg} opacity-[0.05] blur-[100px] pointer-events-none`}></div>
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 blur-[100px] pointer-events-none"></div>
+
+            {/* 🟢 Header */}
+            <div className="flex items-center justify-between px-6 md:px-8 py-5 border-b border-white/5 relative z-10 shrink-0 bg-stone-950/20">
+               <h2 className="text-xl md:text-2xl font-black text-stone-100 uppercase tracking-widest flex items-center gap-3 drop-shadow-md">
+                   <ShoppingCart size={28} className={activeTheme.accent} /> {t.shop}
+               </h2>
+               <div className="flex items-center gap-3 md:gap-5">
+                  <div className="flex items-center gap-2 bg-stone-950/80 px-4 py-2 md:py-2.5 rounded-xl border border-yellow-500/30 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
+                      <Coins size={18} className="text-yellow-500 animate-pulse"/>
+                      <span className="font-mono font-black text-stone-200 text-sm md:text-base">{myCoins}</span>
+                  </div>
+                  <button onClick={() => setIsShopOpen(false)} className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full bg-stone-900/80 border border-white/10 text-stone-400 hover:text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/30 transition-all active:scale-95 shadow-md">
+                      <XCircle size={22} />
+                  </button>
+               </div>
+            </div>
+
+            {/* 🟢 მცურავი ტაბები (Glassmorphism) */}
+            <div className="px-6 md:px-8 py-4 shrink-0 relative z-10">
+               <div className="flex gap-2.5 md:gap-3 overflow-x-auto custom-scrollbar pb-2">
+                 <button onClick={() => setShopTab('vip')} className={`px-5 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 shrink-0 border ${shopTab==='vip' ? 'bg-gradient-to-r from-yellow-600 to-amber-500 border-yellow-400/50 text-stone-950 shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-105' : 'bg-stone-900/80 border-white/5 text-stone-500 hover:text-yellow-500 hover:bg-stone-800'}`}><Crown size={16} className={shopTab==='vip' ? '' : 'text-yellow-600'}/> VIP სტატუსი</button>
+                 <button onClick={() => setShopTab('avatars')} className={`px-5 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 shrink-0 border ${shopTab==='avatars' ? `${activeTheme.accentBg} border-current${activeTheme.accent.replace('text-', 'border-')} text-stone-950 shadow-[0_0_20px_currentColor] scale-105` : 'bg-stone-900/80 border-white/5 text-stone-500 hover:text-stone-300 hover:bg-stone-800'}`}><User size={16}/> ავატარები</button>
+                 <button onClick={() => setShopTab('tables')} className={`px-5 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 shrink-0 border ${shopTab==='tables' ? `${activeTheme.accentBg} border-current${activeTheme.accent.replace('text-', 'border-')} text-stone-950 shadow-[0_0_20px_currentColor] scale-105` : 'bg-stone-900/80 border-white/5 text-stone-500 hover:text-stone-300 hover:bg-stone-800'}`}><LayoutGrid size={16}/> {t.tables}</button>
+                 <button onClick={() => setShopTab('cards')} className={`px-5 py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 shrink-0 border ${shopTab==='cards' ? `${activeTheme.accentBg} border-current${activeTheme.accent.replace('text-', 'border-')} text-stone-950 shadow-[0_0_20px_currentColor] scale-105` : 'bg-stone-900/80 border-white/5 text-stone-500 hover:text-stone-300 hover:bg-stone-800'}`}><Shield size={16}/> კარტები</button>
+               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[300px]">
+            {/* 🟢 მთავარი კონტენტი (Scrollable Area) */}
+            <div className="flex-1 overflow-y-auto px-6 md:px-8 pb-8 custom-scrollbar relative z-10 pt-2">
+              
+              {/* --- VIP ტაბი --- */}
               {shopTab === 'vip' && (
-                <div className="flex flex-col gap-4">
-                  {amIVip && profileData?.vipUntil && (<div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-center animate-pulse shadow-inner"><p className="text-yellow-500 font-black text-[10px] md:text-xs tracking-wider uppercase">👑 VIP აქტიურია {new Date(profileData.vipUntil).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}-მდე</p></div>)}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                    {[{ days: 3, price: 1500, title: '3 დღე' }, { days: 7, price: 3000, title: '7 დღე', best: true }, { days: 30, price: 10000, title: '30 დღე' }].map(pkg => (
-                      <div key={pkg.days} className={`p-4 md:p-5 rounded-2xl flex flex-col items-center justify-between gap-4 border transition-all bg-gradient-to-br ${pkg.best ? 'from-yellow-900/60 to-stone-950 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'from-yellow-900/20 to-stone-950 border-yellow-500/30'}`}>{pkg.best && <span className="absolute -top-3 bg-yellow-500 text-stone-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">საუკეთესო ფასი</span>}<span className="text-4xl md:text-5xl drop-shadow-lg">👑</span><div className="text-center"><p className="text-sm md:text-base font-black text-yellow-500 tracking-wide">{pkg.title}</p><p className="text-[9px] md:text-[10px] font-bold text-stone-400 mt-1">უფრო მეტი XP, ქოინები და ექსკლუზივები!</p></div><button onClick={() => handleBuyVip(pkg.days, pkg.price)} disabled={amIVip} className={`w-full py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-md ${amIVip ? 'bg-stone-800 text-stone-500 border border-white/5 cursor-not-allowed uppercase' : 'bg-stone-900 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-stone-950 active:scale-95'}`}>{amIVip ? t.active : <><Coins size={12} /> {pkg.price}</>}</button></div>
+                <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto w-full">
+                  {amIVip && profileData?.vipUntil && (
+                      <div className="bg-gradient-to-r from-yellow-500/10 via-amber-500/20 to-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 md:p-5 text-center shadow-inner relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 to-amber-600"></div>
+                          <p className="text-yellow-500 font-black text-xs md:text-sm tracking-widest uppercase flex items-center justify-center gap-2 drop-shadow-md">
+                              <Crown size={20} className="animate-pulse" /> 
+                              VIP აქტიურია {new Date(profileData.vipUntil).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}-მდე
+                          </p>
+                      </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
+                    {[{ days: 3, price: 1500, title: '3 დღე', subtitle: 'საცდელი პერიოდი' }, { days: 7, price: 3000, title: '7 დღე', subtitle: 'პოპულარული არჩევანი', best: true }, { days: 30, price: 10000, title: '30 დღე', subtitle: 'ნამდვილი პროფესიონალი' }].map(pkg => (
+                      <div key={pkg.days} className={`relative p-6 md:p-8 rounded-3xl flex flex-col items-center justify-between gap-6 border-2 transition-all hover:-translate-y-2 group/vip ${pkg.best ? 'bg-gradient-to-b from-yellow-900/60 to-stone-950 border-yellow-500 shadow-[0_15px_40px_rgba(234,179,8,0.25)]' : 'bg-gradient-to-b from-yellow-900/20 to-stone-950 border-yellow-500/30 hover:border-yellow-500/60'}`}>
+                        {pkg.best && <span className="absolute -top-3.5 bg-yellow-500 text-stone-950 text-[10px] md:text-xs font-black px-4 py-1 rounded-full shadow-[0_0_15px_rgba(234,179,8,0.6)] uppercase tracking-widest">საუკეთესო ფასი</span>}
+                        <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent rounded-t-3xl pointer-events-none"></div>
+                        
+                        <div className="relative">
+                           {pkg.best && <div className="absolute inset-0 bg-yellow-500 blur-2xl opacity-20 group-hover/vip:opacity-40 transition-opacity"></div>}
+                           <span className="text-6xl md:text-7xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] relative z-10 group-hover/vip:scale-110 transition-transform duration-300">👑</span>
+                        </div>
+
+                        <div className="text-center relative z-10 space-y-1">
+                           <p className="text-xl md:text-2xl font-black text-yellow-500 tracking-wider drop-shadow-md">{pkg.title}</p>
+                           <p className="text-[10px] md:text-xs font-bold text-stone-400 uppercase tracking-widest">{pkg.subtitle}</p>
+                        </div>
+                        
+                        <div className="w-full space-y-2 relative z-10">
+                            <ul className="text-[9px] md:text-[10px] font-bold text-stone-400 space-y-2 text-left mb-6 bg-stone-950/50 p-4 rounded-xl border border-white/5">
+                                <li className="flex items-center gap-2"><CheckCircle2 size={12} className="text-yellow-500"/> მოგებაზე +50% მეტი XP</li>
+                                <li className="flex items-center gap-2"><CheckCircle2 size={12} className="text-yellow-500"/> ექსკლუზიური 👑 ავატარზე</li>
+                                <li className="flex items-center gap-2"><CheckCircle2 size={12} className="text-yellow-500"/> VIP ემოჯიები და მაგიდები</li>
+                            </ul>
+                            <button onClick={() => handleBuyVip(pkg.days, pkg.price)} disabled={amIVip} className={`w-full py-3.5 md:py-4 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 shadow-xl uppercase tracking-widest ${amIVip ? 'bg-stone-800 text-stone-500 border border-white/5 cursor-not-allowed' : 'bg-gradient-to-r from-yellow-500 to-amber-500 text-stone-950 border border-yellow-400 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(234,179,8,0.4)]'}`}>
+                                {amIVip ? t.active : <><Coins size={16} /> {pkg.price} 🪙</>}
+                            </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
+
+              {/* --- ავატარების ტაბი --- */}
               {shopTab === 'avatars' && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 pb-6">
-                  {SHOP_ITEMS.avatars.map(item => { const isUnlocked = unlockedAvatars.includes(item.id); const isEquipped = profileData?.avatar === item.id; const isCardSuit = ['❤️', '♦️', '♠️', '♣️'].includes(item.id); return ( <div key={item.id} className={`p-3 rounded-2xl flex flex-col items-center justify-between gap-2 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : isCardSuit ? 'bg-gradient-to-br from-yellow-900/20 to-stone-950 border-yellow-500/30 hover:border-yellow-500/60' : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}><span className={`text-3xl md:text-4xl drop-shadow-lg ${isCardSuit ? 'animate-pulse' : ''}`}>{item.id}</span><span className={`text-[9px] font-bold text-center leading-tight ${isCardSuit ? 'text-yellow-500' : 'text-stone-400'}`}>{item.name}</span>{isEquipped ? <button disabled className="w-full py-1.5 rounded-lg text-[8px] font-black bg-stone-800 text-stone-500 uppercase mt-1">დაყენებულია</button> : isUnlocked ? <button onClick={() => handleEquipItem('avatar', item.id)} className={`w-full py-1.5 rounded-lg text-[8px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase mt-1`}>დაყენება</button> : <button onClick={() => handleBuyItem('avatar', item.id, item.price)} className={`w-full py-1.5 rounded-lg text-[9px] font-black transition-all flex items-center justify-center gap-1 mt-1 active:scale-95 ${isCardSuit ? 'bg-yellow-500 text-stone-950 shadow-lg' : 'bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10'}`}><Coins size={10} /> {item.price}</button>}</div> )})}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4 pb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  {SHOP_ITEMS.avatars.map(item => { 
+                      const isUnlocked = unlockedAvatars.includes(item.id); 
+                      const isEquipped = profileData?.avatar === item.id; 
+                      const isCardSuit = ['❤️', '♦️', '♠️', '♣️'].includes(item.id); 
+                      
+                      return ( 
+                          <div key={item.id} className={`p-3 md:p-4 rounded-2xl flex flex-col items-center justify-between gap-3 border transition-all duration-300 group/item relative overflow-hidden ${isEquipped ? `${activeTheme.accentBg} bg-opacity-[0.15] border-opacity-100 border-current${activeTheme.accent} shadow-[0_0_20px_currentColor]` : isCardSuit ? 'bg-gradient-to-br from-yellow-900/20 to-stone-950 border-yellow-500/30 hover:border-yellow-500/60 hover:-translate-y-1' : 'bg-stone-950/60 border-white/5 hover:border-white/20 hover:-translate-y-1 hover:bg-stone-900/80'}`}>
+                              {isEquipped && <div className="absolute top-0 right-0 w-12 h-12 bg-current opacity-20 blur-xl"></div>}
+                              
+                              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-stone-900/80 border border-white/5 flex items-center justify-center shadow-inner group-hover/item:scale-110 transition-transform duration-300">
+                                  <span className={`text-3xl md:text-4xl drop-shadow-lg ${isCardSuit ? 'animate-pulse' : ''}`}>{item.id}</span>
+                              </div>
+                              
+                              <span className={`text-[9px] md:text-[10px] font-bold text-center leading-tight tracking-wider uppercase ${isCardSuit ? 'text-yellow-500' : 'text-stone-300'}`}>{item.name}</span>
+                              
+                              {isEquipped ? (
+                                  <button disabled className="w-full py-2 rounded-xl text-[8px] md:text-[9px] font-black bg-stone-800 border border-white/5 text-stone-500 uppercase tracking-widest shadow-inner mt-auto">დაყენებულია</button> 
+                              ) : isUnlocked ? (
+                                  <button onClick={() => handleEquipItem('avatar', item.id)} className={`w-full py-2 rounded-xl text-[8px] md:text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase tracking-widest mt-auto`}>დაყენება</button> 
+                              ) : (
+                                  <button onClick={() => handleBuyItem('avatar', item.id, item.price)} className={`w-full py-2 rounded-xl text-[9px] md:text-[10px] font-black transition-all flex items-center justify-center gap-1 active:scale-95 tracking-wider mt-auto ${isCardSuit ? 'bg-yellow-500 text-stone-950 shadow-[0_0_15px_rgba(234,179,8,0.4)]' : 'bg-stone-800 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-stone-950'}`}>
+                                      <Coins size={12} /> {item.price}
+                                  </button>
+                              )}
+                          </div> 
+                      )
+                  })}
                 </div>
               )}
+
+              {/* --- მაგიდების (Tables) 3D ტაბი --- */}
               {shopTab === 'tables' && (
-                <div className="grid grid-cols-2 gap-3 md:gap-4">
-                  {SHOP_ITEMS.tables.map(item => { const isUnlocked = item.isVipExclusive ? amIVip : unlockedTables.includes(item.id); const isEquipped = profileData?.tableTheme === item.id || (!profileData?.tableTheme && item.id === 'wood'); return ( <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : item.isVipExclusive ? 'bg-gradient-to-b from-stone-900 to-stone-950 border-yellow-500/30' : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}><div className="h-16 rounded-xl border border-white/10 relative overflow-hidden" style={{ background: themeStyles[item.id]?.bg || themeStyles.wood.bg }}>{item.isVipExclusive && <div className="absolute top-0 right-0 w-8 h-8 bg-yellow-500 blur-xl opacity-30"></div>}</div><span className={`text-[10px] md:text-xs font-bold text-center uppercase tracking-widest ${item.isVipExclusive ? 'text-yellow-400 drop-shadow-md' : 'text-stone-200'}`}>{item.name}</span>{isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> : item.isVipExclusive && !amIVip ? <button onClick={() => setShopTab('vip')} className={`w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/30 shadow-md active:scale-95 transition-all uppercase flex items-center justify-center gap-1`}><Crown size={12}/> VIP გახსნა</button> : isUnlocked ? <button onClick={() => handleEquipItem('table', item.id)} className={`w-full py-2 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button> : <button onClick={() => handleBuyItem('table', item.id, item.price)} className="w-full py-2 rounded-lg text-[10px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"><Coins size={12} /> {item.price}</button>}</div>)})}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  {SHOP_ITEMS.tables.map(item => { 
+                      const isUnlocked = item.isVipExclusive ? amIVip : unlockedTables.includes(item.id); 
+                      const isEquipped = profileData?.tableTheme === item.id || (!profileData?.tableTheme && item.id === 'wood'); 
+                      
+                      return ( 
+                          <div key={item.id} className={`p-4 md:p-5 rounded-3xl flex flex-col justify-between gap-4 border-2 transition-all duration-300 group/item ${isEquipped ? `${activeTheme.accentBg} bg-opacity-[0.15] border-opacity-100 border-current${activeTheme.accent} shadow-[0_0_30px_currentColor] scale-[1.02]` : item.isVipExclusive ? 'bg-gradient-to-b from-stone-900 to-stone-950 border-yellow-500/30 hover:-translate-y-1' : 'bg-stone-950/60 border-white/5 hover:border-white/20 hover:-translate-y-1'}`}>
+                              
+                              {/* 🟢 3D მაგიდის პრევიუ (Mini Table Mockup) */}
+                              <div className="h-28 md:h-36 rounded-2xl border border-white/10 relative overflow-hidden flex items-center justify-center shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] group-hover/item:scale-[1.03] transition-transform duration-500" style={{ background: themeStyles[item.id]?.bg || themeStyles.wood.bg }}>
+                                  
+                                  {/* მაგიდის ოვალური ჩარჩო */}
+                                  <div className={`w-[80%] h-[60%] rounded-[50px] md:rounded-[70px] border-[6px] md:border-[8px] border-black/50 shadow-[0_15px_30px_rgba(0,0,0,0.9)] relative flex items-center justify-center`}>
+                                      {/* შიდა ლოგო ან ორნამენტი */}
+                                      <div className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center opacity-50">
+                                          <Shield size={16} className="text-white/30" />
+                                      </div>
+                                  </div>
+                                  
+                                  {/* შუშის არეკვლა (Gloss reflection) */}
+                                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-500"></div>
+                                  
+                                  {item.isVipExclusive && <div className="absolute -top-10 -right-10 w-24 h-24 bg-yellow-500 blur-2xl opacity-40 group-hover/item:opacity-60 transition-opacity"></div>}
+                              </div>
+
+                              <span className={`text-[10px] md:text-sm font-black text-center uppercase tracking-widest ${item.isVipExclusive ? 'text-yellow-400 drop-shadow-md' : 'text-stone-100'}`}>{item.name}</span>
+                              
+                              {isEquipped ? (
+                                  <button disabled className="w-full py-3 md:py-3.5 rounded-xl text-[9px] md:text-[10px] font-black bg-stone-800 border border-white/5 text-stone-500 uppercase tracking-widest shadow-inner mt-2">დაყენებულია</button> 
+                              ) : item.isVipExclusive && !amIVip ? (
+                                  <button onClick={() => setShopTab('vip')} className={`w-full py-3 md:py-3.5 rounded-xl text-[9px] md:text-[10px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/40 shadow-lg active:scale-95 transition-all uppercase flex items-center justify-center gap-2 mt-2 hover:bg-yellow-500/10`}>
+                                      <Crown size={16}/> VIP გახსნა
+                                  </button> 
+                              ) : isUnlocked ? (
+                                  <button onClick={() => handleEquipItem('table', item.id)} className={`w-full py-3 md:py-3.5 rounded-xl text-[9px] md:text-[10px] font-black ${activeTheme.accentBg} text-stone-950 shadow-lg active:scale-95 transition-all uppercase tracking-widest mt-2`}>
+                                      დაყენება
+                                  </button> 
+                              ) : (
+                                  <button onClick={() => handleBuyItem('table', item.id, item.price)} className="w-full py-3 md:py-3.5 rounded-xl text-[10px] md:text-xs font-black bg-stone-800 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-stone-950 shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 tracking-wider mt-2">
+                                      <Coins size={16} /> {item.price}
+                                  </button>
+                              )}
+                          </div>
+                      )
+                  })}
                 </div>
               )}
+
+              {/* --- ბანქოს ფონების (Cards) 3D ტაბი --- */}
               {shopTab === 'cards' && (
-                <div className="grid grid-cols-2 gap-3 md:gap-4">
-                  {SHOP_ITEMS.cards.map(item => { const isUnlocked = unlockedCards.includes(item.id); const isEquipped = profileData?.cardBack === item.id || (!profileData?.cardBack && item.id === 'classic'); const shopCardStyles = { classic: 'bg-blue-900 border-white/20', crimson: 'bg-red-900 border-white/20', gold: 'bg-yellow-600 border-yellow-400', obsidian: 'bg-stone-950 border-stone-700', cyber: 'bg-fuchsia-900 border-fuchsia-400 shadow-[0_0_10px_rgba(232,121,249,0.5)]', royal: 'bg-purple-900 border-yellow-500', hacker: 'bg-black border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' }; const cardStyle = shopCardStyles[item.id] || shopCardStyles.classic; return ( <div key={item.id} className={`p-3 rounded-2xl flex flex-col justify-between items-center gap-3 border transition-all ${isEquipped ? `${activeTheme.accentBg} bg-opacity-20 border-opacity-100 border-current ${activeTheme.accent}` : 'bg-stone-950/50 border-white/5 hover:border-white/20'}`}><div className={`w-12 h-16 rounded-md ${cardStyle} border-2 shadow-lg flex items-center justify-center`}><Shield size={16} className={item.id==='gold'?'text-stone-900':'text-white/30'}/></div><span className="text-[10px] md:text-xs font-bold text-stone-200 text-center uppercase tracking-widest">{item.name}</span>{isEquipped ? <button disabled className="w-full py-2 rounded-lg text-[9px] font-black bg-stone-800 text-stone-500 uppercase">დაყენებულია</button> : isUnlocked ? <button onClick={() => handleEquipItem('card', item.id)} className={`w-full py-2 rounded-lg text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase`}>დაყენება</button> : <button onClick={() => handleBuyItem('card', item.id, item.price)} className="w-full py-2 rounded-lg text-[10px] font-black bg-stone-800 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"><Coins size={12} /> {item.price}</button>}</div> )})}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-5 pb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  {SHOP_ITEMS.cards.map(item => { 
+                      const isUnlocked = unlockedCards.includes(item.id); 
+                      const isEquipped = profileData?.cardBack === item.id || (!profileData?.cardBack && item.id === 'classic'); 
+                      const shopCardStyles = { classic: 'bg-blue-900 border-white/20', crimson: 'bg-red-900 border-white/20', gold: 'bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-300', obsidian: 'bg-gradient-to-br from-stone-800 to-stone-950 border-stone-600', cyber: 'bg-gradient-to-br from-fuchsia-900 to-purple-950 border-fuchsia-400 shadow-[0_0_20px_rgba(232,121,249,0.4)]', royal: 'bg-gradient-to-br from-purple-800 to-indigo-950 border-yellow-500', hacker: 'bg-black border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.4)]' }; 
+                      const cardStyle = shopCardStyles[item.id] || shopCardStyles.classic; 
+                      
+                      return ( 
+                          <div key={item.id} className={`p-4 md:p-5 rounded-3xl flex flex-col justify-between items-center gap-4 border-2 transition-all duration-300 group/item ${isEquipped ? `${activeTheme.accentBg} bg-opacity-[0.15] border-opacity-100 border-current${activeTheme.accent} shadow-[0_0_25px_currentColor] scale-105` : 'bg-stone-950/60 border-white/5 hover:border-white/20 hover:bg-stone-900/60'}`}>
+                              
+                              {/* 🟢 ფიზიკური ბანქოს პრევიუ 3D ეფექტით */}
+                              <div className="h-28 md:h-36 flex items-center justify-center w-full relative perspective-[1000px]">
+                                  <div className={`w-16 h-24 md:w-20 md:h-[110px] rounded-lg md:rounded-xl ${cardStyle} border-2 shadow-[0_15px_30px_rgba(0,0,0,0.6)] flex items-center justify-center relative overflow-hidden group-hover/item:-translate-y-3 group-hover/item:rotate-y-12 transition-all duration-500 transform-style-3d`}>
+                                      {/* შუქ-ჩრდილი თავზე */}
+                                      <div className="absolute top-0 left-0 w-full h-[40%] bg-gradient-to-b from-white/20 to-transparent pointer-events-none"></div>
+                                      <Shield size={24} className={`relative z-10 ${item.id==='gold'?'text-stone-950 drop-shadow-md':'text-white/40'}`}/>
+                                  </div>
+                              </div>
+
+                              <span className="text-[10px] md:text-[11px] font-black text-stone-100 text-center uppercase tracking-widest mt-2">{item.name}</span>
+                              
+                              {isEquipped ? (
+                                  <button disabled className="w-full py-2.5 md:py-3 rounded-xl text-[8px] md:text-[9px] font-black bg-stone-800 border border-white/5 text-stone-500 uppercase tracking-widest shadow-inner mt-auto">დაყენებულია</button> 
+                              ) : isUnlocked ? (
+                                  <button onClick={() => handleEquipItem('card', item.id)} className={`w-full py-2.5 md:py-3 rounded-xl text-[8px] md:text-[9px] font-black ${activeTheme.accentBg} text-stone-950 shadow-md active:scale-95 transition-all uppercase tracking-widest mt-auto`}>დაყენება</button> 
+                              ) : (
+                                  <button onClick={() => handleBuyItem('card', item.id, item.price)} className="w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black bg-stone-800 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-stone-950 shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 tracking-wider mt-auto">
+                                      <Coins size={14} /> {item.price}
+                                  </button>
+                              )}
+                          </div> 
+                      )
+                  })}
                 </div>
               )}
             </div>
-            <button onClick={() => setIsShopOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4 uppercase">{t.close}</button>
+            
           </div>
         </div>
       )}
