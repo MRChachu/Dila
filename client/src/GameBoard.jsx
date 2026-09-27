@@ -264,7 +264,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         )}
 
-        <div className="flex-1 flex flex-col justify-between px-2 pt-1 pb-1 md:pb-6 relative min-h-0 overflow-hidden w-full">
+        {/* 🟢 Portrait-ში გაწელვას ვბლოკავთ, Landscape-ში სქროლს ვრთავთ */}
+        <div className="flex-1 flex flex-col justify-between px-2 pt-2 pb-2 md:p-6 relative min-h-0 portrait:overflow-hidden landscape:overflow-y-auto w-full">
           
           {room.deck?.length > 0 && (
             <div className="absolute top-1 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title="დარჩენილი ბანქო">
@@ -335,9 +336,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             })()}
           </div>
 
-          {/* 🟢 ოვალური მაგიდა (სტაბილური ზომებით) */}
-          <div className="flex-1 flex flex-col items-center justify-center relative mt-1 md:mt-8 mb-1 md:mb-8 w-full z-10 min-h-[160px] md:min-h-[250px]">
-            <div className={`relative w-[92%] md:w-[85%] max-w-3xl aspect-[1.5/1] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[6px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center transition-all duration-300`}>
+          {/* 🟢 ოვალური მაგიდა (aspect-[1.7/1] უზრუნველყოფს, რომ მაგიდამ სიმაღლეში ბევრი ადგილი არ წაიღოს) */}
+          <div className="flex-1 flex flex-col items-center justify-center relative mt-1 md:mt-4 mb-1 md:mb-4 w-full z-10 min-h-[140px] md:min-h-[250px]">
+            <div className={`relative w-[95%] md:w-[85%] max-w-3xl aspect-[1.7/1] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
               
               <div className="absolute inset-0 rounded-[92px] md:rounded-[184px] border border-white/5 shadow-inner pointer-events-none"></div>
               <div className={`absolute inset-0 opacity-20 blur-[40px] rounded-[100px] ${activeTheme.accentBg} pointer-events-none`}></div>
