@@ -471,7 +471,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           {/* 🟢 მთლიანი ქვედა სექცია (დაგდების ღილაკი და კარტები) shrink-0 იცავს შეკუმშვისგან */}
           <div className="flex flex-col items-center mt-auto pt-2 z-20 shrink-0 w-full max-w-lg mx-auto">
             
-            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-6 md:mb-10 px-4">
+            {/* 🟢 აქ mb-6 შევამცირეთ mb-3-მდე მობილურისთვის, რათა ღილაკმა მაღლა აიწიოს */}
+            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-3 md:mb-8 px-4">
+              
               {showEmojiMenu && (
                 <div className="absolute bottom-[115%] left-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex gap-1.5 md:gap-2 w-max max-w-[90vw] overflow-x-auto custom-scrollbar animate-in zoom-in-95 slide-in-from-bottom-2">
                   {standardEmotes.map(emo => (
