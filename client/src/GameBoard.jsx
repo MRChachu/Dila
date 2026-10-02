@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Lock, Flag, Maximize, Minimize } from 'lucide-react';
+import confetti from 'canvas-confetti';
+import { LogOut, MessageSquare, Volume2, VolumeX, Sparkles, Trophy, Clock, Lock, Flag, Maximize, Minimize, XCircle, Gift } from 'lucide-react';
 
 const getLeague = (xp = 0) => {
   if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' };
@@ -8,6 +9,14 @@ const getLeague = (xp = 0) => {
   if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' };
   return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
 };
+
+// 🟢 საჩუქრების სია ფასებით
+const GIFTS = [
+  { id: 'coffee', icon: '☕', price: 50, name: 'ყავა' },
+  { id: 'beer', icon: '🍺', price: 100, name: 'ლუდი' },
+  { id: 'rose', icon: '🌹', price: 200, name: 'ვარდი' },
+  { id: 'crown', icon: '👑', price: 500, name: 'გვირგვინი' }
+];
 
 export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsVip, VipName }) {
   const [selectedCardFromHand, setSelectedCardFromHand] = useState(null);
@@ -23,18 +32,20 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   const [showChatMenu, setShowChatMenu] = useState(false); 
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // 🟢 საჩუქრების სტეიტები
+  const [selectedPlayerForGift, setSelectedPlayerForGift] = useState(null);
+  const [activeGifts, setActiveGifts] = useState([]);
+
   const me = room?.players?.find(p => p.id === socket.id);
   const isMyTurn = room?.players?.[room.currentTurn]?.id === socket.id;
   const amIVip = checkIsVip(me?.vipUntil);
 
-  const standardEmotes = ['😁', '😝', '😉', '😤', '⏰', '😢'];
-  const vipEmotes = ['💩', '😒', '🫦', '🤬', '😎', '😲', '🫶'];
+  const standardEmotes = ['😁', '😝', '😉', '😤'];
+  const vipEmotes = ['💩', '🖕', '🫦', '🤬', '😎', '😲', '🫶'];
 
   const QUICK_PHRASES = [
     "გამარჯობა! 👋",
     "კარგი სვლაა! 🔥",
-    "ეს რა ითამაშე?! 😭",
-    "სუფრა გაშალე! 😂",
     "ჩქარა ითამაშე ⏳",
     "იღბლიანი ხარ 🎲",
     "აუჰ... 🤦‍♂️",
@@ -74,21 +85,33 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   };
 
-  const playSoftSound = (isCapture = false) => {
+  const playSoftSound = (isCapture = false, type = 'card') => {
     if (isMuted) return;
     try {
-      const soundFile = isCapture ? '/card-drop.wav' : '/card-drop.wav'; 
+      let soundFile = '/card-drop.wav';
+      if (type === 'win') soundFile = '/win.wav';
+      if (type === 'gift') soundFile = '/gift.wav'; // თუ გექნება საჩუქრის ხმა
+      
       const audio = new Audio(soundFile);
-      audio.volume = 0.3; 
-      audio.play().catch(e => console.log("Audio error:", e));
+      audio.volume = type === 'card' ? 0.3 : 0.5; 
+      audio.play().catch(e => console.log(e));
     } catch (e) {}
   };
 
   useEffect(() => {
     if (room?.lastAction && !isMuted) {
-      playSoftSound(room.lastAction.type === 'CAPTURE');
+      playSoftSound(room.lastAction.type === 'CAPTURE', 'card');
     }
   }, [room?.lastAction, isMuted]);
+
+  useEffect(() => {
+    if (room?.roundSummary?.matchWinner) {
+      const isMeWinner = room.roundSummary.matchWinner === me?.name;
+      if (isMeWinner) {
+        playSoftSound(false, 'win');
+      }
+    }
+  }, [room?.roundSummary, me?.name, isMuted]);
 
   useEffect(() => {
     if (isMyTurn && room.turnExpiresAt) {
@@ -103,27 +126,11 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     }
   }, [isMyTurn, room.turnExpiresAt]);
 
-  // 🟢 მსუბუქი ზეიმის ლოგიკა (მძიმე confetti-ს გარეშე)
-  useEffect(() => {
-    if (room?.roundSummary?.matchWinner) {
-      const isMeWinner = room.roundSummary.matchWinner === me?.name;
-      if (isMeWinner && !isMuted) {
-        try {
-          const audio = new Audio('/win.wav'); // (თუ გაქვს ხმის ფაილი)
-          audio.volume = 0.5; 
-          audio.play().catch(e => console.log(e));
-        } catch(e) {}
-      }
-    }
-  }, [room?.roundSummary, me?.name, isMuted]);
-
   useEffect(() => {
     const handleReceiveMessage = (msg) => {
       const msgId = Date.now() + Math.random();
       setMessages(prev => [...prev, { ...msg, id: msgId }]);
-      setTimeout(() => {
-        setMessages(prev => prev.filter(m => m.id !== msgId));
-      }, 4000);
+      setTimeout(() => { setMessages(prev => prev.filter(m => m.id !== msgId)); }, 4000);
     };
     
     const handleReceiveEmote = ({ playerId, emote }) => {
@@ -132,24 +139,33 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       setTimeout(() => { setActiveEmotes(prev => prev.filter(e => e.id !== id)); }, 3000);
     };
 
+    // 🟢 საჩუქრის მიღების ლოგიკა (სერვერიდან)
+    const handleReceiveGift = ({ senderId, recipientId, giftId }) => {
+      playSoftSound(false, 'gift');
+      const id = Date.now() + Math.random();
+      setActiveGifts(prev => [...prev, { id, senderId, recipientId, giftId }]);
+      // 3 წამში ვშლით ანიმაციას ეკრანიდან
+      setTimeout(() => { setActiveGifts(prev => prev.filter(g => g.id !== id)); }, 3000);
+    };
+
     socket.on('receiveMessage', handleReceiveMessage);
     socket.on('receiveEmote', handleReceiveEmote);
+    socket.on('receiveGift', handleReceiveGift);
     
     return () => {
       socket.off('receiveMessage', handleReceiveMessage);
       socket.off('receiveEmote', handleReceiveEmote);
+      socket.off('receiveGift', handleReceiveGift);
     };
   }, [socket]);
 
   const handlePlayCard = () => {
     if (!isMyTurn || !selectedCardFromHand) return;
-    playSoftSound(selectedCardsFromTable.length > 0);
+    playSoftSound(selectedCardsFromTable.length > 0, 'card');
     socket.emit('playCard', { roomId: room.id, cardFromHand: selectedCardFromHand, cardsFromTable: selectedCardsFromTable });
     setSelectedCardFromHand(null);
     setSelectedCardsFromTable([]);
   };
-
-  const hasActiveEmote = activeEmotes.some(e => e.playerId === socket.id);
 
   const handleSendEmote = (emote) => {
     if (hasActiveEmote) return; 
@@ -161,6 +177,21 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
 
   const handleSendQuickMessage = (phrase) => {
     socket.emit('sendMessage', { roomId: room.id, message: phrase });
+  };
+
+  // 🟢 საჩუქრის გაგზავნის ლოგიკა
+  const handleSendGift = (gift) => {
+    if (!selectedPlayerForGift) return;
+    
+    // აქ შეგიძლია ლოკალური შემოწმებაც დაამატო (მაგ. თუ me.coins < gift.price)
+    socket.emit('sendGift', { roomId: room.id, recipientId: selectedPlayerForGift, giftId: gift.id });
+    
+    // ლოკალურადაც ვაჩვენებთ ეგრევე, რომ მოლოდინი არ ჰქონდეს
+    const id = Date.now() + Math.random();
+    setActiveGifts(prev => [...prev, { id, senderId: socket.id, recipientId: selectedPlayerForGift, giftId: gift.id }]);
+    setTimeout(() => { setActiveGifts(prev => prev.filter(g => g.id !== id)); }, 3000);
+    
+    setSelectedPlayerForGift(null);
   };
 
   const toggleTableCard = (card) => {
@@ -196,9 +227,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
   }
 
   return (
-    <div className="w-full flex-1 h-[88dvh] md:h-[88vh] flex flex-col items-center justify-center max-w-7xl mx-auto relative pb-1 lg:pb-0 min-h-0">
+    <div className="w-full flex flex-col items-center justify-center max-w-7xl mx-auto portrait:h-[88dvh] landscape:min-h-[100dvh] md:h-[88vh] relative pb-1 lg:pb-0">
       
-      <div className={`flex-1 w-full h-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden min-h-0`}>
+      <div className={`flex-1 w-full portrait:h-full max-w-5xl bg-stone-900/40 backdrop-blur-xl border border-white/5 portrait:rounded-3xl shadow-2xl flex flex-col relative portrait:overflow-hidden landscape:overflow-visible`}>
         
         {/* გლობალური ემოჯიების ანიმაცია */}
         {activeEmotes.length > 0 && (
@@ -235,7 +266,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             <button onClick={toggleFullScreen} className={`text-stone-500 hover:${activeTheme.accent} transition-colors`} title="სრულ ეკრანზე გაშლა">
               {isFullscreen ? <Minimize size={14} className="md:w-4 md:h-4" /> : <Maximize size={14} className="md:w-4 md:h-4" />}
             </button>
-
             <button onClick={() => setIsMuted(!isMuted)} className={`text-stone-500 hover:${activeTheme.accent} transition-colors`}>
               {isMuted ? <VolumeX size={14} className="md:w-4 md:h-4" /> : <Volume2 size={14} className="md:w-4 md:h-4" />}
             </button>
@@ -251,7 +281,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         )}
 
-        <div className="flex-1 flex flex-col justify-between px-2 pt-2 pb-2 md:p-6 relative min-h-0 portrait:overflow-hidden landscape:overflow-y-auto custom-scrollbar w-full">
+        <div className="flex-1 flex flex-col justify-between px-2 pt-2 pb-2 md:p-6 relative min-h-0 w-full">
           
           {room.deck?.length > 0 && (
             <div className="absolute top-1 left-2 md:top-4 md:left-6 flex flex-col items-center z-40" title="დარჩენილი ბანქო">
@@ -322,14 +352,14 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             })()}
           </div>
 
-          {/* 🟢 ოვალური მაგიდა (aspect-[1.7/1] უზრუნველყოფს, რომ მაგიდამ სიმაღლეში ბევრი ადგილი არ წაიღოს) */}
-          <div className="flex-1 flex flex-col items-center justify-center relative mt-1 md:mt-4 mb-1 md:mb-4 w-full z-10 min-h-[140px] md:min-h-[250px]">
-            <div className={`relative w-[95%] md:w-[85%] max-w-3xl aspect-[1.7/1] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
+          {/* 🟢 ოვალური მაგიდა */}
+          <div className="flex-1 flex flex-col items-center justify-center relative portrait:mt-6 landscape:mt-2 md:mt-10 portrait:mb-6 landscape:mb-2 md:mb-10 w-full z-10 portrait:min-h-[180px] landscape:min-h-[120px] md:min-h-[250px]">
+            <div className={`relative w-[92%] md:w-[85%] max-w-3xl aspect-[1.5/1] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
               
               <div className="absolute inset-0 rounded-[92px] md:rounded-[184px] border border-white/5 shadow-inner pointer-events-none"></div>
               <div className={`absolute inset-0 opacity-20 blur-[40px] rounded-[100px] ${activeTheme.accentBg} pointer-events-none`}></div>
 
-              {/* 🟢 მაგიდის კარტები (ცენტრში) */}
+              {/* მაგიდის კარტები */}
               <div className="flex flex-wrap justify-center items-center gap-2 md:gap-3 z-10 px-4 md:px-8">
                 {room.tableCards?.length > 0 ? room.tableCards.map((c, i) => {
                   const isSelected = selectedCardsFromTable.some(tc => tc.rank === c.rank && tc.suit === c.suit);
@@ -379,6 +409,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 const has2Club = p.captured?.some(c => c.rank === '2' && (c.suit === '♣' || c.suit === '♣️'));
 
                 const activePlayerMessage = messages.find(m => m.senderId === p.id);
+                const activePlayerGifts = activeGifts.filter(g => g.recipientId === p.id); // 🟢 ამ მოთამაშის მიღებული საჩუქრები
 
                 let posClass = "";
                 let isVertical = false; 
@@ -400,6 +431,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                 return (
                   <div key={p.id} className={`absolute flex items-center justify-center z-30 ${posClass}`}>
                      
+                     {/* ჩატის მესიჯი */}
                      {activePlayerMessage && (
                        <div className="absolute -top-12 md:-top-16 left-1/2 -translate-x-1/2 bg-stone-100 text-stone-900 px-3 py-1.5 md:py-2 rounded-xl text-[10px] md:text-xs font-black shadow-[0_5px_15px_rgba(0,0,0,0.5)] z-50 animate-in zoom-in-50 fade-in slide-in-from-bottom-2 whitespace-nowrap">
                          {activePlayerMessage.text}
@@ -407,12 +439,27 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                        </div>
                      )}
 
-                     <div className={`relative flex items-center justify-center gap-1 md:gap-1.5 p-1 md:p-1.5 rounded-xl bg-stone-900/95 border transition-all
+                     {/* 🟢 მფრინავი საჩუქრის ანიმაცია */}
+                     {activePlayerGifts.map((g, i) => {
+                       const giftObj = GIFTS.find(gf => gf.id === g.giftId);
+                       return (
+                         <div key={g.id} className="absolute -top-14 left-1/2 -translate-x-1/2 text-5xl md:text-6xl animate-in zoom-in-0 slide-in-from-top-10 fade-in duration-500 drop-shadow-[0_0_20px_rgba(251,191,36,0.8)] z-[60] pointer-events-none">
+                           {giftObj?.icon}
+                         </div>
+                       )
+                     })}
+
+                     <div 
+                        // 🟢 სხვა მოთამაშეზე კლიკით იხსნება საჩუქრების მენიუ
+                        onClick={() => { if (!isMe && !p.isBot) setSelectedPlayerForGift(p.id); }}
+                        className={`relative flex items-center justify-center gap-1 md:gap-1.5 p-1 md:p-1.5 rounded-xl bg-stone-900/95 border transition-all 
+                        ${!isMe && !p.isBot ? 'cursor-pointer hover:border-yellow-500/50 hover:shadow-[0_0_15px_rgba(234,179,8,0.3)]' : ''}
                         ${isCurrentTurn ? `${borderColorClass} shadow-[0_0_15px_currentColor] scale-110 z-40` : 'border-white/10 shadow-md'}
                         ${isVertical ? 'flex-col w-[50px] md:w-[60px]' : 'flex-row px-2 md:px-3'}
                      `}>
                         {isCurrentTurn && <div className={`absolute inset-0 ${activeTheme.accentBg} opacity-10 blur-[2px] rounded-xl`} />}
                         {isDealer && <span className="absolute -top-1.5 -right-1.5 bg-stone-800 text-stone-300 text-[6px] md:text-[7px] px-1 py-0.5 rounded border border-white/20 shadow-md font-black uppercase z-20">D</span>}
+                        
                         <span className="text-[16px] md:text-xl drop-shadow-md z-10 shrink-0 leading-none">{p.avatar || '😎'}</span>
                         
                         <div className={`flex flex-col justify-center z-10 ${isVertical ? 'items-center text-center w-full' : 'items-start min-w-[45px] md:min-w-[55px]'}`}>
@@ -442,9 +489,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
 
           {/* 🟢 მთლიანი ქვედა სექცია */}
-          <div className="flex flex-col items-center mt-auto pt-2 pb-6 md:pb-8 z-20 shrink-0 w-full max-w-lg mx-auto">
+          <div className="flex flex-col items-center mt-auto pt-2 pb-2 md:pb-6 z-20 shrink-0 w-full max-w-lg mx-auto">
             
-            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-8 md:mb-14 px-4">
+            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 portrait:mb-6 landscape:mb-2 md:mb-10 px-4">
               
               {showEmojiMenu && (
                 <div className="absolute bottom-[115%] left-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex gap-1.5 md:gap-2 w-max max-w-[90vw] overflow-x-auto custom-scrollbar animate-in zoom-in-95 slide-in-from-bottom-2">
@@ -502,7 +549,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             </div>
 
             {/* 🟢 მოთამაშის ხელი */}
-            <div className="flex justify-center items-end h-[75px] md:h-[130px] w-full relative overflow-visible">
+            <div className="flex justify-center items-end portrait:h-[85px] landscape:h-[65px] md:h-[130px] w-full relative overflow-visible">
               {me?.cards?.map((c, i) => {
                 const isSelected = selectedCardFromHand?.rank === c.rank && selectedCardFromHand?.suit === c.suit;
                 const totalCards = me.cards.length;
@@ -533,7 +580,7 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                       onClick={() => isMyTurn && setSelectedCardFromHand(isSelected ? null : c)}
                       className={`relative w-[48px] h-[70px] md:w-[86px] md:h-[124px] bg-white rounded-md md:rounded-xl flex items-center justify-center select-none transition-all duration-300 border
                         ${specialBorder}
-                        ${isSelected ? `-translate-y-3 md:-translate-y-6 scale-110 shadow-2xl ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-1.5 hover:shadow-lg cursor-pointer'}
+                        ${isSelected ? `-translate-y-6 md:-translate-y-8 scale-110 shadow-2xl ring-2 md:ring-4 ${activeTheme.accent.replace('text-', 'ring-')}` : 'hover:-translate-y-1.5 hover:shadow-lg cursor-pointer'}
                         ${!isMyTurn && 'opacity-90 hover:opacity-100'} 
                       `}
                     >
@@ -557,7 +604,41 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         </div>
 
-        {/* 🟢 დანებების დადასტურების მოდალი */}
+        {/* 🟢 საჩუქრების მინი-მარკეტის მოდალი */}
+        {selectedPlayerForGift && (
+          <div className="absolute inset-0 bg-stone-950/60 backdrop-blur-sm z-[250] flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-stone-900 border border-white/10 rounded-3xl p-5 md:p-6 max-w-xs w-full shadow-2xl relative">
+              <button 
+                onClick={() => setSelectedPlayerForGift(null)} 
+                className="absolute top-3 right-3 text-stone-500 hover:text-white transition-colors"
+              >
+                <XCircle size={20} />
+              </button>
+              
+              <h3 className="text-center text-xs md:text-sm font-black text-stone-200 uppercase tracking-widest mb-4">
+                გაუგზავნე საჩუქარი
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-3">
+                {GIFTS.map(g => (
+                  <button 
+                    key={g.id} 
+                    onClick={() => handleSendGift(g)} 
+                    className="flex flex-col items-center gap-2 p-3 bg-stone-950/50 hover:bg-stone-800 border border-white/5 hover:border-yellow-500/30 rounded-xl transition-all active:scale-95"
+                  >
+                    <span className="text-3xl md:text-4xl drop-shadow-md">{g.icon}</span>
+                    <span className="text-[10px] font-bold text-stone-300">{g.name}</span>
+                    <span className="text-[9px] font-black text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20 shadow-inner">
+                      {g.price} 🪙
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 🟢 დანებების მოდალი */}
         {showSurrenderModal && (
           <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[250] flex items-center justify-center p-4 animate-in fade-in duration-200 rounded-3xl">
             <div className={`bg-stone-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl text-center space-y-5`}>
@@ -575,16 +656,13 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           </div>
         )}
 
-        {/* 🟢 რაუნდის/თამაშის დასასრულის მოდალი */}
+        {/* 🟢 რაუნდის დასასრულის მოდალი (მსუბუქი CSS ფეიერვერკებით) */}
         {room?.roundSummary && (
           <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
             
-            {/* 🟢 მსუბუქი CSS ზეიმი გამარჯვებულისთვის (არ ჭედავს!) */}
             {room.roundSummary.matchWinner === me?.name && (
               <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center z-0">
-                {/* მფეთქავი ფონი */}
                 <div className="absolute w-[150vw] h-[150vw] bg-[radial-gradient(circle,rgba(234,179,8,0.15)_0%,transparent_60%)] animate-pulse"></div>
-                {/* მოძრავი ემოჯიები */}
                 <div className="absolute top-[10%] left-[10%] text-4xl md:text-6xl animate-bounce">🎉</div>
                 <div className="absolute top-[15%] right-[15%] text-5xl md:text-7xl animate-bounce" style={{ animationDelay: '0.2s' }}>🏆</div>
                 <div className="absolute bottom-[20%] left-[15%] text-5xl md:text-7xl animate-bounce" style={{ animationDelay: '0.4s' }}>💰</div>
@@ -594,7 +672,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
               </div>
             )}
 
-            {/* 🟢 მთავარი მოდალის ჩარჩო (გამარჯვებულზე ინთება ოქროსფრად) */}
             <div className={`bg-stone-900 border border-opacity-30 border-current rounded-2xl md:rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full text-center space-y-4 md:space-y-6 relative overflow-hidden z-10 ${activeTheme.accent} ${room.roundSummary.matchWinner === me?.name ? 'shadow-[0_0_50px_rgba(234,179,8,0.4)] ring-2 ring-yellow-500 scale-105 transition-all' : 'shadow-2xl'}`}>
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-current/10 via-stone-900 to-stone-900"></div>
               
