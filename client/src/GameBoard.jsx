@@ -341,8 +341,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
             })()}
           </div>
 
-          {/* 🟢 ოვალური მაგიდა (shrink-0 იცავს შეკუმშვისგან) */}
-          <div className="flex flex-col items-center justify-center relative mt-4 md:mt-8 mb-4 md:mb-8 w-full z-10 min-h-[180px] md:min-h-[250px] shrink-0">
+          {/* 🟢 ოვალური მაგიდა (დავაბრუნეთ flex-1, რომ მაგიდამ სივრცე თანაბრად გადაანაწილოს და ქვემოთ არ ჩამოტოვოს) */}
+          <div className="flex-1 flex flex-col items-center justify-center relative w-full z-10 min-h-[180px] md:min-h-[250px]">
             <div className={`relative w-[92%] md:w-[85%] max-w-3xl aspect-[1.7/1] md:aspect-[2.2/1] ${activeTheme.card} rounded-[100px] md:rounded-[200px] border-[8px] md:border-[16px] border-stone-900 shadow-[0_0_50px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
               
               <div className="absolute inset-0 rounded-[92px] md:rounded-[184px] border border-white/5 shadow-inner pointer-events-none"></div>
@@ -471,8 +471,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
           {/* 🟢 მთლიანი ქვედა სექცია (დაგდების ღილაკი და კარტები) shrink-0 იცავს შეკუმშვისგან */}
           <div className="flex flex-col items-center mt-auto pt-2 z-20 shrink-0 w-full max-w-lg mx-auto">
             
-            {/* 🟢 აქ mb-6 შევამცირეთ mb-3-მდე მობილურისთვის, რათა ღილაკმა მაღლა აიწიოს */}
-            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-3 md:mb-8 px-4">
+            {/* აქ mb-6 შევცვალეთ mb-2-ით, რომ ღილაკი კარტებს მიუახლოვდეს */}
+            <div className="relative flex justify-center items-center gap-2 md:gap-3 w-full z-40 mb-2 md:mb-8 px-4">
               
               {showEmojiMenu && (
                 <div className="absolute bottom-[115%] left-4 bg-stone-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex gap-1.5 md:gap-2 w-max max-w-[90vw] overflow-x-auto custom-scrollbar animate-in zoom-in-95 slide-in-from-bottom-2">
