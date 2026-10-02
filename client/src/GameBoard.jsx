@@ -163,6 +163,9 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
     setSelectedCardsFromTable([]);
   };
 
+  // 🟢 დავაბრუნეთ ეს წაშლილი ხაზი!
+  const hasActiveEmote = activeEmotes.some(e => e.playerId === socket.id);
+
   const handleSendEmote = (emote) => {
     if (hasActiveEmote) return; 
     socket.emit('sendEmote', { roomId: room.id, emote });
