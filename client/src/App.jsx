@@ -2,26 +2,22 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Auth from './Auth';
 import GameBoard from './GameBoard';
-import DamkaBoard from './DamkaBoard';
-import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Unlock, Medal, UserPlus, UserMinus, BellRing, Settings, Music, Award, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, Coins, Eye, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Sparkles, Share2, PackageOpen, Dices, Briefcase } from 'lucide-react';
+import { Shield, PlusCircle, Play, LogOut, RefreshCw, User, Target, LayoutGrid, Lock, Crown, Trophy, ShieldAlert, Clock, Search, Megaphone, Trash2, Download, Sparkles, Share2, PackageOpen, Dices, Coins, CheckCircle2, XCircle, Swords, Gift, ShoppingCart, UserPlus, UserMinus, BellRing, Settings, Music, Award } from 'lucide-react';
 
 const socket = io('https://purti.onrender.com');
 
 const AVAILABLE_BADGES = [{ id: 'first_win', icon: '🥇', name: 'პირველი მოგება' }, { id: 'diamond_10', icon: '💎', name: '10 აგური' }, { id: 'club_2', icon: '♣️', name: '2 ჯვარი' }, { id: 'veteran', icon: '🛡️', name: 'ვეტერანი (10 მატჩი)' }, { id: 'sweeper', icon: '🧹', name: 'მესუფთავე (J)' }, { id: 'collector', icon: '🛍️', name: 'კოლექციონერი (20+ ემოჯი)' }, { id: 'legionnaire', icon: '🔥', name: 'ლეგიონერი (10 Win Streak)' }];
 const SHOP_ITEMS = { avatars: [{ id: '😎', price: 0, name: 'სტანდარტული' }, { id: '😉', price: 50, name: 'თვალი' }, { id: '🤪', price: 100, name: 'გიჟი' }, { id: '🥷', price: 100, name: 'ნინძა' }, { id: '🤓', price: 150, name: 'ჭკვიანი' }, { id: '🧐', price: 150, name: 'მონოკლი' }, { id: '🤠', price: 200, name: 'კოვბოი' }, { id: '🥳', price: 200, name: 'წვეულება' }, { id: '🧙‍♂️', price: 250, name: 'ჯადოქარი' }, { id: '👽', price: 250, name: 'უცხოპლანეტელი' }, { id: '👻', price: 300, name: 'მოჩვენება' }, { id: '🤖', price: 300, name: 'რობოტი' }, { id: '🤡', price: 350, name: 'ჯამბაზი' }, { id: '💩', price: 350, name: 'პუპ' }, { id: '💀', price: 400, name: 'თავის ქალა' }, { id: '🧛', price: 400, name: 'ვამპირი' }, { id: '🎃', price: 450, name: 'გოგრა' }, { id: '😺', price: 500, name: 'კატა' }, { id: '🐶', price: 500, name: 'ძაღლი' }, { id: '🐭', price: 500, name: 'თაგვი' }, { id: '🦊', price: 600, name: 'მელია' }, { id: '🐻', price: 600, name: 'დათვი' }, { id: '🐼', price: 650, name: 'პანდა' }, { id: '🐨', price: 700, name: 'კოალა' }, { id: '🐯', price: 700, name: 'ვეფხვი' }, { id: '🐮', price: 750, name: 'ძროხა' }, { id: '🐷', price: 750, name: 'ღორი' }, { id: '👑', price: 800, name: 'მეფე' }, { id: '🐸', price: 800, name: 'ბაყაყი' }, { id: '🐵', price: 850, name: 'მაიმუნი' }, { id: '🐔', price: 850, name: 'ქათამი' }, { id: '🐧', price: 900, name: 'პინგვინი' }, { id: '🐦', price: 900, name: 'ჩიტი' }, { id: '🦆', price: 950, name: 'იხვი' }, { id: '🦉', price: 1000, name: 'ბუ' }, { id: '🦇', price: 1000, name: 'ღამურა' }, { id: '🐺', price: 1100, name: 'მგელი' }, { id: '🐗', price: 1100, name: 'ტახი' }, { id: '🐴', price: 1200, name: 'ცხენი' }, { id: '🦁', price: 1200, name: 'ლომი' }, { id: '🐝', price: 1300, name: 'ფუტკარი' }, { id: '🐛', price: 1300, name: 'მუხლუხო' }, { id: '🦋', price: 1400, name: 'პეპელა' }, { id: '🐌', price: 1400, name: 'ლოკოკინა' }, { id: '🐞', price: 1500, name: 'ჭიამაია' }, { id: '🦅', price: 1500, name: 'არწივი' }, { id: '🎱', price: 1500, name: 'რვიანი' }, { id: '🇬🇪', price: 1500, name: 'საქართველო' }, { id: '🐜', price: 1600, name: 'ჭიანჭველა' }, { id: '🐢', price: 1600, name: 'კუ' }, { id: '🐍', price: 1700, name: 'გველი' }, { id: '🐙', price: 1700, name: 'რვაფეხა' }, { id: '🦑', price: 1800, name: 'კალმარი' }, { id: '🦀', price: 1800, name: 'კიბორჩხალა' }, { id: '🐡', price: 1900, name: 'ფუგუ' }, { id: '🐠', price: 1900, name: 'თევზი' }, { id: '🐬', price: 2000, name: 'დელფინი' }, { id: '🦄', price: 2000, name: 'მარტორქა' }, { id: '🐳', price: 2100, name: 'ვეშაპი' }, { id: '🦈', price: 2200, name: 'ზვიგენი' }, { id: '🐊', price: 2300, name: 'ნიანგი' }, { id: '🐅', price: 2400, name: 'ვეფხვი 2' }, { id: '🐆', price: 2400, name: 'ლეოპარდი' }, { id: '🐉', price: 2500, name: 'დრაკონი' }, { id: '🦍', price: 2600, name: 'გორილა' }, { id: '🐘', price: 2700, name: 'სპილო' }, { id: '🦏', price: 2800, name: 'მარტორქა 2' }, { id: '🐪', price: 2900, name: 'აქლემი' }, { id: '🦒', price: 3000, name: 'ჟირაფი' }, { id: '🦘', price: 3200, name: 'კენგურუ' }, { id: '🦚', price: 3500, name: 'ფარშევანგი' }, { id: '🦢', price: 3800, name: 'გედი' }, { id: '🦩', price: 4000, name: 'ფლამინგო' }, { id: '🐲', price: 4500, name: 'დრაკონის თავი' }, { id: '🍎', price: 500, name: 'ვაშლი' }, { id: '🍓', price: 600, name: 'მარწყვი' }, { id: '🍉', price: 700, name: 'საზამთრო' }, { id: '🍌', price: 800, name: 'ბანანი' }, { id: '🍍', price: 900, name: 'ანანასი' }, { id: '🥝', price: 1000, name: 'კივი' }, { id: '🍔', price: 1200, name: 'ბურგერი' }, { id: '🍕', price: 1500, name: 'პიცა' }, { id: '🌮', price: 1800, name: 'ტაკო' }, { id: '🍣', price: 2000, name: 'სუში' }, { id: '🍩', price: 2200, name: 'დონატი' }, { id: '☕', price: 2500, name: 'ყავა' }, { id: '🍹', price: 2800, name: 'კოქტეილი' }, { id: '🍺', price: 3000, name: 'ლუდი' }, { id: '🍷', price: 3500, name: 'ღვინო' }, { id: '⚽', price: 1000, name: 'ფეხბურთი' }, { id: '🏀', price: 1200, name: 'კალათბურთი' }, { id: '🏈', price: 1500, name: 'რაგბი' }, { id: '🎾', price: 1800, name: 'ჩოგბურთი' }, { id: '🎸', price: 2500, name: 'გიტარა' }, { id: '🎷', price: 3000, name: 'საქსოფონი' }, { id: '🚀', price: 4000, name: 'რაკეტა' }, { id: '🛸', price: 5000, name: 'მფრინავი თეფში' }, { id: '🚁', price: 6000, name: 'ვერტმფრენი' }, { id: '⛵', price: 7000, name: 'იალქნიანი' }, { id: '⚓', price: 8000, name: 'ღუზა' }, { id: '❤️', price: 25000, name: 'გული' }, { id: '♦️', price: 25000, name: 'აგური' }, { id: '♠️', price: 25000, name: 'ყვავი' }, { id: '♣️', price: 25000, name: 'ჯვარი' }], tables: [{ id: 'wood', price: 0, name: 'Classic Wood' }, { id: 'lavender', price: 0, name: 'Soft Lavender' }, { id: 'casino', price: 1500, name: 'Dark Casino' }, { id: 'midnight', price: 2500, name: 'Midnight Gold' }, { id: 'neon', price: 4000, name: 'Cyberpunk Neon' }, { id: 'dark_club', price: 5000, name: 'VIP Dark Club' }, { id: 'vip_gold', price: 'VIP', name: '👑 Royal Gold', isVipExclusive: true }, { id: 'vip_diamond', price: 'VIP', name: '💎 Diamond Lounge', isVipExclusive: true }], cards: [{ id: 'classic', price: 0, name: 'Classic Blue' }, { id: 'crimson', price: 500, name: 'Deep Crimson' }, { id: 'gold', price: 1000, name: 'Solid Gold' }, { id: 'obsidian', price: 2000, name: 'Obsidian Black' }, { id: 'cyber', price: 3000, name: 'Neon Cyber' }, { id: 'royal', price: 4000, name: 'Royal Purple' }, { id: 'hacker', price: 5000, name: 'Matrix Hacker' }] };
-const translations = { ka: { top10: "ტოპ 10", shop: "მაღაზია", admin: "ადმინ", settings: "პარამეტრები", xpProgress: "XP პროგრესი", matches: "მატჩი", wins: "მოგება", winRate: "Win %", myHistory: "📜 ჩემი ისტორია", achievements: "მიღწევები", online: "ონლაინ", friends: "მეგობრები", requests: "თხოვნები", noPlayers: "სხვა მოთამაშეები არ არიან", dailyQuests: "ყოველდღიური მისიები", createTable: "მაგიდის შექმნა", customRules: "შენი წესებით და დიზაინით!", join: "შესვლა", tables: "მაგიდები", noTables: "მაგიდები არ არის", music: "ფონური მუსიკა", on: "ჩართული", off: "გამორთული", changePass: "პაროლის შეცვლა", oldPass: "ძველი პაროლი", newPass: "ახალი პაროლი", change: "შეცვლა", close: "დახურვა", ranked: "რეიტინგული", casual: "გასართობი", invite: "მოწვევა", room: "ოთახი", password: "პაროლი", cancel: "გაუქმება", create: "შექმნა", bots: "რობოტები", targetScore: "მიზნობრივი ქულა", playerLimit: "მოთამაშეების ლიმიტი", roomIdPlaceholder: "ოთახის ID...", active: "აქტიურია", emptyHistory: "ისტორია ცარიელია", opponent: "წინააღმდეგ", score: "ქულა" }, en: { top10: "Top 10", shop: "Shop", admin: "Admin", settings: "Settings", xpProgress: "XP Progress", matches: "Matches", wins: "Wins", winRate: "Win %", myHistory: "📜 My History", achievements: "Achievements", online: "Online", friends: "Friends", requests: "Requests", noPlayers: "No other players", dailyQuests: "Daily Quests", createTable: "Create Table", customRules: "With your rules & design!", join: "Join", tables: "Tables", noTables: "No tables available", music: "BG Music", on: "On", off: "Off", changePass: "Change Password", oldPass: "Old Password", newPass: "New Password", change: "Change", close: "Close", ranked: "Ranked", casual: "Casual", invite: "Invite", room: "Room", password: "Password", cancel: "Cancel", create: "Create", bots: "Bots", targetScore: "Target Score", playerLimit: "Player Limit", roomIdPlaceholder: "Room ID...", active: "Active", emptyHistory: "History is empty", opponent: "Versus", score: "Score" }, ru: { top10: "Топ 10", shop: "Магазин", admin: "Админ", settings: "Настройки", xpProgress: "Прогресс XP", matches: "Матчи", wins: "Победы", winRate: "Победы %", myHistory: "📜 Моя история", achievements: "Достижения", online: "Онлайн", অনলাইনে: "Онлайн", friends: "Друзья", requests: "Запросы", noPlayers: "Нет других игроков", dailyQuests: "Ежедневные задания", createTable: "Создать стол", customRules: "С вашими правилами!", join: "Войти", tables: "Столы", noTables: "Нет доступных столов", music: "Музыка", on: "Вкл", off: "Выкл", changePass: "Изменить пароль", oldPass: "Старый пароль", newPass: "Новый пароль", change: "Изменить", close: "Закрыть", ranked: "Рейтинг", casual: "Обычная", invite: "Пригласить", room: "Комната", password: "Пароль", cancel: "Отмена", create: "Создать", bots: "Боты", targetScore: "Целевой счет", playerLimit: "Лимит игроков", roomIdPlaceholder: "ID Комнаты...", active: "Активен", emptyHistory: "История пуста", opponent: "Против", score: "Счет" } };
+const translations = { ka: { top10: "ტოპ 10", shop: "მაღაზია", admin: "ადმინ", settings: "პარამეტრები", xpProgress: "XP პროგრესი", matches: "მატჩი", wins: "მოგება", winRate: "Win %", myHistory: "📜 ჩემი ისტორია", achievements: "მიღწევები", online: "ონლაინ", friends: "მეგობრები", requests: "თხოვნები", noPlayers: "სხვა მოთამაშეები არ არიან", dailyQuests: "ყოველდღიური მისიები", createTable: "მაგიდის შექმნა", customRules: "შენი წესებით და დიზაინით!", join: "შესვლა", tables: "მაგიდები", noTables: "მაგიდები არ არის", music: "ფონური მუსიკა", on: "ჩართული", off: "გამორთული", changePass: "პაროლის შეცვლა", oldPass: "ძველი პაროლი", newPass: "ახალი პაროლი", change: "შეცვლა", close: "დახურვა", ranked: "რეიტინგული", casual: "გასართობი", invite: "მოწვევა", room: "ოთახი", password: "პაროლი", cancel: "გაუქმება", create: "შექმნა", bots: "რობოტები", targetScore: "მიზნობრივი ქულა", playerLimit: "მოთამაშეების ლიმიტი", roomIdPlaceholder: "ოთახის ID...", active: "აქტიურია", emptyHistory: "ისტორია ცარიელია", opponent: "წინააღმდეგ", score: "ქულა" } };
 
 export const getLeague = (xp = 0) => { if (xp < 1000) return { name: 'ბრინჯაო', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' }; if (xp < 3000) return { name: 'ვერცხლი', icon: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/20' }; if (xp < 6000) return { name: 'ოქრო', icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' }; if (xp < 10000) return { name: 'პლატინა', icon: '💎', color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/20' }; return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' }; };
 export const checkIsVip = (vipDate) => { return vipDate && new Date(vipDate) > new Date(); };
 export const VipName = ({ name, isVip, className = '', onClick }) => { if (isVip) { return ( <span onClick={onClick} className={`bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-600 bg-clip-text text-transparent font-black drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] animate-pulse ${className}`}> 👑 {name} </span> ); } return <span onClick={onClick} className={className}>{name}</span>; };
-export const DamkaIcon = ({ type = 'red', size = 'md', className = '' }) => { const dims = { sm: 'w-3.5 h-3.5', md: 'w-5 h-5', lg: 'w-10 h-10', xl: 'w-16 h-16' }[size]; const cs = { sm: 6, md: 10, lg: 20, xl: 32 }[size]; const ibw = size === 'sm' ? 'border-[0.5px]' : size === 'xl' ? 'border-2' : 'border-[1px]'; const obw = size === 'sm' ? 'border-[1px]' : size === 'xl' ? 'border-[3px]' : 'border-[2px]'; const cols = type === 'red' ? 'bg-gradient-to-br from-red-500 to-red-800 border-red-950 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.4),0_2px_4px_rgba(0,0,0,0.6)]' : 'bg-gradient-to-br from-stone-100 to-stone-300 border-stone-400 shadow-[inset_0_-1px_3px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.6)]'; const ib = type === 'red' ? 'border-red-950' : 'border-stone-400'; const cc = type === 'red' ? 'text-amber-400' : 'text-amber-500'; return ( <div className={`${dims} ${obw} rounded-full flex items-center justify-center shrink-0 ${cols} ${className}`}> <div className={`w-[65%] h-[65%] rounded-full ${ibw} flex items-center justify-center opacity-80 ${ib}`}> <Crown size={cs} strokeWidth={3} className={`${cc} drop-shadow-md`} /> </div> </div> ); };
 
 export default function App() {
   const [userState, setUserState] = useState(() => { const s = localStorage.getItem('phurti_user'); return s ? JSON.parse(s) : null; });
   const user = userState?.user || userState; const safeUsername = user?.username || 'მოთამაშე';
-  const [lang, setLang] = useState(() => localStorage.getItem('phurti_lang') || 'ka');
-  useEffect(() => { localStorage.setItem('phurti_lang', lang); }, [lang]);
-  const t = translations[lang];
+  const lang = 'ka'; const t = translations[lang];
 
   const [roomId, setRoomId] = useState(() => localStorage.getItem('phurti_roomId') || '');
   const [inRoom, setInRoom] = useState(() => localStorage.getItem('phurti_inRoom') === 'true');
@@ -41,7 +37,6 @@ export default function App() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false); const [shopTab, setShopTab] = useState('vip'); 
   
-  // 🟢 იღბლიანი ბორბლის State-ები
   const [isWheelOpen, setIsWheelOpen] = useState(false);
   const [legalModal, setLegalModal] = useState(null);
   const [wheelSpinning, setWheelSpinning] = useState(false);
@@ -52,19 +47,18 @@ export default function App() {
 
   const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
   const [profileTab, setProfileTab] = useState('stats');
-  const [myProfileTab, setMyProfileTab] = useState('stats'); 
-  const [invSubTab, setInvSubTab] = useState('avatars'); 
 
   const [inspectProfile, setInspectProfile] = useState(null); const [isSettingsOpen, setIsSettingsOpen] = useState(false); const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem('phurti_music') === 'true'); const audioRef = useRef(typeof Audio !== 'undefined' ? new Audio('/bg-music.mp3') : null);
   const [selectedRoomIdForJoin, setSelectedRoomIdForJoin] = useState(''); const [joinPasswordInput, setJoinPasswordInput] = useState('');
-  const [mGameType, setMGameType] = useState('phurti'); const [mTargetScore, setMTargetScore] = useState(11); const [mMaxPlayers, setMMaxPlayers] = useState(4); const [mAllowBots, setMAllowBots] = useState(false); const [mRoomPassword, setMRoomPassword] = useState(''); const [mIsRanked, setMIsRanked] = useState(true); 
+  
+  // 🟢 ამოღებულია შაშის GameType. ახლა ყველაფერი ეგრევე 'phurti'-ა
+  const [mTargetScore, setMTargetScore] = useState(11); const [mMaxPlayers, setMMaxPlayers] = useState(4); const [mAllowBots, setMAllowBots] = useState(false); const [mRoomPassword, setMRoomPassword] = useState(''); const [mIsRanked, setMIsRanked] = useState(true); 
   
   const [socialTab, setSocialTab] = useState('online'); 
   const [playerSearchQuery, setPlayerSearchQuery] = useState('');
   const [leaderboard, setLeaderboard] = useState([]); const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   
-  // 🟢 გლობალური ჩატის State-ები
   const [globalMessages, setGlobalMessages] = useState([]);
   const [globalChatInput, setGlobalChatInput] = useState('');
   const globalChatScrollRef = useRef(null);
@@ -114,32 +108,24 @@ export default function App() {
     socket.on('friendListUpdated', () => fetchDashboardData(safeUsername)); socket.on('receiveUserProfile', (d) => setInspectProfile(d)); socket.on('roomNotFound', () => handleResetToLobby());
     socket.on('vipBonusClaimed', (a) => { setVipDailyReward(a); fetchDashboardData(safeUsername); }); socket.on('systemBroadcast', (m) => setSystemAlert(m));
 
-    // გლობალური ჩატი
     socket.on('receiveGlobalMessage', (msg) => { setGlobalMessages((prev) => [...prev, msg]); });
     socket.on('globalChatHistory', (history) => { setGlobalMessages(history); });
     socket.emit('getGlobalChatHistory');
 
-    // 🟢 იღბლიანი ბორბლის შედეგის ლისენერი
     socket.on('wheelSpinResult', (data) => {
-        // ვაგრძელებთ ანიმაციას
-        const baseSpins = 360 * 5; // 5 სრული ბრუნი
+        const baseSpins = 360 * 5; 
         let extraRotation = 0;
-        
-        // CSS Conic-Gradient მიხედვით ვადგენთ რომელი მასტი სად არის და ვატრიალებთ
         if (data.winningSuit === '❤️') extraRotation = 315;
         if (data.winningSuit === '♣️') extraRotation = 225;
         if (data.winningSuit === '♦️') extraRotation = 135;
         if (data.winningSuit === '♠️') extraRotation = 45;
-
-        // მცირე რენდომ გადახრა, რომ ზუსტად შუაში არ გაჩერდეს და ბუნებრივი იყოს
-        const randomOffset = Math.floor(Math.random() * 60) - 30; // -30-დან +30 გრადუსამდე
+        const randomOffset = Math.floor(Math.random() * 60) - 30; 
         
         setWheelRotation(prev => {
             const currentSpins = Math.floor(prev / 360) * 360;
             return currentSpins + baseSpins + extraRotation + randomOffset;
         });
 
-        // ანიმაცია გრძელდება 3 წამი, შესაბამისად შედეგსაც 3 წამის მერე ვწერთ ეკრანზე
         setTimeout(() => {
             setWheelSpinning(false);
             setProfileData(prev => ({...prev, coins: data.newCoins}));
@@ -163,14 +149,12 @@ export default function App() {
   useEffect(() => { if (userState && !inRoom && safeUsername !== 'მოთამაშე') { fetchDashboardData(safeUsername); socket.emit('getLiveRooms'); socket.emit('setOnlineUser', safeUsername); } }, [userState, inRoom, safeUsername]);
   useEffect(() => { if (error) { const t = setTimeout(() => setError(''), 4000); return () => clearTimeout(t); } }, [error]);
   useEffect(() => { if (toastMsg) { const t = setTimeout(() => setToastMsg(''), 4000); return () => clearTimeout(t); } }, [toastMsg]);
-  // 🟢 URL ლინკიდან ოთახის წაკითხვის ლოგიკა
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room');
     if (roomParam && userState && !inRoom && !isPasswordModalOpen) {
         setSelectedRoomIdForJoin(roomParam);
         setIsPasswordModalOpen(true);
-        // ლინკის გასუფთავება ისტორიიდან (რომ დარეფრეშებისას ისევ არ ამოაგდოს)
         window.history.replaceState(null, '', window.location.pathname);
     }
   }, [userState, inRoom, isPasswordModalOpen]);
@@ -189,14 +173,16 @@ export default function App() {
   const handleJoinSpecificRoom = (tI, p = '') => { if (!tI || !tI.trim()) return; setError(''); socket.emit('joinRoom', { action: 'join', roomId: tI.trim(), playerName: safeUsername, roomPassword: p }); setInRoom(true); localStorage.setItem('phurti_roomId', tI.trim()); localStorage.setItem('phurti_inRoom', 'true'); setIsPasswordModalOpen(false); setJoinPasswordInput(''); };
   
   const handleConfirmCreateRoom = (e) => {
-    e.preventDefault(); const gId = Math.floor(1000 + Math.random() * 9000).toString(); const fM = mGameType === 'damka' ? 2 : mMaxPlayers;
-    socket.emit('joinRoom', { action: 'create', roomId: gId, playerName: safeUsername, roomPassword: mRoomPassword ? mRoomPassword.trim() : null, maxPlayers: fM, targetScore: mGameType === 'damka' ? 12 : mTargetScore, allowBots: mAllowBots, isRanked: mIsRanked, gameType: mGameType });
+    e.preventDefault(); const gId = Math.floor(1000 + Math.random() * 9000).toString(); 
+    // 🟢 აქაც ამოვიღეთ Damka
+    socket.emit('joinRoom', { action: 'create', roomId: gId, playerName: safeUsername, roomPassword: mRoomPassword ? mRoomPassword.trim() : null, maxPlayers: mMaxPlayers, targetScore: mTargetScore, allowBots: mAllowBots, isRanked: mIsRanked, gameType: 'phurti' });
     setInRoom(true); localStorage.setItem('phurti_roomId', gId); localStorage.setItem('phurti_inRoom', 'true'); setIsCreateModalOpen(false); setMRoomPassword('');
   };
 
   const handleFindMatchSubmit = (e) => {
     e.preventDefault(); setIsSearching(true); setSearchFailed(false);
-    const cfg = { playerName: safeUsername, gameType: mGameType, maxPlayers: mGameType === 'damka' ? 2 : mMaxPlayers, isRanked: mIsRanked };
+    // 🟢 აქაც ამოვიღეთ Damka
+    const cfg = { playerName: safeUsername, gameType: 'phurti', maxPlayers: mMaxPlayers, isRanked: mIsRanked };
     socket.emit('tryFindMatch', cfg);
     searchIntervalRef.current = setInterval(() => { socket.emit('tryFindMatch', cfg); }, 2000);
     searchTimeoutRef.current = setTimeout(() => {
@@ -206,7 +192,7 @@ export default function App() {
   const cancelSearch = () => { clearInterval(searchIntervalRef.current); clearTimeout(searchTimeoutRef.current); setIsSearching(false); setSearchFailed(false); setIsMatchmakingOpen(false); };
 
   const handleSendInviteClick = (tId, tN) => { if (inRoom && roomData) { socket.emit('sendInvite', { targetSocketId: tId, roomId: roomData.id, password: roomData.password, fromName: safeUsername, gameType: roomData.gameType }); setToastMsg('გაიგზავნა!'); } else setInviteTarget({ socketId: tId, name: tN }); };
-  const handleConfirmGameInvite = (sG) => { if (!inviteTarget) return; const gId = Math.floor(1000 + Math.random() * 9000).toString(); const iD = sG === 'damka'; socket.emit('joinRoom', { action: 'create', roomId: gId, playerName: safeUsername, roomPassword: null, maxPlayers: iD ? 2 : 4, targetScore: 11, allowBots: false, isRanked: true, gameType: sG }); setInRoom(true); localStorage.setItem('phurti_roomId', gId); localStorage.setItem('phurti_inRoom', 'true'); setTimeout(() => { socket.emit('sendInvite', { targetSocketId: inviteTarget.socketId, roomId: gId, password: null, fromName: safeUsername, gameType: sG }); setToastMsg('გაიგზავნა!'); }, 300); setInviteTarget(null); };
+  const handleConfirmGameInvite = () => { if (!inviteTarget) return; const gId = Math.floor(1000 + Math.random() * 9000).toString(); socket.emit('joinRoom', { action: 'create', roomId: gId, playerName: safeUsername, roomPassword: null, maxPlayers: 4, targetScore: 11, allowBots: false, isRanked: true, gameType: 'phurti' }); setInRoom(true); localStorage.setItem('phurti_roomId', gId); localStorage.setItem('phurti_inRoom', 'true'); setTimeout(() => { socket.emit('sendInvite', { targetSocketId: inviteTarget.socketId, roomId: gId, password: null, fromName: safeUsername, gameType: 'phurti' }); setToastMsg('გაიგზავნა!'); }, 300); setInviteTarget(null); };
   
   const handleSendFriendReq = async (t) => { try { const r = await fetch('https://purti.onrender.com/api/auth/friend/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sender: safeUsername, target: t }) }); const d = await r.json(); setToastMsg(d.message); fetchDashboardData(safeUsername); } catch(e) {} };
   const handleAcceptFriend = async (s) => { try { const r = await fetch('https://purti.onrender.com/api/auth/friend/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ me: safeUsername, sender: s }) }); const d = await r.json(); setToastMsg(d.message); fetchDashboardData(safeUsername); } catch(e) {} };
@@ -240,7 +226,7 @@ export default function App() {
               if (res.ok) {
                   alert('თქვენი ანგარიში და ყველა მონაცემი წარმატებით წაიშალა სისტემიდან.');
                   setLegalModal(null);
-                  handleLogout(); // ვაგდებთ ლოგინის გვერდზე
+                  handleLogout(); 
               } else {
                   setError(data.message || 'შეცდომა ანგარიშის წაშლისას');
               }
@@ -258,7 +244,6 @@ export default function App() {
       setGlobalChatInput('');
   };
 
-  // 🟢 იღბლიანი ბორბლის ტრიალის გაშვება
   const handleSpinWheel = () => {
       if (wheelSpinning) return;
       const myCoins = profileData?.coins || 0;
@@ -266,12 +251,9 @@ export default function App() {
           setError('არასაკმარისი მონეტები ბორბლის დასატრიალებლად!');
           return;
       }
-      
-      // 🟢 მყისიერად ვაკლებთ ფსონს ვიზუალურად და ვბლოკავთ ღილაკს
       setProfileData(prev => ({ ...prev, coins: prev.coins - wheelBet }));
       setWheelSpinning(true);
       setWheelResultMsg(null);
-      
       socket.emit('spinWheel', { betAmount: wheelBet, selectedSuit: wheelSelectedSuit });
   };
 
@@ -293,29 +275,28 @@ export default function App() {
   return (
     <div className="relative flex min-h-screen flex-col font-sans antialiased transition-all duration-700 overflow-x-hidden" style={{ background: activeTheme.bg }}>
       <div className={`absolute inset-0 ${activeTheme.overlay} backdrop-blur-[8px] z-0 transition-colors duration-700`}></div>
-      {/* 🟢 ფერადი განათებები (მობილურზე მორგებული) */}
       <div className="absolute top-0 left-0 w-64 h-64 md:w-96 md:h-96 bg-blue-500/10 rounded-full blur-[80px] md:blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-0 right-0 w-80 h-80 md:w-[500px] md:h-[500px] bg-purple-500/10 rounded-full blur-[100px] md:blur-[150px] pointer-events-none"></div>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[800px] h-[300px] md:h-[400px] bg-cyan-500/5 rounded-full blur-[100px] md:blur-[150px] pointer-events-none"></div>
+      
       {error && <div className="fixed top-20 md:top-24 right-4 md:right-6 z-[100] rounded-2xl bg-stone-900/95 border border-rose-500/20 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-right-8 fade-in duration-300 flex items-center gap-3"><div className="flex items-center justify-center p-1 rounded-full bg-rose-500/20 text-rose-500 border border-rose-500/30"><XCircle size={16} className="md:w-5 md:h-5" /></div><span className="text-stone-100 tracking-wide uppercase">{error}</span></div>}
       {toastMsg && <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-[100] rounded-2xl bg-stone-900/95 border border-white/10 px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-black shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-top-5 fade-in duration-300 flex items-center gap-3"><div className={`flex items-center justify-center p-1 rounded-full ${activeTheme.accentBg} bg-opacity-20 ${activeTheme.accent} border border-current border-opacity-30`}><CheckCircle2 size={16} className="md:w-5 md:h-5" /></div><span className="text-stone-100 tracking-wide uppercase">{toastMsg}</span></div>}
       
-      {/* Invite Target */}
+      {/* 🟢 Invite Target (მხოლოდ ფურთი დარჩა) */}
       {inviteTarget && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[150] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className={`${activeTheme.card} border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 shadow-2xl font-sans relative text-center`}>
-            <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} uppercase tracking-wider mb-2`}>აირჩიე თამაში</h3>
+            <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} uppercase tracking-wider mb-2`}>მოწვევა</h3>
             <p className="text-xs text-stone-400 font-bold mb-4">იწვევთ მოთამაშეს: <span className="text-stone-200">{inviteTarget.name}</span></p>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => handleConfirmGameInvite('phurti')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group"><span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span><span className="text-[10px] font-black uppercase tracking-widest text-stone-200">ფურთი</span></button>
-              <button onClick={() => handleConfirmGameInvite('damka')} className="p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group"><div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2"><DamkaIcon type="red" size="lg" className="z-10 animate-bounce" /><DamkaIcon type="white" size="lg" className="mt-2 animate-bounce delay-100" /></div><span className="text-[10px] font-black uppercase tracking-widest text-stone-200">შაში</span></button>
-            </div>
+            <button onClick={handleConfirmGameInvite} className="w-full p-4 rounded-2xl flex flex-col items-center gap-2 bg-stone-900 border border-white/10 hover:border-white/30 transition-all shadow-md active:scale-95 group">
+                <span className="text-4xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span>
+                <span className="text-[12px] font-black uppercase tracking-widest text-stone-200">ფურთის დაწყება</span>
+            </button>
             <button onClick={() => setInviteTarget(null)} className="w-full mt-4 py-2.5 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase">გაუქმება</button>
           </div>
         </div>
       )}
 
-      {/* 🟢 იურიდიული და წესების ფანჯარა (Legal Modals) */}
       {legalModal && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[250] flex items-center justify-center p-4 animate-in zoom-in-95 duration-200" onClick={(e) => { if(e.target === e.currentTarget) setLegalModal(null); }}>
           <div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl font-sans relative flex flex-col max-h-[85vh]`}>
@@ -347,12 +328,12 @@ export default function App() {
               {legalModal === 'gameRules' && (
                 <>
                   <h3 className="text-sm font-black text-stone-100 uppercase mb-2">🃏 ფურთის წესები</h3>
-                  <p>ფურთი ტრადიციული ბანქოს თამაშია. მიზანია დარიგებების ციკლში შეაგროვოთ ქულები და პირველმა მიაღწიოთ მიზნობრივ ნიშნულს (11 ქულა).</p>
+                  <p>ფურთი ტრადიციული ბანქოს თამაშია. მიზანია დარიგებების ციკლში შეაგროვოთ ქულები და პირველმა მიაღწიოთ მიზნობრივ ნიშნულს (11 ან 21 ქულა).</p>
                   <ul className="list-disc pl-5 space-y-2 mt-2 text-stone-400 mb-6">
                     <li><strong>დარიგება:</strong> ძირს იდება 4 კარტი, მოთამაშეებსაც ურიგდებათ 4-4 კარტი.</li>
                     <li><strong>წაღება:</strong> კარტის აჭრა/წაღება ხდება შემდეგნაირი პრინციპით: მაგიდაზე და ხელში არსებული კარტების კომბინაციამ უნდა შეადგინოს 11 (მაგალითად: ძირს დადებულ 7-იანს წაიღებთ თქვენი 4-იანით). კაროლს შეუძლია წაიყვანოს სხვა კაროლი და ასევე დამას შეუძლია წაიყვანოს სხვა დამა.</li>
                     <li><strong>ფურთი:</strong> თუ მოთამაშეს ხელში უჭირავს ვალეტი, მას შეუძლია წაიყვანოს მაგიდაზე არსებული ყველა კარტი. <em>გამონაკლისი:</em> ვალეტს არ შეუძლია წაიყვანოს ცალად დადებული კაროლი ან დამა, მაგრამ თუ მაგიდაზე დევს 2 კაროლი ან 2 დამა, მაშინ შესაძლებელია.</li>
-                    <li><strong>ქულების დათვლა 11 ქულამდე:</strong> 
+                    <li><strong>ქულების დათვლა:</strong> 
                       <ul className="list-circle pl-5 mt-1 space-y-1 text-stone-300">
                         <li>მეტობა (ყველაზე მეტი კარტი) = 2 ქულა</li>
                         <li>ჯვრების მეტობა (♣️) = 1 ქულა</li>
@@ -360,14 +341,6 @@ export default function App() {
                         <li>2 ჯვარი (♣️) = 1 ქულა</li>
                       </ul>
                     </li>
-                  </ul>
-
-                  <h3 className="text-sm font-black text-stone-100 uppercase mt-4 mb-2">🔴 შაშის (Damka) წესები</h3>
-                  <ul className="list-disc pl-5 space-y-1.5 mt-2 text-stone-400">
-                    <li><strong>მოძრაობა:</strong> მოთამაშეები მოძრაობენ დიაგონალურად მხოლოდ წინ, თითო სვლაზე თითო უჯრით.</li>
-                    <li><strong>აყვანა (მოკვლა):</strong> თუ მოწინააღმდეგის ქვის უკან უჯრა ცარიელია, სავალდებულოა მისი გადახტომა და აყვანა.</li>
-                    <li><strong>დამკა:</strong> როდესაც ქვა მიაღწევს დაფის ბოლო, მოწინააღმდეგის ხაზს, ის ხდება "დამკა". დამკას შეუძლია დიაგონალზე იმოძრაოს შეუზღუდავი რაოდენობის უჯრაზე როგორც წინ, ისე უკან.</li>
-                    <li><strong>გამარჯვება:</strong> იგებს ის, ვინც აიყვანს მოწინააღმდეგის ყველა ქვას ან დაბლოკავს მას ისე, რომ სვლა აღარ შეეძლოს.</li>
                   </ul>
                 </>
               )}
@@ -382,7 +355,6 @@ export default function App() {
                   <h3 className="text-sm font-black text-stone-100 uppercase mt-4">3. მონაცემების წაშლა</h3>
                   <p>თქვენ ნებისმიერ დროს გაქვთ უფლება მოითხოვოთ თქვენი ანგარიშისა და მასზე მიბმული ყველა მონაცემის სრულად განადგურება ჩვენი სისტემიდან.</p>
 
-                  {/* 🔴 ანგარიშის წაშლის ღილაკი */}
                   <div className="mt-6 pt-5 border-t border-rose-500/20 flex flex-col items-center">
                       <p className="text-[10px] text-rose-400 font-bold mb-3 text-center uppercase tracking-wider">ყურადღება: ანგარიშის წაშლა შეუქცევადია!</p>
                       <button onClick={handleDeleteAccount} className="px-6 py-2.5 bg-rose-900/40 hover:bg-rose-600 text-rose-500 hover:text-white font-black text-[10px] md:text-xs uppercase rounded-xl border border-rose-500/30 hover:border-rose-500 transition-all shadow-lg active:scale-95 flex items-center gap-2">
@@ -402,23 +374,18 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 იღბლიანი ბორბლის მოდალი (Lucky Wheel) */}
-      {/* 🟢 იღბლიანი ბორბალი (Premium Casino Wheel) */}
       {isWheelOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
           <div className={`${activeTheme.card} border ${activeTheme.accent.replace('text-', 'border-')}/30 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl relative overflow-hidden group`}>
             
-            {/* ფონის ნეონის განათება */}
             <div className={`absolute -top-10 -right-10 w-40 h-40 ${activeTheme.accentBg} opacity-10 blur-[50px] rounded-full pointer-events-none`}></div>
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/10 blur-[50px] rounded-full pointer-events-none"></div>
 
-            {/* 🟢 1. ანგარიშზე არსებული თანხის ჩვენება მარცხენა ზედა კუთხეში */}
             <div className="absolute top-4 left-4 bg-stone-950/60 border border-white/10 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-inner z-20">
                 <Coins size={14} className="text-yellow-500" />
                 <span className="text-[10px] md:text-xs font-mono font-black text-stone-200">{profileData?.coins || 0}</span>
             </div>
 
-            {/* დახურვის ღილაკი */}
             <button onClick={() => { setIsWheelOpen(false); setWheelResultMsg(null); setWheelSpinning(false); }} className="absolute top-4 right-4 text-stone-500 hover:text-rose-500 transition-colors z-20 bg-stone-950/60 rounded-full p-1 border border-white/5">
                 <XCircle size={20} />
             </button>
@@ -429,21 +396,17 @@ export default function App() {
 
             <div className="relative z-10 flex flex-col items-center">
                 
-                {/* 🟢 2. გაუმჯობესებული ნეონის "ბორბალი" ჭკვიანი ლოგიკით */}
                 {(() => {
-                    // 1. ტექსტის უსაფრთხოდ ამოღება (იქნება ეს ობიექტი თუ პირდაპირ ტექსტი)
                     const msgStr = typeof wheelResultMsg === 'object' && wheelResultMsg !== null 
                         ? String(wheelResultMsg.message || wheelResultMsg.msg || wheelResultMsg.text || '') 
                         : String(wheelResultMsg || '');
                         
-                    // 2. მოგების დადგენა (ტექსტში ვეძებთ მოგების სიტყვებს ან პლუს ნიშანს)
                     const isWin = (typeof wheelResultMsg === 'object' && wheelResultMsg?.win === true) 
                         || msgStr.includes('მოიგ') 
                         || msgStr.includes('გილოცავ') 
                         || msgStr.includes('მოგებ') 
                         || msgStr.includes('+');
 
-                    // 3. მასტის პოვნა
                     let suit = null;
                     if (typeof wheelResultMsg === 'object' && wheelResultMsg?.winningSuit) {
                         suit = wheelResultMsg.winningSuit;
@@ -452,12 +415,10 @@ export default function App() {
                     else if (msgStr.includes('♦️')) suit = '♦️';
                     else if (msgStr.includes('♠️')) suit = '♠️';
 
-                    // 4. თუ მოვიგეთ და მასტი ტექსტში არ ერია, ვიღებთ მომხმარებლის არჩეულს
                     if (isWin && !suit && typeof wheelSelectedSuit !== 'undefined') {
                         suit = wheelSelectedSuit;
                     }
 
-                    // დინამიური კლასები ბორბლის ფერებისთვის
                     let wheelContainerClass = "w-36 h-36 md:w-44 md:h-44 rounded-full border-[3px] md:border-4 flex items-center justify-center mb-6 relative transition-all duration-500 overflow-hidden ";
                     
                     if (wheelSpinning) {
@@ -472,11 +433,9 @@ export default function App() {
 
                     return (
                         <div className={wheelContainerClass}>
-                            {/* შიდა მბზინავი რგოლი (Depth effect) */}
                             <div className="absolute inset-2 rounded-full border border-white/5 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
 
                             {wheelSpinning ? (
-                                /* 🟢 ტრიალის ანიმაცია */
                                 <div className="relative w-full h-full animate-spin flex items-center justify-center" style={{ animationDuration: '0.4s' }}>
                                     <div className="absolute top-2 text-3xl text-rose-500 drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]">❤️</div>
                                     <div className="absolute bottom-2 text-3xl text-stone-300 drop-shadow-[0_0_10px_rgba(214,211,209,0.8)]">♣️</div>
@@ -485,9 +444,7 @@ export default function App() {
                                     <div className="absolute inset-0 bg-yellow-500/10 rounded-full blur-md"></div>
                                 </div>
                             ) : wheelResultMsg ? (
-                                /* 🟢 შედეგის გამოტანა */
                                 <div className="text-center animate-in zoom-in duration-300 p-2 flex flex-col items-center justify-center w-full h-full z-10">
-                                    {/* გიგანტური მანათობელი მასტის იკონა */}
                                     {suit && (
                                         <div className={`text-5xl md:text-6xl mb-1 animate-bounce ${
                                             ['❤️', '♦️'].includes(suit) ? 'text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.8)]' : 'text-stone-200 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]'
@@ -495,7 +452,6 @@ export default function App() {
                                             {suit}
                                         </div>
                                     )}
-                                    {/* შეტყობინების ტექსტი */}
                                     <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-relaxed px-2 ${
                                         isWin ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-rose-400/80'
                                     }`}>
@@ -503,7 +459,6 @@ export default function App() {
                                     </span>
                                 </div>
                             ) : (
-                                /* 🟢 საწყისი მდგომარეობა */
                                 <div className="flex flex-col items-center justify-center opacity-40 hover:opacity-100 hover:scale-110 transition-all duration-300 cursor-default">
                                     <Dices size={40} className="drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] mb-2" />
                                     <span className="text-[8px] font-black tracking-widest uppercase">დაატრიალე</span>
@@ -513,7 +468,6 @@ export default function App() {
                     );
                 })()}
 
-                {/* ფსონის არჩევა */}
                 <div className="w-full mb-5">
                     <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-widest block mb-2 text-center">აირჩიე ფსონი (🪙)</label>
                     <div className="flex gap-2">
@@ -525,7 +479,6 @@ export default function App() {
                     </div>
                 </div>
 
-                {/* მასტის არჩევა */}
                 <div className="w-full mb-6">
                     <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-widest block mb-2 text-center">რომელი მასტი ამოვა?</label>
                     <div className="grid grid-cols-4 gap-2">
@@ -542,7 +495,6 @@ export default function App() {
                     </div>
                 </div>
 
-                {/* დატრიალების ღილაკი */}
                 <button 
                     onClick={handleSpinWheel} 
                     disabled={wheelSpinning || (profileData?.coins || 0) < wheelBet}
@@ -577,9 +529,9 @@ export default function App() {
           <div className={`bg-stone-900 border border-opacity-30 border-current ${activeTheme.accent} rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-[0_0_50px_rgba(0,0,0,0.3)] font-sans text-center relative overflow-hidden animate-in zoom-in duration-200`}>
             <div className={`absolute top-0 left-0 w-full h-1 ${activeTheme.accentBg} animate-pulse`}></div>
             <div className={`w-16 h-16 ${activeTheme.accentBg} bg-opacity-10 border-opacity-30 border-current rounded-full flex items-center justify-center mx-auto border mb-2 shadow-lg`}><BellRing size={28} /></div>
-            <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">ახალი გამოწვევა!</h3>
+            <h3 className="text-lg font-black text-stone-100 uppercase tracking-widest">ახალი მოწვევა!</h3>
             <p className="text-sm font-bold text-stone-400 mb-1"><span className="font-black">{inviteAlert.fromName}</span> გიწვევს სათამაშოდ<br/>(Room #{inviteAlert.roomId})</p>
-            <div className="bg-stone-950 px-3 py-1 rounded-md text-[10px] text-stone-500 uppercase font-black tracking-widest border border-white/5 inline-flex items-center gap-1.5 justify-center">{inviteAlert.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}</div>
+            <div className="bg-stone-950 px-3 py-1 rounded-md text-[10px] text-stone-500 uppercase font-black tracking-widest border border-white/5 inline-flex items-center gap-1.5 justify-center">🃏 ფურთი</div>
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5 mt-4">
               <button onClick={() => { socket.emit('rejectInvite', { senderSocketId: inviteAlert.senderSocketId, rejecterName: safeUsername }); setInviteAlert(null); }} className="py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md">უარყოფა</button>
               <button onClick={() => { handleJoinSpecificRoom(inviteAlert.roomId, inviteAlert.password); setInviteAlert(null); }} className={`py-3 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg`}>{t.join} 🎮</button>
@@ -588,15 +540,12 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 ჩემი პროფილის ფანჯარა (Premium ID Modal) */}
       {isMyProfileOpen && (
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
           <div className={`${activeTheme.card} border ${amIVip ? 'border-yellow-500/30' : 'border-white/10'} rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative overflow-hidden group`}>
             
-            {/* VIP Glow Background მოდალის შიგნით */}
             {amIVip && <div className="absolute top-0 right-0 w-48 h-48 bg-yellow-500/10 blur-[60px] rounded-full pointer-events-none"></div>}
             
-            {/* 1. ჰედერი (ავატარი და ინფო) */}
             <div className="flex items-center gap-4 border-b border-white/5 pb-5 relative z-10">
                 <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-4xl border ${amIVip ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.3)]' : 'border-white/10 shadow-xl'} shrink-0 relative`}>
                     {myAvatar}
@@ -618,7 +567,6 @@ export default function App() {
                 </div>
             </div>
 
-            {/* 2. XP პროგრესი (უფრო თვალსაჩინო) */}
             <div className="mt-5 mb-6 relative z-10">
                 <div className="flex justify-between text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">
                     <span>XP პროგრესი</span>
@@ -631,16 +579,13 @@ export default function App() {
                 </div>
             </div>
 
-            {/* 3. ნავიგაცია (ტაბები) */}
             <div className="flex gap-2 mb-5 bg-stone-950/60 p-1.5 rounded-xl border border-white/5 relative z-10 shadow-inner">
                 <button onClick={() => setProfileTab('stats')} className={`flex-1 py-2 md:py-2.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${profileTab === 'stats' ? `${activeTheme.accentBg} text-stone-950 shadow-md scale-100` : 'text-stone-500 hover:text-stone-300 hover:bg-white/5 scale-95'}`}>სტატისტიკა</button>
                 <button onClick={() => setProfileTab('inventory')} className={`flex-1 py-2 md:py-2.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${profileTab === 'inventory' ? `${activeTheme.accentBg} text-stone-950 shadow-md scale-100` : 'text-stone-500 hover:text-stone-300 hover:bg-white/5 scale-95'}`}>ინვენტარი</button>
             </div>
 
-            {/* 4. შიგთავსი (სტატისტიკა / ინვენტარი) */}
             <div className="relative z-10 min-h-[160px] max-h-[250px] overflow-y-auto custom-scrollbar pr-2 mt-2">
                 
-                {/* 🟢 სტატისტიკის და მიღწევების ტაბი */}
                 {profileTab === 'stats' && (
                     <div className="space-y-5 animate-in fade-in duration-300">
                         <div className="grid grid-cols-2 gap-3">
@@ -690,10 +635,8 @@ export default function App() {
                     </div>
                 )}
                 
-                {/* 🟢 ინვენტარის ტაბი (რეალური მონაცემებით) */}
                 {profileTab === 'inventory' && (
                     <div className="animate-in fade-in duration-300 space-y-5">
-                        {/* 🟢 შევცვალეთ ცარიელი ინვენტარის ლოგიკა: თუ VIP არის, ცარიელი აღარასდროს იქნება */}
                         {(!profileData?.unlockedAvatars?.length && !profileData?.unlockedTableThemes?.length && !profileData?.unlockedCardBacks?.length && !amIVip) ? (
                             <div className="flex flex-col items-center justify-center h-[120px] text-stone-500 space-y-3">
                                 <PackageOpen size={32} className="opacity-20" />
@@ -701,7 +644,6 @@ export default function App() {
                             </div>
                         ) : (
                             <>
-                                {/* ავატარები */}
                                 {profileData?.unlockedAvatars?.length > 0 && (
                                     <div>
                                         <h3 className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-2 border-b border-white/5 pb-1">ჩემი ავატარები</h3>
@@ -715,21 +657,18 @@ export default function App() {
                                     </div>
                                 )}
                                 
-                                {/* 🟢 მაგიდის თემები (დაემატა VIP მაგიდების გამოჩენა) */}
                                 {(profileData?.unlockedTableThemes?.length > 0 || amIVip) && (
                                     <div>
                                         <h3 className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-2 border-b border-white/5 pb-1">ჩემი მაგიდები</h3>
                                         <div className="flex flex-wrap gap-2">
-                                            {/* ჩვეულებრივი ნაყიდი მაგიდები */}
                                             {profileData?.unlockedTableThemes?.map((item, i) => (
                                                 <button key={i} onClick={() => socket.emit('equipItem', { type: 'table', itemId: item })} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all ${profileData.tableTheme === item ? `bg-stone-800 border-2 ${activeTheme.accent.replace('text-', 'border-')}${activeTheme.accent} shadow-[0_0_10px_currentColor]` : 'bg-stone-900 border border-white/10 text-stone-400 hover:text-stone-200 active:scale-95'}`} title="დაყენება">
                                                     {item.replace('table_', '')}
                                                 </button>
                                             ))}
                                             
-                                            {/* 👑 სპეციალური VIP მაგიდები (გამოჩნდება მხოლოდ VIP-ებისთვის) */}
                                             {amIVip && ['vip_gold', 'vip_diamond'].map((item, i) => {
-                                                if (profileData?.unlockedTableThemes?.includes(item)) return null; // რომ არ გაორდეს
+                                                if (profileData?.unlockedTableThemes?.includes(item)) return null; 
                                                 return (
                                                     <button key={`vip_${i}`} onClick={() => socket.emit('equipItem', { type: 'table', itemId: item })} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border-2 ${profileData.tableTheme === item ? 'bg-stone-800 border-yellow-400 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500/50 active:scale-95'}`} title="ექსკლუზივი VIP წევრებისთვის">
                                                         {item === 'vip_gold' ? '👑 GOLD' : '💎 DIAMOND'}
@@ -740,7 +679,6 @@ export default function App() {
                                     </div>
                                 )}
 
-                                {/* ბანქოს დიზაინები */}
                                 {profileData?.unlockedCardBacks?.length > 0 && (
                                     <div>
                                         <h3 className="text-[9px] uppercase font-bold tracking-widest text-stone-500 mb-2 border-b border-white/5 pb-1">ჩემი ბანქო</h3>
@@ -759,7 +697,6 @@ export default function App() {
                 )}
             </div>
 
-            {/* 5. დახურვის ღილაკი */}
             <button onClick={() => setIsMyProfileOpen(false)} className="mt-6 w-full py-3 md:py-3.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-900 border border-white/10 hover:border-white/30 hover:bg-stone-800 transition-all text-stone-300 shadow-lg active:scale-95 relative z-10 flex items-center justify-center gap-2 group/btn">
                 <XCircle size={16} className="text-stone-500 group-hover/btn:text-rose-500 transition-colors" /> დახურვა
             </button>
@@ -768,7 +705,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 🟢 სხვა მოთამაშის პროფილის დათვალიერება (Premium UI) */}
       {inspectProfile && (() => {
         const isTargetVip = checkIsVip(inspectProfile.vipUntil);
         const targetLeague = getLeague(inspectProfile.xp || 0);
@@ -778,7 +714,6 @@ export default function App() {
             
             <div className={`${activeTheme.card} border ${isTargetVip ? 'border-yellow-500/40 shadow-[0_0_40px_rgba(234,179,8,0.15)]' : 'border-white/10 shadow-2xl'} rounded-3xl w-full max-w-sm overflow-hidden font-sans relative animate-in zoom-in-95 duration-200`}>
               
-              {/* 1. ზედა გრადიენტული ფონი (Cover) */}
               <div className={`h-24 md:h-28 bg-gradient-to-br ${isTargetVip ? 'from-yellow-900/40 via-stone-900 to-stone-950 border-b border-yellow-500/30' : 'from-stone-800/40 via-stone-900 to-stone-950 border-b border-white/5'} relative`}>
                  {isTargetVip && <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 blur-[40px] rounded-full pointer-events-none"></div>}
                  
@@ -787,10 +722,8 @@ export default function App() {
                  </button>
               </div>
 
-              {/* 2. პროფილის ინფორმაცია */}
               <div className="px-6 pb-6 relative">
                 
-                {/* ავატარი - აწეული Cover-ზე გადასაკვეთად */}
                 <div className="flex flex-col items-center -mt-12 md:-mt-14 mb-4 relative z-10">
                    <div className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center text-4xl md:text-5xl border-4 border-stone-950 shadow-xl relative ${isTargetVip ? 'shadow-[0_0_20px_rgba(234,179,8,0.3)] border-yellow-500/20' : ''}`}>
                        {inspectProfile.avatar || '😎'}
@@ -799,13 +732,11 @@ export default function App() {
                        </div>
                    </div>
                    
-                   {/* სახელი და გვირგვინი */}
                    <h2 className={`text-xl md:text-2xl font-black tracking-wide mt-3 flex items-center gap-1.5 drop-shadow-md ${isTargetVip ? 'text-yellow-500' : 'text-stone-100'}`}>
                        {inspectProfile.username}
                        {isTargetVip && <Crown size={18} className="text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]" />}
                    </h2>
                    
-                   {/* რანკი */}
                    <div className="flex gap-2 mt-2">
                        <span className={`px-2.5 py-1 rounded-md border ${targetLeague.bg} ${targetLeague.border} ${targetLeague.color} text-[9px] md:text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm`}>
                            <span className="drop-shadow-md text-xs">{targetLeague.icon}</span> {targetLeague.name}
@@ -813,7 +744,6 @@ export default function App() {
                    </div>
                 </div>
 
-                {/* 3. სოციალური ღილაკები */}
                 <div className="flex justify-center gap-2 mb-6 relative z-10">
                     {!profileData?.friends?.includes(inspectProfile.username) && inspectProfile.username !== safeUsername && (
                         <button onClick={() => { handleSendFriendReq(inspectProfile.username); setInspectProfile(null); }} className={`px-5 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black ${activeTheme.accentBg} text-stone-950 shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 uppercase tracking-wider`}>
@@ -827,7 +757,6 @@ export default function App() {
                     )}
                 </div>
 
-                {/* 4. სტატისტიკის გრიდი */}
                 <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
                     <div className="bg-stone-950/60 border border-white/5 rounded-xl p-3 md:p-4 text-center shadow-inner hover:border-white/10 transition-colors">
                         <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-stone-500 mb-1">{t.wins}</p>
@@ -841,7 +770,6 @@ export default function App() {
                     </div>
                 </div>
 
-                {/* 5. მიღწევების პანელი (საკუთარი პროფილის იდენტური მრგვალი დიზაინით) */}
                 <div className="relative z-10 border-t border-white/5 pt-5 mt-2">
                     <h4 className="text-[9px] md:text-[10px] font-bold text-stone-500 flex items-center justify-center gap-1.5 uppercase tracking-widest mb-4">
                         <Award size={14} className={activeTheme.accent} /> {t.achievements}
@@ -849,7 +777,6 @@ export default function App() {
                     <div className="flex flex-wrap justify-center gap-3 md:gap-4">
                         {inspectProfile?.achievements?.length > 0 ? (
                             inspectProfile.achievements.map((ach, idx) => {
-                                // ზუსტად იგივე მონაცემები, რაც შენს პროფილშია
                                 const achData = {
                                     'wc_play': { icon: '🎮', name: 'პირველი მატჩი' },
                                     'wc_win': { icon: '👑', name: 'პირველი მოგება' },
@@ -913,7 +840,6 @@ export default function App() {
                         
                         {pkg.best && <span className="absolute -top-2 md:-top-3 right-4 md:right-auto md:left-1/2 md:-translate-x-1/2 bg-yellow-500 text-stone-950 text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">საუკეთესო ფასი</span>}
                         
-                        {/* 🟢 მობილურზე ჰორიზონტალური (მარცხენა ნაწილი) */}
                         <div className="flex items-center gap-3 md:flex-col md:items-center text-left md:text-center flex-1">
                             <div className="flex items-center justify-center w-10 h-10 md:w-16 md:h-16 bg-yellow-500/10 rounded-full border border-yellow-500/20 shrink-0">
                                 <span className="text-2xl md:text-4xl drop-shadow-lg">👑</span>
@@ -924,14 +850,12 @@ export default function App() {
                             </div>
                         </div>
 
-                        {/* 🟢 კომპიუტერზე (md:flex) ვაჩვენებთ დეტალურ სიას */}
                         <div className="hidden md:flex flex-col gap-1.5 w-full bg-stone-950/50 p-3 rounded-xl border border-white/5 mt-1">
                            <div className="flex items-center gap-2 text-[9px] text-stone-300 font-bold"><CheckCircle2 size={12} className="text-yellow-500"/> +50% მეტი XP მოგებაზე</div>
                            <div className="flex items-center gap-2 text-[9px] text-stone-300 font-bold"><CheckCircle2 size={12} className="text-yellow-500"/> ექსკლუზიური 👑 ავატარები</div>
                            <div className="flex items-center gap-2 text-[9px] text-stone-300 font-bold"><CheckCircle2 size={12} className="text-yellow-500"/> VIP ემოციები და მაგიდები</div>
                         </div>
 
-                        {/* 🟢 მობილურზე ღილაკი მარჯვნივ ჯდება */}
                         <div className="shrink-0 md:mt-auto">
                             <button onClick={() => handleBuyVip(pkg.days, pkg.price)} disabled={amIVip} className={`w-auto md:w-full px-4 md:px-0 py-2 md:py-3 rounded-xl text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-md ${amIVip ? 'bg-stone-800 text-stone-500 border border-white/5 cursor-not-allowed uppercase' : 'bg-stone-900 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-stone-950 active:scale-95'}`}>
                                 {amIVip ? t.active : <><Coins size={12} className="md:w-4 md:h-4"/> {pkg.price}</>}
@@ -963,11 +887,10 @@ export default function App() {
         </div>
       )}
 
-      {/* Settings / Leaderboard / History Modals */}
       {isSettingsOpen && ( <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4"><div className={`${activeTheme.card} border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-6 shadow-2xl font-sans relative`}><h3 className={`text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2`}><Settings size={18}/> {t.settings}</h3><div className="space-y-3 border-b border-white/10 pb-4"><label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Music size={14}/> {t.music}</label><div className="flex bg-stone-950/50 rounded-xl p-1 border border-white/5"><button onClick={() => setIsMusicPlaying(true)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${isMusicPlaying ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'text-stone-500'}`}>{t.on}</button><button onClick={() => setIsMusicPlaying(false)} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${!isMusicPlaying ? 'bg-stone-800 text-stone-200 shadow-md' : 'text-stone-500'}`}>{t.off}</button></div></div><form onSubmit={async (e) => { e.preventDefault(); try { const res = await fetch(`https://purti.onrender.com/api/auth/change-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: safeUsername, currentPassword: e.target.currentPass.value, newPassword: e.target.newPass.value }) }); const data = await res.json(); if(res.ok) { setToastMsg('პაროლი შეიცვალა!'); e.target.reset(); } else setError(data.message); } catch(err) { setError('შეცდომა!'); } }} className="space-y-3"><label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2"><Lock size={14}/> {t.changePass}</label><input name="currentPass" type="password" placeholder={t.oldPass} className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required /><input name="newPass" type="password" placeholder={t.newPass} className="w-full rounded-xl bg-stone-950/60 border border-white/10 px-3 py-2 text-[10px] md:text-xs font-bold text-stone-100 outline-none" required /><button type="submit" className={`w-full py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs font-black transition-all active:scale-95 shadow-md`}>{t.change}</button></form><button onClick={() => setIsSettingsOpen(false)} className="w-full py-3 bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-300 rounded-xl text-xs font-black transition-all active:scale-95 shadow-inner mt-4">{t.close}</button></div></div> )}
       {isLeaderboardOpen && ( <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4"><div className="bg-stone-900 border border-yellow-500/30 rounded-[2rem] p-6 max-w-md w-full shadow-[0_0_50px_rgba(234,179,8,0.1)] relative max-h-[80vh] overflow-y-auto custom-scrollbar"><h2 className="text-xl font-black text-stone-100 uppercase mb-6 flex items-center gap-3 justify-center"><Trophy className="text-yellow-500"/> {t.top10}</h2><div className="space-y-3">{leaderboard.map((u, i) => { const rank = getLeague(u.xp); return ( <div key={i} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-500/20 border-yellow-500 text-stone-100 scale-105 shadow-lg' : 'bg-stone-950/50 border-white/5 text-stone-300'}`}><div className="flex items-center gap-3"><span className="text-sm font-black w-4 text-stone-500">{i + 1}.</span><div className="text-2xl drop-shadow-md">{u.avatar}</div><div><div className="text-xs font-black uppercase tracking-wider flex items-center gap-2">{u.username} {u.vipUntil && new Date(u.vipUntil) > new Date() && <span className="text-[10px] bg-yellow-500 text-stone-900 px-1.5 rounded uppercase font-black">VIP</span>}</div><div className={`text-[10px] font-bold mt-0.5 flex items-center gap-1 ${rank.color}`}>{rank.icon} {rank.name} • {u.xp} XP</div></div></div><div className="text-right"><div className="text-xs font-black text-stone-400">{t.wins}</div><div className="text-sm font-black text-yellow-500">{u.stats.gamesWon}</div></div></div> ); })}</div><button onClick={() => setIsLeaderboardOpen(false)} className="w-full mt-6 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all">{t.close}</button></div></div> )}
-      {isAdminOpen && ( <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4"><div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto custom-scrollbar relative"><div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 sticky top-0 bg-stone-900 z-10"><h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Control Panel</h2><button onClick={() => {setIsAdminOpen(false); setAdminUsers([]); setAdminPass(''); setAdminMessage('');}} className="text-stone-500 hover:text-stone-300">{t.close}</button></div>{adminUsers.length === 0 ? ( <form onSubmit={loginAdmin} className="space-y-4 max-w-xs mx-auto py-10"><input type="password" placeholder="ადმინისტრატორის პაროლი" value={adminPass} onChange={e => setAdminPass(e.target.value)} className="w-full bg-stone-950 border border-rose-500/30 rounded-xl px-4 py-3 text-xs text-stone-100 outline-none text-center" /><button type="submit" className="w-full py-3 bg-rose-500 text-stone-950 font-black rounded-xl text-xs uppercase shadow-lg hover:bg-rose-400 transition-all">შესვლა</button>{adminMessage && <p className="text-[10px] text-rose-400 text-center font-bold">{adminMessage}</p>}</form> ) : ( <div>{adminStats && ( <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">სულ მოთამაშე</span><div className="text-3xl font-black text-stone-100">{adminStats.totalUsers}</div></div><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ჯამური თამაშები</span><div className="text-3xl font-black text-blue-400">{adminStats.totalGamesPlayed}</div><div className="text-[10px] text-stone-500 mt-2 font-bold bg-stone-900 px-2 py-1 rounded-lg border border-white/5">ფურთი: <span className="text-orange-400">{adminStats.totalPhurti || 0}</span> | დამკა: <span className="text-orange-400">{adminStats.totalDamka || 0}</span></div></div><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ეკონომიკა (ქოინები)</span><div className="text-3xl font-black text-yellow-500">{adminStats.totalCoins} 🪙</div></div></div> )}<div className="bg-red-950/20 border border-red-500/30 rounded-2xl p-4 mb-6 flex flex-col md:flex-row gap-3 items-center"><Megaphone className="text-red-500 shrink-0" size={24}/><input type="text" placeholder="დაწერე გლობალური შეტყობინება ყველასთვის..." value={broadcastText} onChange={(e) => setBroadcastText(e.target.value)} className="flex-1 bg-stone-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-stone-100 outline-none" /><button onClick={() => { if(broadcastText.trim()) { socket.emit('adminBroadcast', broadcastText.trim()); setBroadcastText(''); setToastMsg('გლობალური შეტყობინება გაიგზავნა!'); } }} className="w-full md:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase rounded-xl transition-all shadow-md shrink-0">გაგზავნა</button></div><div className="relative mb-4"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" size={16} /><input type="text" placeholder="მოძებნე მოთამაშე სახელით..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-stone-950 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-stone-100 outline-none" /></div>{adminMessage && ( <div className={`mb-4 p-2 text-xs text-center rounded-lg font-bold border ${adminMessage.includes('შეცდომა') ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'}`}> {adminMessage} </div> )}<div className="grid gap-3">{adminUsers.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase())).map((u, i) => ( <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4 transition-all hover:bg-stone-800/40`}><div className="min-w-[150px]"><div className="text-sm font-black text-stone-100">{u.username}</div><div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">********</span></div><div className="text-[10px] text-stone-500 font-mono mt-0.5">📅 თარიღი: {u.dateOfBirth} | 📝 სიტყვა: {u.secretWord}</div></div><div className="flex items-center gap-4 text-xs font-black"><div className="text-yellow-500">🪙 {u.coins}</div><div className="text-blue-400">⭐ {u.xp} XP</div></div><div className="flex flex-wrap items-center gap-2"><button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors border border-yellow-500/20">+500 🪙</button><button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors border border-blue-500/20">+1000 XP</button><button onClick={() => handleAdvancedAdminAction(u.username, 'reset')} className="px-3 py-1.5 bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 rounded-lg text-[10px] font-black transition-colors border border-orange-500/20" title="სტატისტიკის განულება">RESET</button>{u.isBanned ? ( <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors shadow-md">UNBAN</button> ) : ( <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors shadow-md">BAN</button> )}<button onClick={() => handleAdvancedAdminAction(u.username, 'delete')} className="p-1.5 bg-red-950 text-red-500 hover:bg-red-900 rounded-lg transition-colors border border-red-500/30" title="ექაუნთის წაშლა"><Trash2 size={14}/></button></div></div> ))}</div></div> )}</div></div> )}
-      {isHistoryOpen && ( <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4"><div className="bg-stone-900 border border-white/10 rounded-[2rem] p-5 md:p-6 max-w-lg w-full shadow-2xl relative max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200"><h2 className={`text-lg md:text-xl font-black text-stone-100 uppercase mb-4 flex items-center gap-3 justify-center border-b border-white/5 pb-4`}><Clock className={activeTheme.accent}/> {t.myHistory}</h2><div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 min-h-[250px]">{profileData?.gameHistory?.length > 0 ? ( profileData.gameHistory.map((game, i) => { const isWin = game.isWinner; return ( <div key={i} className={`p-3 md:p-4 rounded-2xl border flex flex-col gap-2 transition-all hover:scale-[1.01] ${isWin ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}><div className="flex justify-between items-center border-b border-white/5 pb-2"><div className="flex items-center gap-2"><span className={`font-black text-xs md:text-sm uppercase tracking-wider flex items-center gap-1.5 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>{isWin ? `🏆 ${t.wins}` : '💔'}</span><span className="text-[8px] bg-stone-950 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md font-black uppercase flex items-center gap-1">{game.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}</span></div><span className="text-[9px] md:text-[10px] text-stone-400 font-bold bg-stone-950/50 px-2 py-1 rounded-lg">{new Date(game.playedAt).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div><div className="flex justify-between items-center text-[10px] md:text-xs pt-1"><span className="text-stone-400 font-medium truncate max-w-[50%]">{t.opponent}: <span className="font-bold text-stone-200 truncate">{game.opponents?.length ? game.opponents.join(', ') : t.bots}</span></span><span className="font-mono font-black text-stone-400 bg-stone-950/40 px-2 py-1 rounded-md border border-white/5 shrink-0">{t.score}: <span className={isWin ? 'text-emerald-400' : 'text-rose-400'}>{game.myFinalScore}</span> / {game.targetScore}</span></div></div> ) }) ) : ( <div className="flex flex-col items-center justify-center py-12 text-stone-500 opacity-50"><Clock size={40} className="mb-3"/><p className="text-xs font-bold uppercase tracking-widest">{t.emptyHistory}</p></div> )}</div><button onClick={() => setIsHistoryOpen(false)} className="w-full mt-5 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all active:scale-95 shadow-inner">{t.close}</button></div></div> )}
+      {isAdminOpen && ( <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4"><div className="bg-stone-900 border border-rose-500/50 rounded-3xl p-6 max-w-4xl w-full shadow-[0_0_50px_rgba(244,63,94,0.2)] max-h-[90vh] overflow-y-auto custom-scrollbar relative"><div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 sticky top-0 bg-stone-900 z-10"><h2 className="text-xl font-black text-rose-500 uppercase flex items-center gap-2"><ShieldAlert/> Control Panel</h2><button onClick={() => {setIsAdminOpen(false); setAdminUsers([]); setAdminPass(''); setAdminMessage('');}} className="text-stone-500 hover:text-stone-300">{t.close}</button></div>{adminUsers.length === 0 ? ( <form onSubmit={loginAdmin} className="space-y-4 max-w-xs mx-auto py-10"><input type="password" placeholder="ადმინისტრატორის პაროლი" value={adminPass} onChange={e => setAdminPass(e.target.value)} className="w-full bg-stone-950 border border-rose-500/30 rounded-xl px-4 py-3 text-xs text-stone-100 outline-none text-center" /><button type="submit" className="w-full py-3 bg-rose-500 text-stone-950 font-black rounded-xl text-xs uppercase shadow-lg hover:bg-rose-400 transition-all">შესვლა</button>{adminMessage && <p className="text-[10px] text-rose-400 text-center font-bold">{adminMessage}</p>}</form> ) : ( <div>{adminStats && ( <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">სულ მოთამაშე</span><div className="text-3xl font-black text-stone-100">{adminStats.totalUsers}</div></div><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ჯამური თამაშები</span><div className="text-3xl font-black text-blue-400">{adminStats.totalGamesPlayed}</div><div className="text-[10px] text-stone-500 mt-2 font-bold bg-stone-900 px-2 py-1 rounded-lg border border-white/5">ფურთი: <span className="text-orange-400">{adminStats.totalPhurti || 0}</span></div></div><div className="bg-stone-950 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center justify-center shadow-inner"><span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-1">ეკონომიკა (ქოინები)</span><div className="text-3xl font-black text-yellow-500">{adminStats.totalCoins} 🪙</div></div></div> )}<div className="bg-red-950/20 border border-red-500/30 rounded-2xl p-4 mb-6 flex flex-col md:flex-row gap-3 items-center"><Megaphone className="text-red-500 shrink-0" size={24}/><input type="text" placeholder="დაწერე გლობალური შეტყობინება ყველასთვის..." value={broadcastText} onChange={(e) => setBroadcastText(e.target.value)} className="flex-1 bg-stone-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-stone-100 outline-none" /><button onClick={() => { if(broadcastText.trim()) { socket.emit('adminBroadcast', broadcastText.trim()); setBroadcastText(''); setToastMsg('გლობალური შეტყობინება გაიგზავნა!'); } }} className="w-full md:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase rounded-xl transition-all shadow-md shrink-0">გაგზავნა</button></div><div className="relative mb-4"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" size={16} /><input type="text" placeholder="მოძებნე მოთამაშე სახელით..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-stone-950 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-stone-100 outline-none" /></div>{adminMessage && ( <div className={`mb-4 p-2 text-xs text-center rounded-lg font-bold border ${adminMessage.includes('შეცდომა') ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'}`}> {adminMessage} </div> )}<div className="grid gap-3">{adminUsers.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase())).map((u, i) => ( <div key={i} className={`p-4 rounded-2xl border ${u.isBanned ? 'bg-rose-950/30 border-rose-500/30' : 'bg-stone-950/50 border-white/5'} flex flex-wrap items-center justify-between gap-4 transition-all hover:bg-stone-800/40`}><div className="min-w-[150px]"><div className="text-sm font-black text-stone-100">{u.username}</div><div className="text-[10px] text-stone-400 font-mono mt-1">🔑 პაროლი: <span className="text-yellow-500">********</span></div><div className="text-[10px] text-stone-500 font-mono mt-0.5">📅 თარიღი: {u.dateOfBirth} | 📝 სიტყვა: {u.secretWord}</div></div><div className="flex items-center gap-4 text-xs font-black"><div className="text-yellow-500">🪙 {u.coins}</div><div className="text-blue-400">⭐ {u.xp} XP</div></div><div className="flex flex-wrap items-center gap-2"><button onClick={() => adminAction(u.username, 'addCoins', 500)} className="px-3 py-1.5 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 rounded-lg text-[10px] font-black transition-colors border border-yellow-500/20">+500 🪙</button><button onClick={() => adminAction(u.username, 'addXP', 1000)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-[10px] font-black transition-colors border border-blue-500/20">+1000 XP</button><button onClick={() => handleAdvancedAdminAction(u.username, 'reset')} className="px-3 py-1.5 bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 rounded-lg text-[10px] font-black transition-colors border border-orange-500/20" title="სტატისტიკის განულება">RESET</button>{u.isBanned ? ( <button onClick={() => adminAction(u.username, 'unban')} className="px-3 py-1.5 bg-emerald-500 text-stone-950 hover:bg-emerald-400 rounded-lg text-[10px] font-black transition-colors shadow-md">UNBAN</button> ) : ( <button onClick={() => adminAction(u.username, 'ban')} className="px-3 py-1.5 bg-rose-500 text-stone-950 hover:bg-rose-400 rounded-lg text-[10px] font-black transition-colors shadow-md">BAN</button> )}<button onClick={() => handleAdvancedAdminAction(u.username, 'delete')} className="p-1.5 bg-red-950 text-red-500 hover:bg-red-900 rounded-lg transition-colors border border-red-500/30" title="ექაუნთის წაშლა"><Trash2 size={14}/></button></div></div> ))}</div></div> )}</div></div> )}
+      {isHistoryOpen && ( <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4"><div className="bg-stone-900 border border-white/10 rounded-[2rem] p-5 md:p-6 max-w-lg w-full shadow-2xl relative max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200"><h2 className={`text-lg md:text-xl font-black text-stone-100 uppercase mb-4 flex items-center gap-3 justify-center border-b border-white/5 pb-4`}><Clock className={activeTheme.accent}/> {t.myHistory}</h2><div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 min-h-[250px]">{profileData?.gameHistory?.length > 0 ? ( profileData.gameHistory.map((game, i) => { const isWin = game.isWinner; return ( <div key={i} className={`p-3 md:p-4 rounded-2xl border flex flex-col gap-2 transition-all hover:scale-[1.01] ${isWin ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}><div className="flex justify-between items-center border-b border-white/5 pb-2"><div className="flex items-center gap-2"><span className={`font-black text-xs md:text-sm uppercase tracking-wider flex items-center gap-1.5 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>{isWin ? `🏆 ${t.wins}` : '💔'}</span><span className="text-[8px] bg-stone-950 border border-white/5 text-stone-400 px-1.5 py-0.5 rounded-md font-black uppercase flex items-center gap-1">🃏 ფურთი</span></div><span className="text-[9px] md:text-[10px] text-stone-400 font-bold bg-stone-950/50 px-2 py-1 rounded-lg">{new Date(game.playedAt).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div><div className="flex justify-between items-center text-[10px] md:text-xs pt-1"><span className="text-stone-400 font-medium truncate max-w-[50%]">{t.opponent}: <span className="font-bold text-stone-200 truncate">{game.opponents?.length ? game.opponents.join(', ') : t.bots}</span></span><span className="font-mono font-black text-stone-400 bg-stone-950/40 px-2 py-1 rounded-md border border-white/5 shrink-0">{t.score}: <span className={isWin ? 'text-emerald-400' : 'text-rose-400'}>{game.myFinalScore}</span> / {game.targetScore}</span></div></div> ) }) ) : ( <div className="flex flex-col items-center justify-center py-12 text-stone-500 opacity-50"><Clock size={40} className="mb-3"/><p className="text-xs font-bold uppercase tracking-widest">{t.emptyHistory}</p></div> )}</div><button onClick={() => setIsHistoryOpen(false)} className="w-full mt-5 py-3 bg-stone-800 hover:bg-stone-700 text-stone-300 font-black text-xs uppercase rounded-xl transition-all active:scale-95 shadow-inner">{t.close}</button></div></div> )}
 
       <div className="relative z-10 flex flex-col flex-1 w-full h-full text-stone-100">
         <header className={`${activeTheme.card} flex items-center justify-between border-b border-white/5 backdrop-blur-xl px-4 md:px-8 py-3 md:py-4 sticky top-0 z-40 shadow-lg transition-colors duration-700`}>
@@ -976,9 +899,6 @@ export default function App() {
             <span className={`text-sm md:text-lg font-black tracking-widest ${activeTheme.accent}`}>PHURTI ARENA</span>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
-           
-            
-            {/* 🟢 ბორბლის ღილაკი */}
             <button onClick={() => setIsWheelOpen(true)} className="flex items-center gap-1.5 p-2 md:px-3 md:py-2 bg-stone-900/80 border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 shadow-md">
                <span className="text-sm md:text-base leading-none">🎰</span> 
                <span className="hidden md:block text-[10px] font-black uppercase">ბორბალი</span>
@@ -996,27 +916,22 @@ export default function App() {
           {!inRoom ? (
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6 items-start">
               
-              {/* მარცხენა სვეტი */}
               <div className="space-y-4 md:space-y-5 animate-in slide-in-from-bottom-8 fade-in duration-700">
-                {/* 🟢 1. პრემიუმ პროფილის ბარათი (Gaming ID Card) */}
                 <div className={`relative overflow-hidden ${activeTheme.card} backdrop-blur-xl border ${amIVip ? 'border-yellow-500/30' : 'border-white/10'} rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 group`}>
-                  {/* VIP Glow Background */}
                   {amIVip && <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 blur-[50px] rounded-full pointer-events-none"></div>}
                   
                   <div className="flex items-center justify-between border-b border-white/5 pb-3 md:pb-4 mb-4 md:mb-5 relative z-10">
                     <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all w-full" onClick={() => setIsMyProfileOpen(true)}>
-                      {/* ავატარი */}
                       <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center font-black text-3xl md:text-4xl border ${amIVip ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'border-white/10 shadow-xl'} relative shrink-0`}>
                         {myAvatar}
                         <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${activeTheme.accentBg} text-stone-950 flex items-center justify-center text-[10px] font-black border-2 border-stone-900 shadow-md`}>{currentLevel}</div>
                       </div>
                       
-                      {/* ინფო */}
                       <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                         <h2 className="text-sm md:text-base font-black text-stone-100 tracking-wide truncate flex items-center gap-1.5">
-    {safeUsername} 
-    {amIVip && <Crown size={16} className="text-yellow-500 shrink-0 drop-shadow-md" />}
-</h2>
+                            {safeUsername} 
+                            {amIVip && <Crown size={16} className="text-yellow-500 shrink-0 drop-shadow-md" />}
+                        </h2>
                         <div className="flex flex-wrap items-center gap-1.5 text-stone-400 mt-1">
                            <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border ${myLeague.bg} ${myLeague.border} shadow-sm shrink-0`}><span className="text-[9px] drop-shadow-md">{myLeague.icon}</span><span className={`text-[8px] font-black uppercase tracking-wider ${myLeague.color}`}>{myLeague.name}</span></div>
                            <div className="flex items-center gap-1 bg-stone-950/50 px-2 py-0.5 rounded-md border border-white/5 shrink-0"><Coins size={10} className="text-yellow-500"/><span className="text-[10px] md:text-xs font-mono font-bold">{myCoins}</span></div>
@@ -1026,18 +941,15 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* XP პროგრესი */}
                   <div className="space-y-1.5 md:space-y-2 mb-4 relative z-10">
                     <div className="flex justify-between text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest"><span>{t.xpProgress}</span><span className={activeTheme.accent}>{currentXp} / {targetXp}</span></div>
                     <div className="w-full h-1.5 md:h-2 bg-stone-950 rounded-full overflow-hidden border border-white/5 shadow-inner">
                         <div className={`h-full ${activeTheme.accentBg} rounded-full transition-all duration-1000 relative`} style={{ width: `${xpPercentage}%` }}>
-                            {/* ნეონის ანარეკლი ზოლის ბოლოში */}
                             <div className="absolute top-0 right-0 bottom-0 w-4 bg-white/40 blur-[2px]"></div>
                         </div>
                     </div>
                   </div>
 
-                  {/* სტატისტიკის ყუთები */}
                   <div className="grid grid-cols-3 gap-2 relative z-10">
                     <div className="bg-stone-950/60 border border-white/5 hover:border-white/10 transition-colors rounded-lg md:rounded-xl p-2 md:p-2.5 text-center shadow-inner group/stat cursor-default">
                         <p className="text-[8px] md:text-[9px] uppercase font-bold tracking-widest text-stone-500 group-hover/stat:text-stone-300 transition-colors">{t.matches}</p>
@@ -1053,14 +965,12 @@ export default function App() {
                     </div>
                   </div>
                   
-                  {/* ისტორიის ღილაკი ანიმაციით */}
                   <button onClick={() => setIsHistoryOpen(true)} className={`mt-3 md:mt-4 w-full py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest bg-stone-950/80 border border-white/5 hover:border-white/20 transition-all text-stone-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 active:scale-95 relative z-10 overflow-hidden group/btn`}>
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
                       <Clock size={14} className={`${activeTheme.accent} md:w-4 md:h-4 shrink-0`} /> <span className="truncate">{t.myHistory}</span>
                   </button>
                 </div>
 
-                {/* 🟢 2. გლობალური ჩატი (Premium Chat) */}
                 <div className={`relative overflow-hidden ${activeTheme.card} backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl transition-all duration-700 h-[260px] group/chat`}>
                   <div className={`absolute -top-10 -left-10 w-32 h-32 ${activeTheme.accentBg} opacity-10 blur-[40px] rounded-full pointer-events-none transition-opacity duration-700 group-hover/chat:opacity-20`}></div>
                   
@@ -1134,7 +1044,7 @@ export default function App() {
                   </form>
                 </div>
 
-                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
+                <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 hover:border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700`}>
                   <div className="flex border-b border-white/5 gap-3 md:gap-4 overflow-x-auto custom-scrollbar shrink-0">
                     <button onClick={() => setSocialTab('online')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${socialTab === 'online' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500 hover:text-stone-300'}`}>{t.online} ({onlineUser.length})</button>
                     <button onClick={() => setSocialTab('friends')} className={`pb-2.5 md:pb-3 text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${socialTab === 'friends' ? `${activeTheme.accent} border-b-2 border-current` : 'text-stone-500 hover:text-stone-300'}`}>{t.friends}</button>
@@ -1172,7 +1082,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* მარჯვენა სვეტი */}
               <div className="lg:col-span-2 space-y-4 md:space-y-5 w-full relative animate-in slide-in-from-bottom-12 fade-in duration-700 delay-150 fill-mode-both">
                 
                 {showWelcomeChallenge && (
@@ -1218,11 +1127,8 @@ export default function App() {
                     </div>
                 )}
 
-                {/* 🟢 მთავარი მოქმედების (Action) ღილაკების ბლოკი */}
-                {/* 🟢 მთავარი მოქმედების (Action) ღილაკების ბლოკი - მობილურზე მორგებული */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5 relative z-10 w-full">
                   
-                  {/* 1. თამაშის ძებნა (Epic Gaming Button) */}
                   <button onClick={() => setIsMatchmakingOpen(true)} className={`relative overflow-hidden p-4 md:p-6 rounded-2xl md:rounded-3xl text-left transition-all active:scale-95 group border-2 ${activeTheme.accent.replace('text-', 'border-')} shadow-[0_0_20px_rgba(0,0,0,0.3)] md:shadow-[0_0_30px_currentColor] bg-gradient-to-br from-stone-900 to-stone-950 w-full`}>
                       <div className={`absolute top-0 right-0 w-24 h-24 md:w-32 md:h-32 ${activeTheme.accentBg} opacity-10 blur-[30px] md:blur-[40px] rounded-full group-hover:opacity-30 transition-opacity duration-500`}></div>
                       <div className={`absolute -bottom-2 -right-2 md:-bottom-4 md:-right-4 text-5xl md:text-7xl opacity-5 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-500 ${activeTheme.accent}`}>🎮</div>
@@ -1239,7 +1145,6 @@ export default function App() {
                       </div>
                   </button>
 
-                  {/* 2. ოთახის შექმნა (Premium Glassmorphism) */}
                   <button onClick={() => setIsCreateModalOpen(true)} className={`relative overflow-hidden p-4 md:p-6 rounded-2xl md:rounded-3xl text-left transition-all active:scale-95 group border border-white/10 hover:border-white/30 bg-stone-900/40 backdrop-blur-md shadow-xl w-full`}>
                       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="absolute -bottom-2 -right-2 md:-bottom-4 md:-right-4 text-5xl md:text-7xl opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 text-white">🏠</div>
@@ -1256,7 +1161,6 @@ export default function App() {
                       </div>
                   </button>
 
-                  {/* 3. ოთახში შესვლა კოდით (ID Join) */}
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 hover:border-white/10 rounded-2xl md:rounded-3xl p-3 md:p-5 flex flex-col justify-center gap-2 md:gap-2.5 shadow-2xl transition-all duration-700 col-span-1 sm:col-span-2 lg:col-span-1 relative overflow-hidden group w-full`}>
                     <div className="absolute -right-4 -top-4 md:-right-8 md:-top-8 w-16 h-16 md:w-24 md:h-24 bg-white/5 rounded-full blur-[15px] md:blur-[20px] pointer-events-none"></div>
                     <label className="text-[8px] md:text-[10px] font-bold text-stone-500 uppercase tracking-widest px-1">შესვლა კოდით</label>
@@ -1276,7 +1180,6 @@ export default function App() {
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 space-y-3 shadow-2xl transition-colors duration-700 h-full`}>
                     <div className="flex items-center justify-between border-b border-white/5 pb-2.5 md:pb-3"><h3 className="text-[10px] md:text-xs font-bold text-stone-400 flex items-center gap-2 uppercase tracking-widest"><LayoutGrid size={14} className={activeTheme.accent} /> {t.tables}</h3><button onClick={() => socket.emit('getLiveRooms')} className={`p-1.5 md:p-2 hover:bg-stone-800 ${activeTheme.accent} rounded-lg bg-stone-950/60 border border-white/5 shadow-md active:scale-95`}><RefreshCw size={12}/></button></div>
                     {liveRooms.length === 0 ? ( <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-stone-950/30 h-[160px] flex items-center justify-center"><p className="text-[10px] md:text-xs text-stone-500 font-bold">{t.noTables}</p></div> ) : ( <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">{liveRooms.map((room) => ( <div key={room.id} className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-stone-900/60 border border-white/5 hover:border-white/20 hover:bg-stone-800/80 transition-all flex justify-between items-center shadow-lg group relative overflow-hidden">
-                              {/* ნეონის ხაზი გვერდზე */}
                               <div className={`absolute left-0 top-0 bottom-0 w-1 ${room.isRanked ? activeTheme.accentBg : 'bg-stone-500'} opacity-50 group-hover:opacity-100 transition-opacity`}></div>
                               
                               <div className="flex flex-col gap-1.5 pl-2">
@@ -1285,7 +1188,7 @@ export default function App() {
                                   <VipName name={room.hostName} isVip={checkIsVip(room.hostVip)} /> 
                                   {room.isPrivate && <Lock size={12} className="text-stone-500" />}
                                   <span className="text-[8px] md:text-[9px] bg-stone-950 border border-white/10 text-stone-300 px-2 py-0.5 rounded-md uppercase ml-1 shadow-sm flex items-center gap-1">
-                                    {room.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში</> : '🃏 ფურთი'}
+                                    🃏 ფურთი
                                   </span>
                                 </div>
                                 <div className="flex gap-2 items-center">
@@ -1305,9 +1208,7 @@ export default function App() {
                             </div> ))}</div> )}
                   </div>
 
-                  {/* 🟢 3. ყოველდღიური მისიები (Premium Quests) */}
                   <div className={`${activeTheme.card} backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-2xl transition-colors duration-700 relative overflow-hidden h-full group/quest`}>
-                     {/* ფონის განათება და დიდი იკონა */}
                      <div className={`absolute top-0 right-0 w-32 h-32 ${activeTheme.accentBg} opacity-10 blur-[50px] rounded-full pointer-events-none group-hover/quest:opacity-20 transition-all duration-700`}></div>
                      <div className="absolute -bottom-10 -left-10 text-8xl opacity-[0.03] group-hover/quest:scale-110 group-hover/quest:rotate-12 transition-all duration-700 pointer-events-none">🎯</div>
                      
@@ -1330,7 +1231,6 @@ export default function App() {
                                   </div>
                                   <div className="w-full h-1.5 md:h-2 bg-stone-900 rounded-full overflow-hidden border border-white/5 shadow-inner">
                                       <div className={`h-full ${isDone ? 'bg-emerald-500' : activeTheme.accentBg} transition-all duration-1000 relative`} style={{ width: `${p}%` }}>
-                                          {/* მბზინავი ეფექტი ზოლის ბოლოში */}
                                           <div className="absolute top-0 right-0 bottom-0 w-4 bg-white/30 blur-[2px]"></div>
                                       </div>
                                   </div>
@@ -1360,20 +1260,13 @@ export default function App() {
                         <div className="border-b border-white/10 pb-3 md:pb-4 flex justify-between items-start">
                           <div className="flex flex-col gap-1">
                              <div className="flex items-center gap-3">
-    <h3 className={`text-lg md:text-xl font-black ${activeTheme.accent} font-mono`}>ROOM #{roomData.id}</h3>
-    <button 
-        onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/?room=${roomData.id}`);
-            setToastMsg('მაგიდის ლინკი დაკოპირდა!');
-        }}
-        className="p-1.5 rounded-lg bg-stone-900 border border-white/10 text-stone-400 hover:text-white hover:bg-stone-800 transition-all shadow-md active:scale-95"
-        title="მაგიდის ლინკის კოპირება"
-    >
-        <Share2 size={16} />
-    </button>
-</div>
+                                <h3 className={`text-lg md:text-xl font-black ${activeTheme.accent} font-mono`}>ROOM #{roomData.id}</h3>
+                                <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/?room=${roomData.id}`); setToastMsg('მაგიდის ლინკი დაკოპირდა!'); }} className="p-1.5 rounded-lg bg-stone-900 border border-white/10 text-stone-400 hover:text-white hover:bg-stone-800 transition-all shadow-md active:scale-95" title="მაგიდის ლინკის კოპირება">
+                                    <Share2 size={16} />
+                                </button>
+                             </div>
                              <span className="text-[10px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400 w-max shadow-inner flex items-center gap-1.5">
-                               {roomData.gameType === 'damka' ? <><DamkaIcon type="red" size="sm" /> შაში (Damka)</> : '🃏 ფურთი (Phurti)'}
+                               🃏 ფურთი
                              </span>
                           </div>
                           <span className="text-[9px] font-bold uppercase tracking-widest bg-stone-950 px-2 py-1 rounded-md border border-white/5 text-stone-400">{roomData.hostTheme || 'wood'} Theme</span>
@@ -1413,54 +1306,38 @@ export default function App() {
                           </div>
                         </div>
 
-                        {roomData.gameType === 'phurti' ? (
-                          <>
-                            <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
-                              <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">{t.targetScore}</label>
-                              <div className="grid grid-cols-2 gap-2 md:gap-2.5">
-                                {[11, 21].map((score) => ( <button key={score} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: score, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.targetScore === score ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{score}</button> ))}
-                              </div>
+                        <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
+                            <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.targetScore}</label>
+                            <div className="grid grid-cols-2 gap-2 md:gap-2.5">
+                            {[11, 21].map((score) => ( <button key={score} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: score, maxPlayers: roomData.maxPlayers, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.targetScore === score ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{score}</button> ))}
                             </div>
-                            <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
-                              <label className="text-[9px] md:text-[10px] font-bold text-stone-500 uppercase tracking-wider">{t.playerLimit}</label>
-                              <div className="grid grid-cols-3 gap-2 md:gap-2.5">
-                                {[2, 3, 4].map((num) => ( <button key={num} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: num, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.maxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{num}</button> ))}
-                              </div>
+                        </div>
+                        <div className="space-y-2 md:space-y-2.5 pt-1 md:pt-2">
+                            <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.playerLimit}</label>
+                            <div className="grid grid-cols-3 gap-2 md:gap-2.5">
+                            {[2, 3, 4].map((num) => ( <button key={num} disabled={!isHost} onClick={() => socket.emit('updateConfig', { roomId: roomData.id, targetScore: roomData.targetScore, maxPlayers: num, allowBots: roomData.allowBots, isRanked: roomData.isRanked })} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${roomData.maxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950 border border-white/5 text-stone-400 hover:bg-stone-900'}`}>{num}</button> ))}
                             </div>
-                          </>
-                        ) : ( <div className="flex flex-col items-center justify-center py-4 mt-2 bg-stone-950/40 rounded-xl border border-white/5 shadow-inner"><div className="flex -space-x-4 mb-3"><DamkaIcon type="red" size="lg" className="z-10" /><DamkaIcon type="white" size="lg" className="mt-4" /></div><p className="text-[10px] font-bold text-stone-400 max-w-xs text-center px-4">შაში ითამაშება მხოლოდ 2 მოთამაშეზე. {roomData.allowBots ? 'ბოტები ჩართულია.' : 'ბოტები გამორთულია.'}</p></div> )}
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <>
-                      {roomData.gameType === 'damka' ? (
-                         <DamkaBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} checkIsVip={checkIsVip} VipName={VipName} DamkaIcon={DamkaIcon} />
-                      ) : (
-                         <GameBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} checkIsVip={checkIsVip} VipName={VipName} />
-                      )}
-                    </>
+                     <GameBoard room={roomData} socket={socket} onLeave={handleResetToLobby} activeTheme={activeTheme} checkIsVip={checkIsVip} VipName={VipName} />
                   )}
                 </>
               )}
             </div>
           )}
         </main>
-        {/* 🟢 სოც. ქსელების და იურიდიული ლინკების ბლოკი (მხოლოდ ლობიში) */}
           {!inRoom && (
               <div className="w-full pb-6 pt-2 flex flex-col items-center justify-center gap-4 animate-in fade-in duration-1000">
-                  
-                  {/* სოც. ქსელების ჩარჩო */}
                   <div className="flex flex-col items-center gap-1.5">
                       <div className="flex items-center gap-1.5 bg-stone-950/60 p-1.5 md:p-2 rounded-2xl border border-white/5 shadow-inner">
-                          {/* Facebook */}
                           <a href="https://facebook.com/share/1AXfwQEWdJ/" target="_blank" rel="noreferrer" className="p-2 md:p-2.5 bg-stone-900 border border-white/10 hover:border-blue-500/50 rounded-xl text-stone-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all shadow-md active:scale-95 group">
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
                           </a>
-                          {/* Instagram */}
                           <a href="https://instagram.com/phurtiarena" target="_blank" rel="noreferrer" className="p-2 md:p-2.5 bg-stone-900 border border-white/10 hover:border-pink-500/50 rounded-xl text-stone-400 hover:text-pink-400 hover:bg-pink-500/10 transition-all shadow-md active:scale-95 group">
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
                           </a>
-                          {/* TikTok */}
                           <a href="https://tiktok.com/@phurtiarena" target="_blank" rel="noreferrer" className="p-2 md:p-2.5 bg-stone-900 border border-white/10 hover:border-stone-300/50 rounded-xl text-stone-400 hover:text-stone-200 hover:bg-stone-300/10 transition-all shadow-md active:scale-95 group">
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>
                           </a>
@@ -1468,7 +1345,6 @@ export default function App() {
                       <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-widest text-stone-600 mt-0.5">შემოგვიერთდი</span>
                   </div>
 
-                  {/* 🟢 საიტის წესები და პოლიტიკა */}
                   <div className="flex flex-wrap justify-center items-center gap-3 md:gap-4 text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-stone-500 px-4 text-center">
                       <button onClick={() => setLegalModal('siteRules')} className="hover:text-stone-300 transition-colors">საიტის წესები</button>
                       <span className="text-stone-700 hidden sm:inline">•</span>
@@ -1476,7 +1352,6 @@ export default function App() {
                       <span className="text-stone-700 hidden sm:inline">•</span>
                       <button onClick={() => setLegalModal('privacy')} className="hover:text-stone-300 transition-colors">კონფიდენციალურობა</button>
                   </div>
-
               </div>
           )}
       </div>
@@ -1496,7 +1371,6 @@ export default function App() {
               </div>
             ) : isSearching ? (
                <div className="py-12 flex flex-col items-center relative overflow-hidden">
-                  {/* სკანირების რადარის რგოლები */}
                   <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border-2 ${activeTheme.accent.replace('text-', 'border-')} border-dashed animate-[spin_3s_linear_infinite] opacity-30 pointer-events-none`}></div>
                   <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border border-white/10 animate-ping opacity-20 pointer-events-none`}></div>
                   <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full border border-white/5 opacity-10 pointer-events-none`}></div>
@@ -1515,22 +1389,19 @@ export default function App() {
             ) : (
               <form onSubmit={handleFindMatchSubmit} className="space-y-4 md:space-y-5 text-left">
                 <h3 className={`text-sm md:text-base font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider`}>თამაშის ძებნა</h3>
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <button type="button" onClick={() => setMGameType('phurti')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'phurti' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}><span className="text-3xl drop-shadow-md group-hover:scale-110 transition-transform">🃏</span><span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-300'}`}>ფურთი</span></button>
-                  <button type="button" onClick={() => setMGameType('damka')} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105' : 'border-white/5 bg-stone-950/50 opacity-50 hover:opacity-100 hover:bg-stone-900'}`}><div className="flex -space-x-3 group-hover:scale-110 transition-transform drop-shadow-md pb-2"><DamkaIcon type="red" size="lg" className="z-10" /><DamkaIcon type="white" size="lg" className="mt-2" /></div><span className={`text-[10px] font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-300'}`}>შაში</span></button>
-                </div>
-                <div className="space-y-2 md:space-y-2.5">
+                
+                <div className="space-y-2 md:space-y-2.5 mt-4">
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => setMIsRanked(true)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🏆 რეიტინგული</button>
                     <button type="button" onClick={() => setMIsRanked(false)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 გასართობი</button>
                   </div>
                 </div>
-                {mGameType === 'phurti' && (
-                  <div className="space-y-2 md:space-y-2.5">
-                    <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">მოთამაშეების რაოდენობა</label>
-                    <div className="grid grid-cols-3 gap-2">{[2, 3, 4].map(num => ( <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button> ))}</div>
-                  </div>
-                )}
+                
+                <div className="space-y-2 md:space-y-2.5">
+                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">მოთამაშეების რაოდენობა</label>
+                  <div className="grid grid-cols-3 gap-2">{[2, 3, 4].map(num => ( <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/50 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button> ))}</div>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-2 md:gap-3 pt-3 border-t border-white/5 mt-4"><button type="button" onClick={cancelSearch} className="py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-inner uppercase tracking-wider">გაუქმება</button><button type="submit" className={`py-2.5 ${activeTheme.accentBg} text-stone-950 rounded-xl text-[10px] md:text-xs font-black transition-all active:scale-95 shadow-lg uppercase tracking-wider`}>ძებნა 🔍</button></div>
               </form>
             )}
@@ -1542,28 +1413,13 @@ export default function App() {
         <div className="fixed inset-0 bg-stone-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
           <form onSubmit={handleConfirmCreateRoom} className={`${activeTheme.card} border border-white/10 rounded-3xl p-5 md:p-6 max-w-sm w-full space-y-4 md:space-y-5 shadow-[0_0_50px_rgba(0,0,0,0.5)] font-sans relative overflow-hidden group`}>
             
-            {/* ფონის ნეონის ეფექტი კუთხეში */}
             <div className={`absolute -top-16 -right-16 w-32 h-32 ${activeTheme.accentBg} opacity-10 blur-[40px] rounded-full pointer-events-none`}></div>
 
             <h3 className={`text-base md:text-lg font-black ${activeTheme.accent} border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2 relative z-10`}>
               <PlusCircle size={18} /> თამაშის შექმნა
             </h3>
 
-            <div className="grid grid-cols-2 gap-3 mt-4 relative z-10">
-              <button type="button" onClick={() => setMGameType('phurti')} className={`p-3 md:p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md group/btn ${mGameType === 'phurti' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105 shadow-[0_0_15px_currentColor]' : 'border-white/5 bg-stone-950/50 opacity-60 hover:opacity-100 hover:bg-stone-900'}`}>
-                <span className="text-3xl drop-shadow-md group-hover/btn:scale-110 transition-transform">🃏</span>
-                <span className={`text-[10px] md:text-xs font-black uppercase tracking-widest ${mGameType === 'phurti' ? activeTheme.accent : 'text-stone-400'}`}>ფურთი</span>
-              </button>
-              <button type="button" onClick={() => setMGameType('damka')} className={`p-3 md:p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all shadow-md group/btn ${mGameType === 'damka' ? activeTheme.accent.replace('text-', 'border-') + ' bg-stone-900 scale-105 shadow-[0_0_15px_currentColor]' : 'border-white/5 bg-stone-950/50 opacity-60 hover:opacity-100 hover:bg-stone-900'}`}>
-                <div className="flex -space-x-3 group-hover/btn:scale-110 transition-transform drop-shadow-md pb-2">
-                  <DamkaIcon type="red" size="md" className="z-10" />
-                  <DamkaIcon type="white" size="md" className="mt-2" />
-                </div>
-                <span className={`text-[10px] md:text-xs font-black uppercase tracking-widest ${mGameType === 'damka' ? activeTheme.accent : 'text-stone-400'}`}>შაში (Damka)</span>
-              </button>
-            </div>
-
-            <div className="space-y-2.5 relative z-10">
+            <div className="space-y-2.5 relative z-10 mt-4">
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" disabled={mAllowBots} onClick={() => setMIsRanked(true)} className={`py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider transition-all ${mIsRanked ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'} ${mAllowBots ? 'opacity-30 cursor-not-allowed' : ''}`}>🏆 {t.ranked}</button>
                 <button type="button" onClick={() => setMIsRanked(false)} className={`py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider transition-all ${!mIsRanked ? 'bg-stone-500 text-stone-950 shadow-md' : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>🎮 {t.casual}</button>
@@ -1579,26 +1435,24 @@ export default function App() {
               {mAllowBots && <p className="text-[8px] md:text-[9px] text-stone-500 font-bold text-center pt-1 w-full bg-stone-950/50 py-1 rounded-md border border-white/5">ბოტებთან რეიტინგი (XP) არ ითვლება</p>}
             </div>
 
-            {mGameType === 'phurti' && (
-              <div className="flex gap-3 relative z-10">
+            <div className="flex gap-3 relative z-10">
                 <div className="space-y-2 flex-1">
-                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.targetScore}</label>
-                  <div className="grid grid-cols-2 gap-2">
+                    <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.targetScore}</label>
+                    <div className="grid grid-cols-2 gap-2">
                     {[11, 21].map(sc => (
-                      <button type="button" key={sc} onClick={() => setMTargetScore(sc)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mTargetScore === sc ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{sc}</button>
+                        <button type="button" key={sc} onClick={() => setMTargetScore(sc)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mTargetScore === sc ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{sc}</button>
                     ))}
-                  </div>
+                    </div>
                 </div>
                 <div className="space-y-2 flex-1">
-                  <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.playerLimit}</label>
-                  <div className="grid grid-cols-3 gap-2">
+                    <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider">{t.playerLimit}</label>
+                    <div className="grid grid-cols-3 gap-2">
                     {[2, 3, 4].map(num => (
-                      <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button>
+                        <button type="button" key={num} onClick={() => setMMaxPlayers(num)} className={`py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black transition-all ${mMaxPlayers === num ? `${activeTheme.accentBg} text-stone-950 shadow-md` : 'bg-stone-950/80 text-stone-400 border border-white/5 hover:bg-stone-900'}`}>{num}</button>
                     ))}
-                  </div>
+                    </div>
                 </div>
-              </div>
-            )}
+            </div>
 
             <div className="space-y-2 relative z-10 pt-2">
               <label className="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5"><Lock size={12}/> ოთახის პაროლი (სურვილისამებრ)</label>
