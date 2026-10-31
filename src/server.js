@@ -768,8 +768,7 @@ io.on('connection', (socket) => {
         const r = rooms[roomId]; 
         if (!r || !r.gameStarted) return;
         const p = r.players[r.currentTurn]; 
-        // 🟢 დაემატა !p შემოწმება
-        if (!p || p.id !== socket.id) return socket.emit('error', 'ახლა შენი სვლა არ არის!');
+        if (p.id !== socket.id) return socket.emit('error', 'ახლა შენი სვლა არ არის!');
         
         if (cardsFromTable && cardsFromTable.length > 0) {
             if (!isValidCapture(cardFromHand, cardsFromTable)) return socket.emit('error', 'არასწორი მოჭრა!');
@@ -910,9 +909,30 @@ io.on('connection', (socket) => {
         
         if (!r.readyForNextRound.includes(socket.id)) r.readyForNextRound.push(socket.id);
         
-        // თუ ყველამ დააჭირა 5 წამის გასვლამდე, ეგრევე ვიწყებთ
         if (r.readyForNextRound.length >= r.players.length) {
-            startNextRound(roomId);
+            r.deck = createDeck(); 
+            r.tableCards = [];
+            while (r.tableCards.length < 4) { 
+                let c = r.deck.shift(); 
+                if (c.rank === 'J') r.deck.push(c); 
+                else r.tableCards.push(c); 
+            }
+            r.players.forEach(p => { 
+                p.cards = r.deck.splice(0, 4); 
+                p.captured = []; 
+                p.achievementsEarned = []; 
+            });
+            
+            r.dealerIndex = (r.dealerIndex + 1) % r.players.length; 
+            r.currentTurn = r.dealerIndex; 
+            r.lastAction = null; 
+            r.roundSummary = null; 
+            r.lastCapturerId = null; 
+            r.readyForNextRound = [];
+            
+            startTurnTimer(r, roomId); 
+            io.to(roomId).emit('gameUpdated', r); 
+            checkAndTriggerBotTurn(r, roomId);
         } else {
             io.to(roomId).emit('gameUpdated', r);
         }
@@ -928,211 +948,163 @@ io.on('connection', (socket) => {
     });
 });
 
-// 🟢 ახალი რაუნდის დაწყების დამხმარე ფუნქცია
-function startNextRound(roomId) {
-    const r = rooms[roomId];
-    if (!r || !r.gameStarted || !r.roundSummary || r.roundSummary.matchWinner) return;
-    if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
-
-    r.deck = createDeck(); 
-    r.tableCards = [];
-    while (r.tableCards.length < 4) { 
-        let c = r.deck.shift(); 
-        if (c.rank === 'J') r.deck.push(c); 
-        else r.tableCards.push(c); 
-    }
-    r.players.forEach(p => { 
-        p.cards = r.deck.splice(0, 4); 
-        p.captured = []; 
-        p.achievementsEarned = []; 
-    });
-    
-    r.dealerIndex = (r.dealerIndex + 1) % r.players.length; 
-    r.currentTurn = r.dealerIndex; 
-    r.lastAction = null; 
-    r.roundSummary = null; 
-    r.lastCapturerId = null; 
-    r.readyForNextRound = [];
-    r.nextRoundStartsAt = null;
-    
-    startTurnTimer(r, roomId); 
-    io.to(roomId).emit('gameUpdated', r); 
-    checkAndTriggerBotTurn(r, roomId);
-}
-
 function handleTurnTransition(room, roomId) {
     if (roomTimers[roomId]) clearTimeout(roomTimers[roomId]);
     const allEmpty = room.players.every(p => p.cards.length === 0);
-    
     if (allEmpty) {
-        // 🟢 ჯერ ვაჩვენებთ ბოლო კარტის სვლას და ვაჩერებთ სვლებს 1.5 წამით
-        room.currentTurn = null;
-        room.turnExpiresAt = null;
-        io.to(roomId).emit('gameUpdated', room);
-
-        roomTimers[roomId] = setTimeout(() => {
-            if (!rooms[roomId] || !room.gameStarted) return;
-
-            if (room.deck.length > 0) { 
-                room.players.forEach(p => p.cards = room.deck.splice(0, 4)); 
-                if (room.dealerIndex === undefined) room.dealerIndex = 0; 
-                room.currentTurn = room.dealerIndex; 
-                startTurnTimer(room, roomId); 
-                io.to(roomId).emit('gameUpdated', room); 
-                checkAndTriggerBotTurn(room, roomId); 
-            } else {
-                if (room.tableCards.length > 0 && room.lastCapturerId) { 
-                    const lc = room.players.find(p => p.id === room.lastCapturerId); 
-                    if (lc) { 
-                        lc.captured.push(...room.tableCards); 
-                        room.tableCards = []; 
-                    } 
-                }
-                calculateRoundScores(room);
-                
-                if (room.roundSummary.diamond10Winner !== "-") { 
-                    const p = room.players.find(pl => pl.name === room.roundSummary.diamond10Winner); 
-                    if (p && !p.isBot && !p.achievementsEarned.includes('diamond_10')) {
-                        p.achievementsEarned.push('diamond_10'); 
-                    }
-                }
-                if (room.roundSummary.club2Winner !== "-") { 
-                    const p = room.players.find(pl => pl.name === room.roundSummary.club2Winner); 
-                    if (p && !p.isBot && !p.achievementsEarned.includes('club_2')) {
-                        p.achievementsEarned.push('club_2'); 
-                    }
-                }
-                
-                room.readyForNextRound = []; 
-                room.players.forEach(p => { 
-                    if (p.isBot) room.readyForNextRound.push(p.id); 
-                });
-                
-                let mS = -1; 
-                let winP = null; 
-                room.players.forEach(p => { 
-                    if (p.totalScore > mS) { mS = p.totalScore; winP = p; } 
-                });
-                
-                if (mS >= room.targetScore) {
-                    room.roundSummary.matchWinner = winP.name; 
-                    broadcastOnlineUsers(); 
-                    
-                    room.players.forEach(async (p) => {
-                        if (p.isBot) return; 
-                        try {
-                            const isW = p.name === room.roundSummary.matchWinner; 
-                            const mA = p.achievementsEarned || []; 
-                            const dbU = await User.findOne({ username: p.name });
-                            if (dbU) {
-                                const isV = dbU.vipUntil && new Date(dbU.vipUntil) > new Date(); 
-                                
-                                let eX = 0; let eC = 0;
-                                if (room.isRanked) {
-                                    eX = isW ? (isV ? 35 : 25) : (isV ? -5 : -10); 
-                                    eC = isW ? (isV ? 75 : 50) : (isV ? -25 : -50);
-                                } else {
-                                    eX = 0;
-                                    eC = isW ? 15 : 5;
-                                }
-
-                                if (!dbU.achievements.includes('wc_play')) {
-                                    dbU.achievements.push('wc_play');
-                                    eX += 500;
-                                    const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
-                                    if (sckId) io.to(sckId).emit('successMessage', '🎁 ახალბედას მისია: პირველი მატჩი დასრულდა! +500 XP');
-                                }
-
-                                if (isW && !dbU.achievements.includes('wc_win')) {
-                                    dbU.achievements.push('wc_win');
-                                    const currVip = dbU.vipUntil && dbU.vipUntil > new Date() ? dbU.vipUntil.getTime() : Date.now();
-                                    dbU.vipUntil = new Date(currVip + 24 * 60 * 60 * 1000);
-                                    const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
-                                    if (sckId) io.to(sckId).emit('successMessage', '👑 ახალბედას მისია შესრულდა: გაგიაქტიურდა 24სთ VIP!');
-                                }
-                                
-                                if (isW) { 
-                                    dbU.stats.gamesWon++; 
-                                    if (room.isRanked) {
-                                        dbU.stats.winStreak = (dbU.stats.winStreak || 0) + 1; 
-                                        if (dbU.stats.winStreak >= 10 && !dbU.achievements.includes('legionnaire')) dbU.achievements.push('legionnaire'); 
-                                    }
-                                    if (!dbU.achievements.includes('first_win')) dbU.achievements.push('first_win'); 
-                                    if (dbU.stats.gamesWon >= 100 && !dbU.achievements.includes('veteran')) dbU.achievements.push('veteran');
-                                    
-                                    if (!dbU.achievementProgress) dbU.achievementProgress = { diamond_10: 0, club_2: 0, sweeper: 0 };
-                                    
-                                    if (mA.includes('diamond_10') && !dbU.achievements.includes('diamond_10')) { 
-                                        dbU.achievementProgress.diamond_10 = (dbU.achievementProgress.diamond_10 || 0) + 1; 
-                                        if (dbU.achievementProgress.diamond_10 >= 50) dbU.achievements.push('diamond_10'); 
-                                    }
-                                    if (mA.includes('club_2') && !dbU.achievements.includes('club_2')) { 
-                                        dbU.achievementProgress.club_2 = (dbU.achievementProgress.club_2 || 0) + 1; 
-                                        if (dbU.achievementProgress.club_2 >= 50) dbU.achievements.push('club_2'); 
-                                    }
-                                    if (mA.includes('sweeper') && !dbU.achievements.includes('sweeper')) { 
-                                        dbU.achievementProgress.sweeper = (dbU.achievementProgress.sweeper || 0) + 1; 
-                                        if (dbU.achievementProgress.sweeper >= 50) dbU.achievements.push('sweeper'); 
-                                    }
-                                } else {
-                                    if (room.isRanked) dbU.stats.winStreak = 0; 
-                                }
-                                
-                                if (dbU.dailyQuests && dbU.dailyQuests.length > 0) {
-                                    dbU.dailyQuests.forEach(q => {
-                                        if (q.isCompleted) return;
-                                        if (q.questId === 'play_ranked' && room.isRanked) q.progress++; 
-                                        if (q.questId === 'win_ranked' && room.isRanked && isW) q.progress++; 
-                                        if (q.questId === 'get_10_diamond' && mA.includes('diamond_10')) q.progress++; 
-                                        if (q.questId === 'get_2_club' && mA.includes('club_2')) q.progress++; 
-                                        if (q.questId === 'play_5_games') q.progress++; 
-                                        if (q.questId === 'win_3_games' && isW) q.progress++; 
-                                        if (q.questId === 'sweep_table' && mA.includes('sweeper')) q.progress++;
-                                        
-                                        if (q.progress >= q.target) { 
-                                            q.progress = q.target; 
-                                            q.isCompleted = true; 
-                                            eX += q.xpReward; 
-                                            eC += 50; 
-                                        }
-                                    }); 
-                                    dbU.markModified('dailyQuests');
-                                }
-                                
-                                dbU.xp = Math.max(0, dbU.xp + eX); 
-                                dbU.coins = Math.max(0, (dbU.coins || 0) + eC);
-                                let lT = dbU.level * 1000; 
-                                while (dbU.xp >= lT) { dbU.xp -= lT; dbU.level++; lT = dbU.level * 1000; }
-                                dbU.stats.gamesPlayed++; 
-                                dbU.stats.phurtiPlayed = (dbU.stats.phurtiPlayed || 0) + 1;
-
-                                dbU.stats.totalPointsScored += p.totalScore;
-                                dbU.gameHistory.unshift({ 
-                                    roomId: room.id, 
-                                    targetScore: room.targetScore, 
-                                    myFinalScore: p.totalScore, 
-                                    isWinner: isW, 
-                                    playedAt: new Date(), 
-                                    opponents: room.players.filter(op=>op.id!==p.id).map(op=>op.name), 
-                                    gameType: 'phurti' 
-                                });
-                                
-                                if (dbU.gameHistory.length > 30) dbU.gameHistory.pop(); 
-                                await dbU.save();
-                            }
-                        } catch (e) {}
-                    });
-                } else {
-                    // 🟢 თუ მატჩი ჯერ არ დასრულებულა, 5 წამში ავტომატურად იწყება ახალი რაუნდი!
-                    room.nextRoundStartsAt = Date.now() + 5000;
-                    roomTimers[roomId] = setTimeout(() => {
-                        startNextRound(roomId);
-                    }, 5000);
-                }
-
-                io.to(roomId).emit('gameUpdated', room); 
+        if (room.deck.length > 0) { 
+            room.players.forEach(p => p.cards = room.deck.splice(0, 4)); 
+            if (room.dealerIndex === undefined) room.dealerIndex = 0; 
+            room.currentTurn = room.dealerIndex; 
+            startTurnTimer(room, roomId); 
+            io.to(roomId).emit('gameUpdated', room); 
+            checkAndTriggerBotTurn(room, roomId); 
+        } else {
+            if (room.tableCards.length > 0 && room.lastCapturerId) { 
+                const lc = room.players.find(p => p.id === room.lastCapturerId); 
+                if (lc) { 
+                    lc.captured.push(...room.tableCards); 
+                    room.tableCards = []; 
+                } 
             }
-        }, 1500);
+            calculateRoundScores(room);
+            
+            if (room.roundSummary.diamond10Winner !== "-") { 
+                const p = room.players.find(pl => pl.name === room.roundSummary.diamond10Winner); 
+                if (p && !p.isBot && !p.achievementsEarned.includes('diamond_10')) {
+                    p.achievementsEarned.push('diamond_10'); 
+                }
+            }
+            if (room.roundSummary.club2Winner !== "-") { 
+                const p = room.players.find(pl => pl.name === room.roundSummary.club2Winner); 
+                if (p && !p.isBot && !p.achievementsEarned.includes('club_2')) {
+                    p.achievementsEarned.push('club_2'); 
+                }
+            }
+            
+            room.readyForNextRound = []; 
+            room.players.forEach(p => { 
+                if (p.isBot) room.readyForNextRound.push(p.id); 
+            });
+            
+            let mS = -1; 
+            let winP = null; 
+            room.players.forEach(p => { 
+                if (p.totalScore > mS) { mS = p.totalScore; winP = p; } 
+            });
+            
+            if (mS >= room.targetScore) {
+                room.roundSummary.matchWinner = winP.name; 
+                broadcastOnlineUsers(); 
+                
+                room.players.forEach(async (p) => {
+                    if (p.isBot) return; 
+                    try {
+                        const isW = p.name === room.roundSummary.matchWinner; 
+                        const mA = p.achievementsEarned || []; 
+                        const dbU = await User.findOne({ username: p.name });
+                        if (dbU) {
+                            const isV = dbU.vipUntil && new Date(dbU.vipUntil) > new Date(); 
+                            
+                            let eX = 0; let eC = 0;
+                            if (room.isRanked) {
+                                eX = isW ? (isV ? 35 : 25) : (isV ? -5 : -10); 
+                                eC = isW ? (isV ? 75 : 50) : (isV ? -25 : -50);
+                            } else {
+                                eX = 0;
+                                eC = isW ? 15 : 5;
+                            }
+
+                            if (!dbU.achievements.includes('wc_play')) {
+                                dbU.achievements.push('wc_play');
+                                eX += 500;
+                                const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
+                                if (sckId) io.to(sckId).emit('successMessage', '🎁 ახალბედას მისია: პირველი მატჩი დასრულდა! +500 XP');
+                            }
+
+                            if (isW && !dbU.achievements.includes('wc_win')) {
+                                dbU.achievements.push('wc_win');
+                                const currVip = dbU.vipUntil && dbU.vipUntil > new Date() ? dbU.vipUntil.getTime() : Date.now();
+                                dbU.vipUntil = new Date(currVip + 24 * 60 * 60 * 1000);
+                                const sckId = Object.keys(onlineUsersMap).find(k => onlineUsersMap[k] === p.name);
+                                if (sckId) io.to(sckId).emit('successMessage', '👑 ახალბედას მისია შესრულდა: გაგიაქტიურდა 24სთ VIP!');
+                            }
+                            
+                            if (isW) { 
+                                dbU.stats.gamesWon++; 
+                                if (room.isRanked) {
+                                    dbU.stats.winStreak = (dbU.stats.winStreak || 0) + 1; 
+                                    if (dbU.stats.winStreak >= 10 && !dbU.achievements.includes('legionnaire')) dbU.achievements.push('legionnaire'); 
+                                }
+                                if (!dbU.achievements.includes('first_win')) dbU.achievements.push('first_win'); 
+                                if (dbU.stats.gamesWon >= 100 && !dbU.achievements.includes('veteran')) dbU.achievements.push('veteran');
+                                
+                                if (!dbU.achievementProgress) dbU.achievementProgress = { diamond_10: 0, club_2: 0, sweeper: 0 };
+                                
+                                if (mA.includes('diamond_10') && !dbU.achievements.includes('diamond_10')) { 
+                                    dbU.achievementProgress.diamond_10 = (dbU.achievementProgress.diamond_10 || 0) + 1; 
+                                    if (dbU.achievementProgress.diamond_10 >= 50) dbU.achievements.push('diamond_10'); 
+                                }
+                                if (mA.includes('club_2') && !dbU.achievements.includes('club_2')) { 
+                                    dbU.achievementProgress.club_2 = (dbU.achievementProgress.club_2 || 0) + 1; 
+                                    if (dbU.achievementProgress.club_2 >= 50) dbU.achievements.push('club_2'); 
+                                }
+                                if (mA.includes('sweeper') && !dbU.achievements.includes('sweeper')) { 
+                                    dbU.achievementProgress.sweeper = (dbU.achievementProgress.sweeper || 0) + 1; 
+                                    if (dbU.achievementProgress.sweeper >= 50) dbU.achievements.push('sweeper'); 
+                                }
+                            } else {
+                                if (room.isRanked) dbU.stats.winStreak = 0; 
+                            }
+                            
+                            if (dbU.dailyQuests && dbU.dailyQuests.length > 0) {
+                                dbU.dailyQuests.forEach(q => {
+                                    if (q.isCompleted) return;
+                                    if (q.questId === 'play_ranked' && room.isRanked) q.progress++; 
+                                    if (q.questId === 'win_ranked' && room.isRanked && isW) q.progress++; 
+                                    if (q.questId === 'get_10_diamond' && mA.includes('diamond_10')) q.progress++; 
+                                    if (q.questId === 'get_2_club' && mA.includes('club_2')) q.progress++; 
+                                    if (q.questId === 'play_5_games') q.progress++; 
+                                    if (q.questId === 'win_3_games' && isW) q.progress++; 
+                                    if (q.questId === 'sweep_table' && mA.includes('sweeper')) q.progress++;
+                                    
+                                    if (q.progress >= q.target) { 
+                                        q.progress = q.target; 
+                                        q.isCompleted = true; 
+                                        eX += q.xpReward; 
+                                        eC += 50; 
+                                    }
+                                }); 
+                                dbU.markModified('dailyQuests');
+                            }
+                            
+                            dbU.xp = Math.max(0, dbU.xp + eX); 
+                            dbU.coins = Math.max(0, (dbU.coins || 0) + eC);
+                            let lT = dbU.level * 1000; 
+                            while (dbU.xp >= lT) { dbU.xp -= lT; dbU.level++; lT = dbU.level * 1000; }
+                            dbU.stats.gamesPlayed++; 
+                            dbU.stats.phurtiPlayed = (dbU.stats.phurtiPlayed || 0) + 1;
+
+                            dbU.stats.totalPointsScored += p.totalScore;
+                            dbU.gameHistory.unshift({ 
+                                roomId: room.id, 
+                                targetScore: room.targetScore, 
+                                myFinalScore: p.totalScore, 
+                                isWinner: isW, 
+                                playedAt: new Date(), 
+                                opponents: room.players.filter(op=>op.id!==p.id).map(op=>op.name), 
+                                gameType: 'phurti' 
+                            });
+                            
+                            if (dbU.gameHistory.length > 30) dbU.gameHistory.pop(); 
+                            await dbU.save();
+                        }
+                    } catch (e) {}
+                });
+            }
+            io.to(roomId).emit('gameUpdated', room); 
+            return;
+        }
     } else { 
         room.currentTurn = (room.currentTurn + 1) % room.players.length; 
         startTurnTimer(room, roomId); 

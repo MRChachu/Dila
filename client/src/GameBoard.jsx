@@ -10,8 +10,6 @@ const getLeague = (xp = 0) => {
   return { name: 'ლეგენდა', icon: '👑', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' };
 };
 
-const [roundCountdown, setRoundCountdown] = useState(5);
-
 const GIFTS = [
   { id: 'coffee', icon: '☕', price: 50, name: 'ყავა' },
   { id: 'beer', icon: '🍺', price: 100, name: 'ლუდი' },
@@ -103,16 +101,6 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
       playSoftSound(room.lastAction.type === 'CAPTURE', 'card');
     }
   }, [room?.lastAction, isMuted]);
-
-  useEffect(() => {
-    if (room?.roundSummary && !room.roundSummary.matchWinner) {
-      setRoundCountdown(5);
-      const int = setInterval(() => {
-        setRoundCountdown(prev => Math.max(0, prev - 1));
-      }, 1000);
-      return () => clearInterval(int);
-    }
-  }, [room?.roundSummary]);
 
   useEffect(() => {
     if (room?.roundSummary?.matchWinner) {
@@ -693,21 +681,8 @@ export default function GameBoard({ room, socket, onLeave, activeTheme, checkIsV
                     <div className="flex justify-between"><span className="text-stone-400">ჯვრის 2:</span> <span className="font-black text-stone-100">{room.roundSummary.club2Winner}</span></div>
                   </div>
                 )}
-                <button 
-                  onClick={() => {
-                    if (room.roundSummary.matchWinner) {
-                      onLeave();
-                    } else {
-                      socket.emit('nextRoundReady', { roomId: room.id });
-                    }
-                  }}
-                  className={`w-full py-3 md:py-4 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all`}
-                >
-                  {room.roundSummary.matchWinner 
-                    ? 'ლობიში დაბრუნება' 
-                    : room.readyForNextRound?.includes(socket.id) 
-                      ? `მოლოდინი (${roundCountdown}წმ)...` 
-                      : `შემდეგი რაუნდი (${roundCountdown}წმ)`}
+                <button onClick={() => { if (room.roundSummary.matchWinner) { onLeave(); } else { socket.emit('nextRoundReady', { roomId: room.id }); } }} className={`w-full py-3 md:py-4 ${activeTheme.accentBg} text-stone-950 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all`}>
+                  {room.readyForNextRound?.includes(socket.id) ? 'მოლოდინი...' : room.roundSummary.matchWinner ? 'ლობიში დაბრუნება' : 'შემდეგი რაუნდი'}
                 </button>
               </div>
             </div>
